@@ -2,14 +2,16 @@ import * as fs from 'fs';
 import { LuaFile } from './LuaFile';
 import { LuaClass } from './LuaClass';
 import { LuaElement } from './LuaElement';
-import { LuaGraph } from './LuaGraph';
 import { LuaTable } from './LuaTable';
 
+/**
+ * **LuaLibrary**
+ * 
+ * @author JabDoesThings
+ */
 export class LuaLibrary {
 
     private files: string[] = [];
-
-    private graph: LuaGraph = new LuaGraph();
 
     luaFiles: {[id: string]: LuaFile} = {};
     classes: {[id: string]: LuaClass} = {};
@@ -77,14 +79,6 @@ export class LuaLibrary {
 
           this.luaFiles[id] = luaFile;
         }
-
-        // for(const file of Object.values(this.luaFiles)) {
-        //     this.graph.addFile(file);
-        // }
-        // this.graph.sort();
-        // this.graph.forEach((file: LuaFile) => {
-        //     file.scan();
-        // })
 
         for(const file of Object.values(this.luaFiles)) {
             file.scanGlobalAssignments();

@@ -1,6 +1,11 @@
 import { ConstructorDoc, ConstructorDocJson } from './doc/ConstructorDoc';
 import { ParamModel, ParamModelJson } from './ParamModel';
 
+/**
+ * **ConstructorModel**
+ * 
+ * @author JabDoesThings
+ */
 export class ConstructorModel {
   doc: ConstructorDoc;
   params: ParamModel[] = [];

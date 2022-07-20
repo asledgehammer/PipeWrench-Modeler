@@ -1,5 +1,10 @@
 import { FieldDoc, FieldDocJson } from "./doc/FieldDoc";
 
+/**
+ * **FieldModel**
+ * 
+ * @author JabDoesThings
+ */
 export class FieldModel {
     doc: FieldDoc;
     types: string[] = [];

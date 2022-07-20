@@ -1,5 +1,43 @@
-import * as ast from './ast';
+import * as ast from '../luaparser/ast';
 import { DeriveInfo, FunctionInfo, MethodInfo, ProxyInfo, RequireInfo, TableConstructorInfo } from './types';
+
+export let DEBUG = false;
+
+/**
+ * Corrects lua that compiles in Kahlua2 that breaks Luaparser.
+ *
+ * @param lua The erroneous Lua code to correct.
+ * @returns The fixed lua code.
+ */
+export const correctKahluaCode = (lua: string): string => {
+  /**
+   * Removes Float symbols from explicit numeric constants in Lua code.
+   *
+   * @param symbol The numeric symbol to remove.
+   * @param trailing The trailing chars where this situation can occur.
+   */
+  const removeNumericSymbol = (symbol: string, trailing: string[]) => {
+    for (const t of trailing) {
+      for (let x = 0; x < 10; x++) {
+        const to = `${x}${t}`;
+        const from = `${x}${symbol}${t}`;
+        while (lua.indexOf(from) !== -1) lua = lua.replace(from, to);
+      }
+    }
+  };
+
+  // Luaparser does not like it when break expressions have trailing
+  // semi-colons. This removes them.
+  while (lua.indexOf('break;') !== -1) {
+    lua = lua.replace('break;', 'break ');
+  }
+
+  // Remove any Float and Long symbols present in the Lua file.
+  removeNumericSymbol('l', [',', ';', ')', ' ']);
+  removeNumericSymbol('f', [',', ';', ')', ' ']);
+
+  return lua;
+};
 
 export const getRequireInfo = (statement: ast.CallStatement): RequireInfo | null => {
   let path;
@@ -17,7 +55,7 @@ export const getRequireInfo = (statement: ast.CallStatement): RequireInfo | null
     if (!expression.arguments || expression.arguments.length !== 1) return null;
     if (expression.arguments[0].type !== 'StringLiteral') return null;
     const arg0 = expression.arguments[0] as ast.StringLiteral;
-    
+
     path = arg0.raw;
   } else if ((statement.expression.type = 'StringCallExpression')) {
     const expression = statement.expression as ast.StringCallExpression;
@@ -32,7 +70,7 @@ export const getRequireInfo = (statement: ast.CallStatement): RequireInfo | null
     if (!expression.argument) return null;
     if (expression.argument.type !== 'StringLiteral') return null;
     const arg0 = expression.argument as ast.StringLiteral;
-    
+
     path = arg0.raw;
   } else {
     return null;
@@ -119,7 +157,7 @@ export const getFunctionDeclaration = (declaration: ast.FunctionDeclaration): Fu
 export const getMethodDeclaration = (b: boolean, declaration: ast.FunctionDeclaration): MethodInfo | null => {
   // This is how we know that this is a function assigned to a table on definition.
   if (declaration.identifier && declaration.identifier.type !== 'MemberExpression') {
-    if (b) console.log("M A", declaration);
+    // if (b) console.log('M A', declaration);
     return null;
   }
   // For method declarations and static function assignments, the identifier stores either as
@@ -133,7 +171,7 @@ export const getMethodDeclaration = (b: boolean, declaration: ast.FunctionDeclar
   // The name of the method or static function is stored inside the main identifier.
   let name = identifier.identifier.name;
   if (!className || !name) {
-    if (b) console.log("M B", className, name, declaration);
+    // if (b) console.log('M B', className, name, declaration);
     return null;
   }
   // Compile parameter names in order. (If present)
@@ -149,29 +187,31 @@ export const getMethodDeclaration = (b: boolean, declaration: ast.FunctionDeclar
   return { className, name, params, isStatic };
 };
 
-export const getMethodDeclarationFromAssignment = (b: boolean, statement: ast.AssignmentStatement): MethodInfo | null => {
-  
+export const getMethodDeclarationFromAssignment = (
+  b: boolean,
+  statement: ast.AssignmentStatement
+): MethodInfo | null => {
   // This is how we know that this is a function assigned to a table on definition.
-  if (!statement.init || statement.init.length !== 1 || statement.init[0].type !== 'FunctionDeclaration' ) {
-    if (b) console.log('M2 A', statement);
+  if (!statement.init || statement.init.length !== 1 || statement.init[0].type !== 'FunctionDeclaration') {
+    // if (b) console.log('M2 A', statement);
     return null;
   }
   const declaration = statement.init[0] as ast.FunctionDeclaration;
 
   if (!statement.variables || statement.variables.length !== 1 || statement.variables[0].type !== 'MemberExpression') {
-    if (b) console.log('M2 B', statement);
+    // if (b) console.log('M2 B', statement);
     return null;
   }
   const variable = statement.variables[0] as ast.MemberExpression;
 
   if (!variable.base || variable.base.type !== 'Identifier') {
-    if (b) console.log('M2 C', statement);
+    // if (b) console.log('M2 C', statement);
     return null;
   }
   const base = variable.base as ast.Identifier;
 
   if (!variable.identifier || variable.identifier.type !== 'Identifier') {
-    if (b) console.log('M2 D', statement);
+    // if (b) console.log('M2 D', statement);
     return null;
   }
   const identifier = variable.identifier as ast.Identifier;
@@ -181,7 +221,7 @@ export const getMethodDeclarationFromAssignment = (b: boolean, statement: ast.As
   const name = identifier.name;
 
   if (!className || !name) {
-    if (b) console.log("M2 E", className, name, statement);
+    // if (b) console.log('M2 E', className, name, statement);
     return null;
   }
 
@@ -201,16 +241,16 @@ export const isFunctionLocal = (declaration: ast.FunctionDeclaration): boolean =
 };
 
 export const printMethodInfo = (info: MethodInfo): string => {
-    let str = '';
-    if (info.isStatic) str += 'static ';
-    str += `${info.className}`;
-    str += info.isStatic ? '.' : ':';
-    str += `${info.name}(`;
-    if (info.params.length) {
-      for (const param of info.params) str += `${param}, `;
-      str = str.substring(0, str.length - 2);
-    }
-    return str + ')';
+  let str = '';
+  if (info.isStatic) str += 'static ';
+  str += `${info.className}`;
+  str += info.isStatic ? '.' : ':';
+  str += `${info.name}(`;
+  if (info.params.length) {
+    for (const param of info.params) str += `${param}, `;
+    str = str.substring(0, str.length - 2);
+  }
+  return str + ')';
 };
 
 export const printFunctionInfo = (info: FunctionInfo): string => {

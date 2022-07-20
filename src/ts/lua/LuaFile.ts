@@ -1,8 +1,16 @@
 import * as fs from 'fs';
 import * as parser from 'luaparse';
-import * as ast from './ast';
+import * as ast from '../luaparser/ast';
+import { LuaClass } from './LuaClass';
+import { LuaLibrary } from './LuaLibrary';
+import { LuaElement } from './LuaElement';
+import { LuaFunction } from './LuaFunction';
+import { LuaTable } from './LuaTable';
+import { LuaMethod } from './LuaMethod';
 
 import {
+  correctKahluaCode,
+  DEBUG,
   getDeriveInfo,
   getFunctionDeclaration,
   getMethodDeclaration,
@@ -15,15 +23,7 @@ import {
   printMethodInfo,
   printProxyInfo,
   printRequireInfo,
-} from './inspect';
-import { LuaClass } from './LuaClass';
-import { LuaLibrary } from './LuaLibrary';
-import { LuaElement } from './LuaElement';
-import { LuaFunction } from './LuaFunction';
-import { LuaTable } from './LuaTable';
-import { LuaMethod } from './LuaMethod';
-
-const DEBUG = false;
+} from './LuaUtils';
 
 export class LuaFile {
   readonly proxies: { [id: string]: string } = {};
@@ -45,9 +45,9 @@ export class LuaFile {
 
   parse() {
     let raw = fs.readFileSync(this.file).toString();
-    raw = LuaFile.correctKahluaCode(raw);
+    raw = correctKahluaCode(raw);
     this.parsed = parser.parse(raw, { luaVersion: '5.1' });
-    if (this.id.endsWith('luautils')) {
+    if (this.id.endsWith('ISUIElement')) {
       console.log(this.parsed);
     }
   }
@@ -229,41 +229,5 @@ export class LuaFile {
       }
     }
     if (DEBUG) console.log('\n');
-  }
-
-  /**
-   * Corrects lua that compiles in Kahlua2 that breaks Luaparser.
-   *
-   * @param lua The erroneous Lua code to correct.
-   * @returns The fixed lua code.
-   */
-  private static correctKahluaCode(lua: string): string {
-    /**
-     * Removes Float symbols from explicit numeric constants in Lua code.
-     *
-     * @param symbol The numeric symbol to remove.
-     * @param trailing The trailing chars where this situation can occur.
-     */
-    const removeNumericSymbol = (symbol: string, trailing: string[]) => {
-      for (const t of trailing) {
-        for (let x = 0; x < 10; x++) {
-          const to = `${x}${t}`;
-          const from = `${x}${symbol}${t}`;
-          while (lua.indexOf(from) !== -1) lua = lua.replace(from, to);
-        }
-      }
-    };
-
-    // Luaparser does not like it when break expressions have trailing
-    // semi-colons. This removes them.
-    while (lua.indexOf('break;') !== -1) {
-      lua = lua.replace('break;', 'break ');
-    }
-
-    // Remove any Float and Long symbols present in the Lua file.
-    removeNumericSymbol('l', [',', ';', ')', ' ']);
-    removeNumericSymbol('f', [',', ';', ')', ' ']);
-
-    return lua;
   }
 }

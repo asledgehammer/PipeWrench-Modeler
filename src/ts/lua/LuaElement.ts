@@ -1,3 +1,8 @@
+/**
+ * **LuaElement**
+ * 
+ * @author JabDoesThings
+ */
 export class LuaElement {
     readonly name: string;
 

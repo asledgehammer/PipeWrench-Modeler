@@ -1,5 +1,10 @@
 import { ParamDoc, ParamDocJson } from './doc/ParamDoc';
 
+/**
+ * **ParamModel**
+ * 
+ * @author JabDoesThings
+ */
 export class ParamModel {
   doc: ParamDoc;
   id: string;

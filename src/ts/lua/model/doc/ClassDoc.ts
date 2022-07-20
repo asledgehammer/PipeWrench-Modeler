@@ -1,3 +1,8 @@
+/**
+ * **ClassDoc**
+ * 
+ * @author JabDoesThings
+ */
 export class ClassDoc {
   annotations: { [annotation: string]: any } = {};
   lines: string[] = [];

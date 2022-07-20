@@ -1,6 +1,11 @@
 import { LuaElement } from "./LuaElement";
 import { LuaFile } from "./LuaFile";
 
+/**
+ * **LuaFunction**
+ * 
+ * @author JabDoesThings
+ */
 export class LuaFunction extends LuaElement {
 
     readonly file: LuaFile;

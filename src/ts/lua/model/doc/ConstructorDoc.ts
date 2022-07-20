@@ -1,3 +1,8 @@
+/**
+ * **ConstructorDoc**
+ * 
+ * @author JabDoesThings
+ */
 export class ConstructorDoc {
   annotations: { [annotation: string]: any } = {};
   lines: string[] = [];

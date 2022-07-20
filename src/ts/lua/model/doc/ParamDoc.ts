@@ -1,3 +1,8 @@
+/**
+ * **ParamDoc**
+ * 
+ * @author JabDoesThings
+ */
 export class ParamDoc {
   lines: string[] = [];
 

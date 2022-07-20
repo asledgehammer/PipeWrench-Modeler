@@ -1,7 +1,11 @@
-import { LuaClass } from "./LuaClass";
 import { LuaContainer } from "./LuaContainer";
 import { LuaElement } from "./LuaElement";
 
+/**
+ * **LuaMethod**
+ * 
+ * @author JabDoesThings
+ */
 export class LuaMethod extends LuaElement {
 
     readonly container: LuaContainer;

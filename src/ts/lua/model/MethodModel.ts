@@ -1,6 +1,11 @@
 import { MethodDoc, MethodDocJson } from './doc/MethodDoc';
 import { ParamModel, ParamModelJson } from './ParamModel';
 
+/**
+ * **MethodModel**
+ * 
+ * @author JabDoesThings
+ */
 export class MethodModel {
   doc: MethodDoc;
   params: ParamModel[] = [];

@@ -1,3 +1,8 @@
+/**
+ * **FieldDoc**
+ * 
+ * @author JabDoesThings
+ */
 export class FieldDoc {
   annotations: { [annotation: string]: any } = {};
   lines: string[] = [];

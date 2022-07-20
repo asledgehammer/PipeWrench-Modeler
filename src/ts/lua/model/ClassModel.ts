@@ -3,6 +3,11 @@ import { ConstructorModel, ConstructorModelJson } from './ConstructorModel';
 import { FieldModel, FieldModelJson } from './FieldModel';
 import { MethodModel, MethodModelJson } from './MethodModel';
 
+/**
+ * **ClassModel**
+ * 
+ * @author JabDoesThings
+ */
 export class ClassModel {
   fields: { [id: string]: FieldModel } = {};
   methods: { [id: string]: MethodModel } = {};

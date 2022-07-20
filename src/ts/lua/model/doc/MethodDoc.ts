@@ -1,3 +1,8 @@
+/**
+ * **MethodDoc**
+ * 
+ * @author JabDoesThings
+ */
 export class MethodDoc {
   annotations: { [annotation: string]: any } = {};
   lines: string[] = [];
