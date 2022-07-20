@@ -81,12 +81,12 @@ export class LuaLibrary {
         }
 
         for(const file of Object.values(this.luaFiles)) {
-            file.scanGlobalAssignments();
+            file.scanGlobals();
         }
 
         for(const file of Object.values(this.luaFiles)) {
             // console.log(`### ${file.id}`);
-            file.scan();
+            file.scanMembers();
         }
 
         console.log(this.tables['luautils']);

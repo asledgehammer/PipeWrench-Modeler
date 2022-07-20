@@ -25,24 +25,53 @@ import {
   printRequireInfo,
 } from './LuaUtils';
 
+/**
+ * **LuaFile** loads, parses, and processes Lua code stored in files.
+ * 
+ * @author JabDoesThings
+ */
 export class LuaFile {
+  /** All proxy assigners discovered in the file. */
   readonly proxies: { [id: string]: string } = {};
+
+  /** All pseudo-classes discovered in the file. */
   readonly classes: { [id: string]: LuaClass } = {};
+
+  /** All properties discovered in the file. (Fields) */
   readonly properties: { [id: string]: LuaElement } = {};
+
+  /** All tables discovered in the file. */
   readonly tables: { [id: string]: LuaTable } = {};
+
+  /** All requires in the file. (Used for dependency chains) */
   readonly requires: string[] = [];
+
+  /** The library storing all discovered Lua. */
   readonly library: LuaLibrary;
+
+  /** The `require(..) / require '..'` path to the file. */
   readonly id: string;
+
+  /** The path to the file on the disk. */
   readonly file: string;
 
+  /** The parsed chunk provided by LuaParse. */
   parsed: ast.Chunk;
 
+  /**
+   * @param library The library storing all discovered Lua.
+   * @param id The `require(..) / require '..'` path to the file.
+   * @param file The path to the file on the disk.
+   */
   constructor(library: LuaLibrary, id: string, file: string) {
     this.library = library;
     this.id = id;
     this.file = file;
   }
 
+  /**
+   * Cleans & parses Lua in the file using LuaParse.
+   */
   parse() {
     let raw = fs.readFileSync(this.file).toString();
     raw = correctKahluaCode(raw);
@@ -52,6 +81,11 @@ export class LuaFile {
     }
   }
 
+  /**
+   * Ran first, scans for all `require(..) | require '..'` call-statements in the file.
+   * These statements are used for generating dependency-chains for all files in the
+   * library.
+   */
   scanRequires() {
     const processRequire = (statement: ast.CallStatement): boolean => {
       const info = getRequireInfo(statement);
@@ -70,7 +104,11 @@ export class LuaFile {
     }
   }
 
-  scanGlobalAssignments() {
+  /**
+   * Ran second, scans and discovers global functions, global pseudo-classes, and proxy 
+   * assignments to discovered elements in the file.
+   */
+  scanGlobals() {
     const { parsed } = this;
 
     const processTable = (statement: ast.AssignmentStatement): boolean => {
@@ -138,17 +176,20 @@ export class LuaFile {
     }
   }
 
-  scan() {
+  /**
+   * Ran third, scans for elements assigned to global elements like methods and static 
+   * functions | properties.
+   */
+  scanMembers() {
     const { parsed } = this;
 
     // if (this.id.endsWith('luautils')) {
     //   console.log(parsed);
     // }
 
-    const processMethod = (declaration: ast.FunctionDeclaration, forceStatic: boolean): boolean => {
+    const processMethod = (declaration: ast.FunctionDeclaration): boolean => {
       const info = getMethodDeclaration(this.id.endsWith('luautils'), declaration);
       if (!info) return false;
-      if (forceStatic) info.isStatic = true;
       if (DEBUG) console.log(`\tMethod: ${printMethodInfo(info)}`);
 
       if (this.proxies[info.className]) {
@@ -178,10 +219,9 @@ export class LuaFile {
       return true;
     };
 
-    const processMethodFromAssignment = (statement: ast.AssignmentStatement, forceStatic: boolean): boolean => {
+    const processMethodFromAssignment = (statement: ast.AssignmentStatement): boolean => {
       const info = getMethodDeclarationFromAssignment(this.id.endsWith('luautils'), statement);
       if (!info) return false;
-      if (forceStatic) info.isStatic = true;
       if (DEBUG) console.log(`\tMethod: ${printMethodInfo(info)}`);
 
       if (this.proxies[info.className]) {
@@ -214,7 +254,7 @@ export class LuaFile {
     // Scan for class function declarations.
     for (const statement of parsed.body) {
       if (statement.type === 'FunctionDeclaration') {
-        if (processMethod(statement, false)) continue;
+        if (processMethod(statement)) continue;
         else {
           if (!isFunctionLocal(statement)) {
             console.warn(`\tApplying function as global property.`);
@@ -224,7 +264,7 @@ export class LuaFile {
       } else if (statement.type === 'AssignmentStatement') {
         if (statement.init.length === 1 && statement.init[0].type === 'FunctionDeclaration') {
           // These assignments can only be static.
-          if (processMethodFromAssignment(statement, true)) continue;
+          if (processMethodFromAssignment(statement)) continue;
         }
       }
     }
