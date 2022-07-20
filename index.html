@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PipeWrench Modeler</title>
+    <link rel="stylesheet" href="assets/css/project.min.css"/>
+    <link rel="stylesheet" href="node_modules/highlight.js/styles/base16/gigavolt.css"/>
+</head>
+<body>
+    
+    <div class="model_list">
+        <div class="model_list_entry">
+            <span class="label_code_font">ISUIElement</span>
+        </div>
+    </div>
+    <div class="right_side">
+        <div class="background"></div>
+        <div class="background_filter"></div>
+        <div class="grid"></div>
+        <div class="grid_shadow"></div>
+        <div class="model_form class_model_form">
+            <div class="model_form_background"></div>
+            <div class="model_form_background_filter"></div>
+            <div class="model_form_border"></div>
+            <div id="code"></div>
+        </div>
+    </div>
+  
+    <script type="module">
+        window.$ = window.jQuery = require('jquery');
+
+        $(document).on('dragstart', '*', function (event) { event.preventDefault() });
+
+        // Start application.
+        $(function () { require("./assets/js/main.js").start() });
+    </script>
+</body>
+</html>

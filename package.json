@@ -1,0 +1,43 @@
+{
+  "name": "JCME",
+  "version": "1.0.0",
+  "description": "None",
+  "main": "main.js",
+  "scripts": {
+    "start": "./node_modules/electron/dist/electron.exe main.js"
+  },
+  "devDependencies": {
+    "@microsoft/tsdoc": "^0.12.10",
+    "@types/jquery": "^3.3.30",
+    "electron": "7.1.11",
+    "electron-builder": "21.2.0",
+    "grunt": "^1.0.4",
+    "grunt-contrib-cssmin": "latest",
+    "grunt-contrib-sass": "latest",
+    "grunt-contrib-uglify-es": "git://github.com/gruntjs/grunt-contrib-uglify.git#harmony",
+    "grunt-contrib-watch": "latest",
+    "grunt-postcss": "latest",
+    "grunt-ts": "latest",
+    "sass": "^1.26.10",
+    "tslint": "latest",
+    "tslint-config-standard": "latest",
+    "tslint-eslint-rules": "latest",
+    "typescript": "latest"
+  },
+  "dependencies": {
+    "@material/animation": "^3.1.0",
+    "@types/highlight.js": "^9.12.3",
+    "@types/luaparse": "^0.2.8",
+    "highlight.js": "^11.6.0",
+    "jquery": "^3.5.1",
+    "luaparse": "^0.3.1"
+  },
+  "staticFiles": {
+    "staticPath": "public",
+    "watcherGlob": "**"
+  },
+  "keywords": [
+    "typescript",
+    "javascript"
+  ]
+}

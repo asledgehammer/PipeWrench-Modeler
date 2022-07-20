@@ -1,0 +1,11 @@
+.tscache/
+.sass-cache/
+staged/
+assets/js/
+assets/css/
+
+package-lock.json
+node_modules/
+screenshot.png
+.eslintrc.json
+assets/media/lua/
