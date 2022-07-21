@@ -89,7 +89,7 @@ export class LuaLibrary {
             file.scanMembers();
         }
 
-        console.log(this.tables['luautils']);
+        console.log(this.classes['ISUIElement']);
 
         this.linkClasses();
     }

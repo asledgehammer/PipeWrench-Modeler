@@ -149,7 +149,7 @@ export class LuaFile {
       const info = getFunctionDeclaration(declaration);
       if (!info) return false;
       if (DEBUG) printFunctionInfo(info);
-      const func = new LuaFunction(this, info.name, info.params, info.isLocal);
+      const func = new LuaFunction(this, declaration, info.name, info.params, info.isLocal);
       this.properties[info.name] = func;
       if (!info.isLocal) {
         this.library.properties[func.name] = func;
@@ -199,7 +199,7 @@ export class LuaFile {
 
       const clazz = this.library.classes[info.className];
       if (clazz) {
-        const func = new LuaMethod(clazz, info.name, info.params, info.isStatic);
+        const func = new LuaMethod(clazz, declaration, info.name, info.params, info.isStatic);
         if (!info.isStatic && info.name === 'new') {
           clazz._constructor_ = func;
         } else {
@@ -210,7 +210,7 @@ export class LuaFile {
 
       const table = this.library.tables[info.className];
       if (table) {
-        const func = new LuaMethod(table, info.name, info.params, info.isStatic);
+        const func = new LuaMethod(table, declaration, info.name, info.params, info.isStatic);
         table.methods[info.name] = func;
         return true;
       }
@@ -231,7 +231,7 @@ export class LuaFile {
 
       const clazz = this.library.classes[info.className];
       if (clazz) {
-        const func = new LuaMethod(clazz, info.name, info.params, info.isStatic);
+        const func = new LuaMethod(clazz, statement, info.name, info.params, info.isStatic);
         if (!info.isStatic && info.name === 'new') {
           clazz._constructor_ = func;
         } else {
@@ -242,7 +242,7 @@ export class LuaFile {
 
       const table = this.library.tables[info.className];
       if (table) {
-        const func = new LuaMethod(table, info.name, info.params, info.isStatic);
+        const func = new LuaMethod(table, statement, info.name, info.params, info.isStatic);
         table.methods[info.name] = func;
         return true;
       }
