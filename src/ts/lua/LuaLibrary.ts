@@ -80,33 +80,45 @@ export class LuaLibrary {
           this.luaFiles[id] = luaFile;
         }
 
-        for(const file of Object.values(this.luaFiles)) {
-            file.scanGlobals();
-        }
-
-        for(const file of Object.values(this.luaFiles)) {
-            // console.log(`### ${file.id}`);
-            file.scanMembers();
-        }
-
-        for(const clazz of Object.values(this.classes)) {
-            clazz.scanMethods();
-        }
-
+        for(const file of Object.values(this.luaFiles)) file.scanGlobals();
+        for(const file of Object.values(this.luaFiles)) file.scanMembers();
+        for(const clazz of Object.values(this.classes)) clazz.scanMethods();
         this.linkClasses();
+        this.audit();
+    
+        const compileClasses = () => {
+            const classNames = Object.keys(this.classes);
+            classNames.sort((o1, o2) => {
+              return o1.localeCompare(o2);
+            });
+            let s = '';
+            for(const className of classNames) s += `${this.classes[className].compile()}\n`;
+            console.log(s);
+        };
 
-        
-        const tableNames = Object.keys(this.tables);
-        tableNames.sort((o1, o2) => {
-            return o1.localeCompare(o2);
-        });
+        const compileTables = () => {
+            const tableNames = Object.keys(this.tables);
+            tableNames.sort((o1, o2) => {
+              return o1.localeCompare(o2);
+            });
+            let s = '';
+            for(const tableName of tableNames) s += `${this.tables[tableName].compile()}\n`;
+            console.log(s);
+        };
 
-        let s = '';
-        for(const tableName of tableNames) {
-          s += `${this.tables[tableName].compile()}\n`;
-        }
-        console.log(s);
+        const compileProperties = () => {
+            const propNames = Object.keys(this.properties);
+            propNames.sort((o1, o2) => {
+              return o1.localeCompare(o2);
+            });
+            let s = '';
+            for(const propName of propNames) s += `${this.properties[propName].compile('')}\n`;
+            console.log(s);
+        };
 
+        // compileClasses();
+
+        compileProperties();
 
         // const ISUIElement = this.classes['ISUIElement'];
         // console.log(ISUIElement);
@@ -115,6 +127,16 @@ export class LuaLibrary {
         // const luautils = this.tables['luautils'];
         // console.log(luautils);
         // console.log(luautils.compile(''));
+    }
+
+    private audit() {
+        // Classes takes precedence over duplicate tables.
+        for(const className of Object.keys(this.classes)) {
+            if(this.tables[className]) {
+                delete this.tables[className];
+            }
+            this.classes[className].audit();
+        }
     }
 
     private linkClasses() {

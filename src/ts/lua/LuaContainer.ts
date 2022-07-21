@@ -47,6 +47,12 @@ export class LuaContainer extends LuaElement {
     this.type = type;
   }
 
+  audit() {
+    for(const methodName of Object.keys(this.methods)) {
+      if(this.fields[methodName]) delete this.fields[methodName];
+    }
+  }
+
   compile(prefix: string = ''): string {
 
     // Render empty classes & tables on one line.
