@@ -114,6 +114,10 @@ export class LuaFile {
     const processTable = (statement: ast.AssignmentStatement): boolean => {
       const info = getTableConstructor(statement);
       if (!info) return false;
+      
+      // Make sure that the root class isn't rendered as a table.
+      if (info.name === 'ISBaseObject') return false;
+      
       const table = new LuaTable(this, info.name);
       this.library.tables[info.name] = table;
       // console.log(`Adding table: ${table.name}`);

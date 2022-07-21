@@ -1,6 +1,7 @@
 import { LuaElement } from './LuaElement';
 import { LuaFile } from './LuaFile';
 import * as ast from '../luaparser/ast';
+import { fixParameters } from './LuaUtils';
 
 /**
  * **LuaFunction**
@@ -24,7 +25,11 @@ export class LuaFunction extends LuaElement {
     super(name);
     this.parsed = parsed;
     this.file = file;
-    this.params = params;
+    this.params = fixParameters(params);
     this.isLocal = isLocal;
+  }
+
+  compile(prefix: string = ''): string {
+    return '';
   }
 }

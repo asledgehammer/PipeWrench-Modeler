@@ -1,6 +1,7 @@
 import { LuaClass } from './LuaClass';
 import { LuaContainer } from './LuaContainer';
 import { LuaElement } from './LuaElement';
+import { sanitizeParameter } from './LuaUtils';
 
 /**
  * **LuaField** stores calls to constants or variables.
@@ -24,5 +25,9 @@ export class LuaField extends LuaElement {
     super(name);
     this.clazz = clazz;
     this.isStatic = isStatic;
+  }
+
+  compile(prefix: string = ''): string {
+    return `${prefix}${this.isStatic ? 'static ' : ''}${this.name}: unknown;`;
   }
 }

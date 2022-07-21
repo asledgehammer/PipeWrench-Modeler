@@ -3,7 +3,7 @@ import { LuaElement } from './LuaElement';
 import * as ast from '../luaparser/ast';
 import { LuaField } from './LuaField';
 import { LuaLibrary } from './LuaLibrary';
-import { scanBodyForFields } from './LuaUtils';
+import { fixParameters, sanitizeParameter, scanBodyForFields } from './LuaUtils';
 import { Identifier } from 'luaparse';
 
 /**
@@ -30,8 +30,20 @@ export class LuaMethod extends LuaElement {
     this.library = library;
     this.container = container;
     this.parsed = parsed;
-    this.params = params;
+    this.params = fixParameters(params);
     this.isStatic = isStatic;
+  }
+
+  compile(prefix: string = ''): string {
+    // Compile parameter(s). (If any)
+    let paramS = '';
+    const { params } = this;
+    if (params.length) {
+      for (const param of params) paramS += `${param}: unknown, `;
+      paramS = paramS.substring(0, paramS.length - 2);
+    }
+
+    return `${prefix}${this.isStatic ? 'static ' : ''}${this.name}: ((${paramS})=>unknown) | unknown;`;
   }
 
   scanAsConstructor() {

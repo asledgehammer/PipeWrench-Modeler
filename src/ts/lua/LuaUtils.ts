@@ -318,14 +318,18 @@ export const scanBodyForFields = (
 
     const ref: FieldReference = { containerName, fieldName, isStatic };
     found = false;
-    for(const next of fieldReferences) {
-      if(next.containerName === ref.containerName && next.fieldName === ref.fieldName && next.isStatic === ref.isStatic) {
+    for (const next of fieldReferences) {
+      if (
+        next.containerName === ref.containerName &&
+        next.fieldName === ref.fieldName &&
+        next.isStatic === ref.isStatic
+      ) {
         found = true;
         break;
       }
     }
 
-    if(!found) fieldReferences.push(ref); 
+    if (!found) fieldReferences.push(ref);
   }
   return fieldReferences;
 };
@@ -365,3 +369,38 @@ export const printProxyInfo = (info: ProxyInfo) => {
 export const printRequireInfo = (info: RequireInfo) => {
   console.log(`Require: ${info.path}`);
 };
+
+const badParameterNames: string[] = [
+  'unknown',
+  'any',
+  'try',
+  'function',
+  'export',
+  'do',
+  'while',
+  'catch',
+  'for',
+  'declare',
+  'const',
+  'let',
+  'new',
+  'default',
+];
+
+export const sanitizeParameter = (param: string) => {
+  if(badParameterNames.indexOf(param) !== -1) return `_${param}_`;
+  return param;
+};
+
+export const fixParameters = (params: string[]): string[] => {
+  const pre = [].concat(params).reverse();
+  const fixed: string[] = [];
+  let index = 0;
+  while(pre.length) {
+    let next = pre.pop();
+    if (pre.indexOf(next) !== -1 || next === '_') next = `arg${index}`;
+    fixed.push(sanitizeParameter(next));
+    index++;
+  }
+  return fixed;
+}

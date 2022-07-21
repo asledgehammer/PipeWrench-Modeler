@@ -3,7 +3,7 @@
  * 
  * @author JabDoesThings
  */
-export class LuaElement {
+export abstract class LuaElement {
   /** The name of the element. (If stored globally, identifies as such) */
   readonly name: string;
 
@@ -13,4 +13,6 @@ export class LuaElement {
   constructor(name: string) {
     this.name = name;
   }
+
+  abstract compile(prefix: string): string;
 }
