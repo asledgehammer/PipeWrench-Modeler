@@ -39,6 +39,7 @@ export class LuaClass extends LuaContainer {
   }
 
   scanMethods() {
+    this._constructor_?.scanAsConstructor();
     for(const method of Object.values(this.methods)) {
         method.scanFields();
     }

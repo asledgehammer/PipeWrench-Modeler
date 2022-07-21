@@ -252,6 +252,7 @@ export const scanBodyForFields = (
   body: ast.Statement[],
   selfName: string,
   locals: string[] = [],
+  onlyLocals: boolean = false,
   fieldReferences: FieldReference[] = []
 ): FieldReference[] => {
   const scopedLocals = [];
@@ -266,18 +267,18 @@ export const scanBodyForFields = (
       }
       continue;
     } else if (entry.type === 'WhileStatement') {
-      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), fieldReferences);
+      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), onlyLocals, fieldReferences);
       continue;
     } else if (entry.type === 'DoStatement') {
-      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), fieldReferences);
+      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), onlyLocals, fieldReferences);
     } else if (entry.type === 'ForGenericStatement') {
-      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), fieldReferences);
+      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), onlyLocals, fieldReferences);
     } else if (entry.type === 'ForNumericStatement') {
-      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), fieldReferences);
+      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), onlyLocals, fieldReferences);
     } else if (entry.type === 'IfStatement') {
       const clauses = entry.clauses;
       for (const clause of clauses) {
-        scanBodyForFields(clause.body, selfName, [].concat(locals, scopedLocals), fieldReferences);
+        scanBodyForFields(clause.body, selfName, [].concat(locals, scopedLocals), onlyLocals, fieldReferences);
       }
     } else if (entry.type !== 'AssignmentStatement') continue;
 

@@ -4,6 +4,7 @@ import * as ast from '../luaparser/ast';
 import { LuaField } from './LuaField';
 import { LuaLibrary } from './LuaLibrary';
 import { scanBodyForFields } from './LuaUtils';
+import { Identifier } from 'luaparse';
 
 /**
  * **LuaMethod**
@@ -33,6 +34,40 @@ export class LuaMethod extends LuaElement {
     this.isStatic = isStatic;
   }
 
+  scanAsConstructor() {
+    const D = this.container.name === 'ISUIElement';
+
+    const { parsed, container } = this;
+    if (!parsed || !container || container.type !== 'class') {
+      return;
+    }
+
+    const declaration = parsed as ast.FunctionDeclaration;
+    const fieldRefs = scanBodyForFields(declaration.body, this.container.name, [].concat(this.params), true);
+
+    // Grab the name of the returned local table. This is what initial values for fields are set.
+    let returnName;
+    for (let index = declaration.body.length - 1; index >= 0; index--) {
+      const statement = declaration.body[index];
+      if (statement.type === 'ReturnStatement') {
+        const returnStatement = statement as ast.ReturnStatement;
+        returnName = (returnStatement.arguments[0] as Identifier).name;
+        break;
+      }
+    }
+
+    // Go through all local assignments and add the ones matching the returnName as fields to the containser.
+    for (const ref of fieldRefs) {
+      if (ref.containerName === returnName) {
+        const { containerName, fieldName } = ref;
+        if (!this.container.fields[fieldName]) {
+          const field = new LuaField(this.container, ref.fieldName, false);
+          container.fields[fieldName] = field;
+        }
+      }
+    }
+  }
+
   scanFields() {
     const D = false; /// this.container.name === 'ISUIElement';
 
@@ -44,14 +79,11 @@ export class LuaMethod extends LuaElement {
 
     const { parsed, container } = this;
     if (!parsed || !container || container.type !== 'class') {
-      if (D) console.log('SF 1');
       return;
     }
 
     if (parsed.type === 'FunctionDeclaration') {
       this.scanFieldsAsFunctionDeclaration(parsed as ast.FunctionDeclaration, D);
-    } else {
-      this.scanFieldAsAssignmentStatement(parsed as ast.AssignmentStatement);
     }
   }
 
@@ -62,10 +94,9 @@ export class LuaMethod extends LuaElement {
 
     if (D && fieldRefs.length) console.log(fieldRefs);
 
-    for ( const ref of fieldRefs) {
-      
+    for (const ref of fieldRefs) {
       const { containerName, fieldName, isStatic } = ref;
-      
+
       let container: LuaContainer = this.library.classes[containerName];
       if (!container) container = this.library.tables[containerName];
       if (!container) continue;
@@ -75,8 +106,5 @@ export class LuaMethod extends LuaElement {
       const field = new LuaField(this.container, fieldName, isStatic);
       container.fields[fieldName] = field;
     }
-
   }
-
-  private scanFieldAsAssignmentStatement(statement: ast.AssignmentStatement) {}
 }
