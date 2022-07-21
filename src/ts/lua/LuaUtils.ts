@@ -1,5 +1,13 @@
 import * as ast from '../luaparser/ast';
-import { DeriveInfo, FunctionInfo, MethodInfo, ProxyInfo, RequireInfo, TableConstructorInfo } from './types';
+import {
+  DeriveInfo,
+  FieldReference,
+  FunctionInfo,
+  MethodInfo,
+  ProxyInfo,
+  RequireInfo,
+  TableConstructorInfo,
+} from './types';
 
 export let DEBUG = false;
 
@@ -234,6 +242,91 @@ export const getMethodDeclarationFromAssignment = (
   }
 
   return { className, name, params, isStatic };
+};
+
+/**
+ * NOTE: Doesn't scan `CallStatement` argument expressions for field discovery.
+ * If field(s) are missing in generated results, this may be why.
+ */
+export const scanBodyForFields = (
+  body: ast.Statement[],
+  selfName: string,
+  locals: string[] = [],
+  fieldReferences: FieldReference[] = []
+): FieldReference[] => {
+  const scopedLocals = [];
+
+  for (const entry of body) {
+    if (entry.type === 'LocalStatement') {
+      const statement = entry as ast.LocalStatement;
+      if (statement.variables.length !== 1) continue;
+      const localName = statement.variables[0].name;
+      if (locals.indexOf(localName) === -1) {
+        scopedLocals.push(localName);
+      }
+      continue;
+    } else if (entry.type === 'WhileStatement') {
+      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), fieldReferences);
+      continue;
+    } else if (entry.type === 'DoStatement') {
+      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), fieldReferences);
+    } else if (entry.type === 'ForGenericStatement') {
+      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), fieldReferences);
+    } else if (entry.type === 'ForNumericStatement') {
+      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), fieldReferences);
+    } else if (entry.type === 'IfStatement') {
+      const clauses = entry.clauses;
+      for (const clause of clauses) {
+        scanBodyForFields(clause.body, selfName, [].concat(locals, scopedLocals), fieldReferences);
+      }
+    } else if (entry.type !== 'AssignmentStatement') continue;
+
+    const statement = entry as ast.AssignmentStatement;
+    const variables = statement.variables;
+    if (!variables || !variables.length) continue;
+
+    let containerName;
+    let fieldName;
+    let found = false;
+    let isStatic = true;
+    for (const varNext of variables) {
+      const variable = varNext as ast.MemberExpression;
+      if (!variable.base || variable.base.type !== 'Identifier') continue;
+      if (!variable.identifier || variable.identifier.type !== 'Identifier') continue;
+
+      const base = variable.base as ast.Identifier;
+      if (base.name === 'self') {
+        containerName = selfName;
+        isStatic = false;
+      } else {
+        containerName = base.name;
+      }
+
+      // Make sure the assignment isn't to a local var.
+      if (locals.indexOf(containerName) !== -1) continue;
+
+      const identifier = variable.identifier as ast.Identifier;
+      fieldName = identifier.name;
+      // isStatic = variable.indexer === '.';
+      found = true;
+
+      break;
+    }
+
+    if (!found) continue;
+
+    const ref: FieldReference = { containerName, fieldName, isStatic };
+    found = false;
+    for(const next of fieldReferences) {
+      if(next.containerName === ref.containerName && next.fieldName === ref.fieldName && next.isStatic === ref.isStatic) {
+        found = true;
+        break;
+      }
+    }
+
+    if(!found) fieldReferences.push(ref); 
+  }
+  return fieldReferences;
 };
 
 export const isFunctionLocal = (declaration: ast.FunctionDeclaration): boolean => {

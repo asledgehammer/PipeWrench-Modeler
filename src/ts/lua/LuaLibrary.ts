@@ -89,6 +89,10 @@ export class LuaLibrary {
             file.scanMembers();
         }
 
+        for(const clazz of Object.values(this.classes)) {
+            clazz.scanMethods();
+        }
+
         console.log(this.classes['ISUIElement']);
 
         this.linkClasses();

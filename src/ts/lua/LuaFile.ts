@@ -27,7 +27,7 @@ import {
 
 /**
  * **LuaFile** loads, parses, and processes Lua code stored in files.
- * 
+ *
  * @author JabDoesThings
  */
 export class LuaFile {
@@ -105,7 +105,7 @@ export class LuaFile {
   }
 
   /**
-   * Ran second, scans and discovers global functions, global pseudo-classes, and proxy 
+   * Ran second, scans and discovers global functions, global pseudo-classes, and proxy
    * assignments to discovered elements in the file.
    */
   scanGlobals() {
@@ -177,7 +177,7 @@ export class LuaFile {
   }
 
   /**
-   * Ran third, scans for elements assigned to global elements like methods and static 
+   * Ran third, scans for elements assigned to global elements like methods and static
    * functions | properties.
    */
   scanMembers() {
@@ -199,7 +199,7 @@ export class LuaFile {
 
       const clazz = this.library.classes[info.className];
       if (clazz) {
-        const func = new LuaMethod(clazz, declaration, info.name, info.params, info.isStatic);
+        const func = new LuaMethod(this.library, clazz, declaration, info.name, info.params, info.isStatic);
         if (!info.isStatic && info.name === 'new') {
           clazz._constructor_ = func;
         } else {
@@ -210,7 +210,7 @@ export class LuaFile {
 
       const table = this.library.tables[info.className];
       if (table) {
-        const func = new LuaMethod(table, declaration, info.name, info.params, info.isStatic);
+        const func = new LuaMethod(this.library, table, declaration, info.name, info.params, info.isStatic);
         table.methods[info.name] = func;
         return true;
       }
@@ -231,7 +231,7 @@ export class LuaFile {
 
       const clazz = this.library.classes[info.className];
       if (clazz) {
-        const func = new LuaMethod(clazz, statement, info.name, info.params, info.isStatic);
+        const func = new LuaMethod(this.library, clazz, statement, info.name, info.params, info.isStatic);
         if (!info.isStatic && info.name === 'new') {
           clazz._constructor_ = func;
         } else {
@@ -242,7 +242,7 @@ export class LuaFile {
 
       const table = this.library.tables[info.className];
       if (table) {
-        const func = new LuaMethod(table, statement, info.name, info.params, info.isStatic);
+        const func = new LuaMethod(this.library, table, statement, info.name, info.params, info.isStatic);
         table.methods[info.name] = func;
         return true;
       }

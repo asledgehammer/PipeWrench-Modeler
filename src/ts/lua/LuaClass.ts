@@ -38,6 +38,12 @@ export class LuaClass extends LuaContainer {
     this.superClassName = superClassName;
   }
 
+  scanMethods() {
+    for(const method of Object.values(this.methods)) {
+        method.scanFields();
+    }
+  }
+
   /**
    * @returns True if a super-class is assigned and linked successfully.
    */

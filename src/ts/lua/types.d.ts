@@ -28,3 +28,9 @@ export type MethodInfo = {
   params: string[];
   isStatic: boolean;
 };
+
+export type FieldReference = {
+  containerName: string;
+  fieldName: string;
+  isStatic: boolean;
+};
