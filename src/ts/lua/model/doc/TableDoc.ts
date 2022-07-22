@@ -1,52 +1,48 @@
 import { AuthoredDoc, AuthoredDocJson } from './AuthoredDoc';
-import { ConstructorDoc, ConstructorDocJson } from './ConstructorDoc';
+import { BaseDoc, BaseDocJson } from './BaseDoc';
 import { FieldDoc, FieldDocJson } from './FieldDoc';
 import { MethodDoc, MethodDocJson } from './MethodDoc';
 
 /**
- * **ClassDoc**
+ * **TableDoc**
  *
  * @author JabDoesThings
  */
-export class ClassDoc extends AuthoredDoc {
+export class TableDoc extends AuthoredDoc {
   annotations: { [annotation: string]: any } = {};
   fields: FieldDoc[] = [];
   methods: MethodDoc[] = [];
-  readonly _constructor_: ConstructorDoc;
 
-  constructor(json?: ClassDocJson) {
+  constructor(json?: TableDocJson) {
     super();
     if (json) this.load(json);
   }
 
-  load(json: ClassDocJson) {
+  load(json: TableDocJson) {
     super.load(json);
     this.annotations = json.annotations;
     this.fields = [];
     this.methods = [];
     for (const next of json.fields) this.fields.push(new FieldDoc(next));
     for (const next of json.methods) this.methods.push(new MethodDoc(next));
-    this._constructor_.load(json._constructor_);
   }
 
-  save(): ClassDocJson {
-    const json = super.save() as ClassDocJson;
+  save(): TableDocJson {
+    const json = super.save() as TableDocJson;
     json.annotations = this.annotations;
     json.fields = this.fields.map((next) => next.save());
     json.methods = this.methods.map((next) => next.save());
-    json._constructor_ = this._constructor_.save();
     return json;
   }
 }
 
 /**
- * **ClassDocJson**
+ * **TableDocJson**
  *
  * @author JabDoesThings
  */
-export type ClassDocJson = AuthoredDocJson & {
+export type TableDocJson = AuthoredDocJson & {
   annotations: { [annotation: string]: any };
   fields: FieldDocJson[];
   methods: MethodDocJson[];
-  _constructor_: ConstructorDocJson;
 };

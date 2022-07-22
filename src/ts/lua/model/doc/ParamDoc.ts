@@ -1,24 +1,36 @@
+import { BaseDoc, BaseDocJson } from './BaseDoc';
+
 /**
  * **ParamDoc**
- * 
+ *
  * @author JabDoesThings
  */
-export class ParamDoc {
-  lines: string[] = [];
+export class ParamDoc extends BaseDoc {
+
+  types: string[];
 
   constructor(json?: ParamDocJson) {
+    super();
     if (json) this.load(json);
   }
 
   load(json: ParamDocJson) {
-    this.lines = json.lines;
+    super.load(json);
+    this.types = json.types;
   }
 
   save(): ParamDocJson {
-    return { lines: this.lines };
+    const json = super.save() as ParamDocJson;
+    json.types = this.types;
+    return json;
   }
 }
 
-export type ParamDocJson = {
-  lines: string[];
+/**
+ * **ParamDocJson**
+ *
+ * @author JabDoesThings
+ */
+export type ParamDocJson = BaseDocJson & {
+  types: string[];
 };

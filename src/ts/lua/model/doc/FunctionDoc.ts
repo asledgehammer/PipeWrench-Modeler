@@ -1,40 +1,46 @@
-import { BaseDoc, BaseDocJson } from './BaseDoc';
+import { AuthoredDoc, AuthoredDocJson } from './AuthoredDoc';
 import { ParamDoc, ParamDocJson } from './ParamDoc';
+import { ReturnDoc, ReturnDocJson } from './ReturnDoc';
 
 /**
- * **ConstructorDoc**
+ * **FunctionDoc**
  *
  * @author JabDoesThings
  */
-export class ConstructorDoc extends BaseDoc {
+export class FunctionDoc extends AuthoredDoc {
   annotations: { [annotation: string]: any } = {};
   params: ParamDoc[] = [];
+  readonly returns: ReturnDoc = new ReturnDoc();
 
-  constructor(json?: ConstructorDocJson) {
+  constructor(json?: FunctionDocJson) {
     super();
     if (json) this.load(json);
   }
 
-  load(json: ConstructorDocJson) {
+  load(json: FunctionDocJson) {
     super.load(json);
     this.annotations = json.annotations;
+    this.params = [];
     for (const next of json.params) this.params.push(new ParamDoc(next));
+    this.returns.load(json.returns);
   }
 
-  save(): ConstructorDocJson {
-    const json = super.save() as ConstructorDocJson;
+  save(): FunctionDocJson {
+    const json = super.save() as FunctionDocJson;
     json.annotations = this.annotations;
     json.params = this.params.map((param) => param.save());
+    json.returns = this.returns.save();
     return json;
   }
 }
 
 /**
- * **ConstructorDocJson**
+ * **FunctionDocJson**
  *
  * @author JabDoesThings
  */
-export type ConstructorDocJson = BaseDocJson & {
+export type FunctionDocJson = AuthoredDocJson & {
   annotations: { [annotation: string]: any };
   params: ParamDocJson[];
+  returns: ReturnDocJson;
 };

@@ -1,27 +1,35 @@
+import { BaseDoc, BaseDocJson } from './BaseDoc';
+
 /**
  * **FieldDoc**
- * 
+ *
  * @author JabDoesThings
  */
-export class FieldDoc {
+export class FieldDoc extends BaseDoc {
   annotations: { [annotation: string]: any } = {};
-  lines: string[] = [];
 
   constructor(json?: FieldDocJson) {
+    super();
     if (json) this.load(json);
   }
 
   load(json: FieldDocJson) {
+    super.load(json);
     this.annotations = json.annotations;
-    this.lines = json.lines;
   }
 
   save(): FieldDocJson {
-    return { annotations: this.annotations, lines: this.lines };
+    const json = super.save() as FieldDocJson;
+    json.annotations = this.annotations;
+    return json;
   }
 }
 
-export type FieldDocJson = {
+/**
+ * **FieldDocJson**
+ *
+ * @author JabDoesThings
+ */
+export type FieldDocJson = BaseDocJson & {
   annotations: { [annotation: string]: any };
-  lines: string[];
 };

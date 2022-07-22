@@ -1,27 +1,46 @@
+import { BaseDoc, BaseDocJson } from './BaseDoc';
+import { ParamDoc, ParamDocJson } from './ParamDoc';
+import { ReturnDoc, ReturnDocJson } from './ReturnDoc';
+
 /**
  * **MethodDoc**
- * 
+ *
  * @author JabDoesThings
  */
-export class MethodDoc {
+export class MethodDoc extends BaseDoc {
   annotations: { [annotation: string]: any } = {};
-  lines: string[] = [];
+  params: ParamDoc[] = [];
+  readonly returns: ReturnDoc = new ReturnDoc();
 
   constructor(json?: MethodDocJson) {
+    super();
     if (json) this.load(json);
   }
 
   load(json: MethodDocJson) {
+    super.load(json);
     this.annotations = json.annotations;
-    this.lines = json.lines;
+    this.params = [];
+    for (const next of json.params) this.params.push(new ParamDoc(next));
+    this.returns.load(json.returns);
   }
 
   save(): MethodDocJson {
-    return { annotations: this.annotations, lines: this.lines };
+    const json = super.save() as MethodDocJson;
+    json.annotations = this.annotations;
+    json.params = this.params.map((param) => param.save());
+    json.returns = this.returns.save();
+    return json;
   }
 }
 
-export type MethodDocJson = {
+/**
+ * **MethodDocJson**
+ *
+ * @author JabDoesThings
+ */
+export type MethodDocJson = BaseDocJson & {
   annotations: { [annotation: string]: any };
-  lines: string[];
+  params: ParamDocJson[];
+  returns: ReturnDocJson;
 };
