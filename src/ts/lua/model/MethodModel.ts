@@ -1,3 +1,4 @@
+import { LuaMethod } from '../LuaMethod';
 import { MethodDoc, MethodDocJson } from './doc/MethodDoc';
 import { ParamModel, ParamModelJson } from './ParamModel';
 
@@ -10,9 +11,22 @@ export class MethodModel {
   doc: MethodDoc;
   params: ParamModel[] = [];
   returns: { applyUnknownType: boolean; types: string[] } = { applyUnknownType: true, types: [] };
+  readonly name: string;
 
-  constructor(json?: MethodModelJson) {
+  constructor(name: string, json?: MethodModelJson) {
+    this.name = name;
     if (json) this.load(json);
+  }
+
+  testSignature(func: LuaMethod): boolean {
+    if(func.name !== this.name) return false;
+    if(func.params.length !== this.params.length) return false;
+    if(this.params.length) {
+      for(let index = 0; index < this.params.length; index++) {
+        if(!this.params[index].testSignature(func.params[index])) return false;
+      }
+    }
+    return true;
   }
 
   load(json: MethodModelJson) {

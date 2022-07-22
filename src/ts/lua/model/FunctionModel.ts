@@ -1,3 +1,4 @@
+import { LuaFunction } from '../LuaFunction';
 import { FunctionDoc, FunctionDocJson } from './doc/FunctionDoc';
 import { ParamModel, ParamModelJson } from './ParamModel';
 
@@ -10,9 +11,22 @@ export class FunctionModel {
   doc: FunctionDoc;
   params: ParamModel[] = [];
   returns: { applyUnknownType: boolean; types: string[] } = { applyUnknownType: true, types: [] };
+  readonly name: string;
 
-  constructor(json?: FunctionModelJson) {
+  constructor(name: string, json?: FunctionModelJson) {
+    this.name = name;
     if (json) this.load(json);
+  }
+
+  testSignature(func: LuaFunction): boolean {
+    if(func.name !== this.name) return false;
+    if(func.params.length !== this.params.length) return false;
+    if(this.params.length) {
+      for(let index = 0; index < this.params.length; index++) {
+        if(!this.params[index].testSignature(func.params[index])) return false;
+      }
+    }
+    return true;
   }
 
   load(json: FunctionModelJson) {

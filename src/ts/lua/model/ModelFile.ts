@@ -69,26 +69,29 @@ export class ModelFile {
 
     // Load class models.
     if (classes) {
-      for (const id of Object.keys(classes)) {
-        this.library.classes[id] = this.classes[id] = new ClassModel(classes[id]);
+      for (const name of Object.keys(classes)) {
+        this.library.classes[name] = this.classes[name] = new ClassModel(name, classes[name]);
       }
     }
     // Load table models.
     if (tables) {
-      for (const id of Object.keys(tables)) {
-        this.library.tables[id] = this.tables[id] = new TableModel(tables[id]);
+      for (const name of Object.keys(tables)) {
+        this.library.tables[name] = this.tables[name] = new TableModel(name, tables[name]);
       }
     }
     // Load global field models.
     if (globalFields) {
-      for (const id of Object.keys(globalFields)) {
-        this.library.globalFields[id] = this.globalFields[id] = new FieldModel(globalFields[id]);
+      for (const name of Object.keys(globalFields)) {
+        this.library.globalFields[name] = this.globalFields[name] = new FieldModel(name, globalFields[name]);
       }
     }
     // Load global function models.
     if (globalFunctions) {
-      for (const id of Object.keys(globalFunctions)) {
-        this.library.globalFunctions[id] = this.globalFunctions[id] = new FunctionModel(globalFunctions[id]);
+      for (const name of Object.keys(globalFunctions)) {
+        this.library.globalFunctions[name] = this.globalFunctions[name] = new FunctionModel(
+          name,
+          globalFunctions[name]
+        );
       }
     }
   }
@@ -106,7 +109,7 @@ export class ModelFile {
 
 /**
  * **ModelFileJson**
- * 
+ *
  * @author JabDoesThings
  */
 export type ModelFileJson = {

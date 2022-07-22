@@ -16,6 +16,10 @@ export class ParamModel {
     if (json) this.load(json);
   }
 
+  testSignature(paramName: string): boolean {
+    return paramName === this.id;
+  }
+
   load(json: ParamModelJson) {
     this.doc = new ParamDoc(json.doc);
     this.id = json.id;

@@ -1,3 +1,4 @@
+import { LuaField } from '../LuaField';
 import { FieldDoc, FieldDocJson } from './doc/FieldDoc';
 
 /**
@@ -9,9 +10,15 @@ export class FieldModel {
   doc: FieldDoc;
   types: string[] = [];
   applyUnknownType: boolean = true;
+  readonly name: string;
 
-  constructor(json?: FieldModelJson) {
+  constructor(name: string, json?: FieldModelJson) {
+    this.name = name;
     if (json) this.load(json);
+  }
+
+  testSignature(field: LuaField): boolean {
+    return field.name === this.name;
   }
 
   load(json: FieldModelJson) {
