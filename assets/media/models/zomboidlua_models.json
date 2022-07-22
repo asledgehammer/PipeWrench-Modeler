@@ -1,0 +1,117 @@
+{
+  "classes": {
+    "ISUIElement": {
+      "doc": {
+        "authors": ["JabDoesThings"],
+        "lines": ["ISUIElement is the base class for all ISUI elements in the Project Zomboid Lua codebase."]
+      },
+      "_constructor_": {
+        "params": [
+          {
+            "id": "x",
+            "applyUnknownType": false,
+            "doc": { "lines": ["The x coordinate on the screen. (In pixels)"] },
+            "types": ["number"]
+          },
+          {
+            "id": "y",
+            "applyUnknownType": false,
+            "doc": { "lines": ["The y coordinate on the screen. (In pixels)"] },
+            "types": ["number"]
+          },
+          {
+            "id": "width",
+            "applyUnknownType": false,
+            "doc": { "lines": ["The width of the element. (In pixels)"] },
+            "types": ["number"]
+          },
+          {
+            "id": "height",
+            "applyUnknownType": false,
+            "doc": { "lines": ["The height of the element. (In pixels)"] },
+            "types": ["number"]
+          }
+        ]
+      },
+      "fields": {
+        "x": {
+          "types": ["number"],
+          "applyUnknownType": false,
+          "doc": { "lines": ["The x coordinate of the ISUI element. (In pixels)"] }
+        },
+        "y": {
+          "types": ["number"],
+          "applyUnknownType": false,
+          "doc": { "lines": ["The y coordinate of the ISUI element. (In pixels)"] }
+        },
+        "width": {
+          "types": ["number"],
+          "applyUnknownType": false,
+          "doc": { "lines": ["The width of the ISUI element. (In pixels)"] }
+        },
+        "height": {
+          "types": ["number"],
+          "applyUnknownType": false,
+          "doc": { "lines": ["The height of the ISUI element. (In pixels)"] }
+        }
+      },
+      "methods": {
+        "drawTexture": {
+          "doc": { "lines": ["Draws a texture at 1:1 scale with colors and alpha channel."] },
+          "params": [
+            {
+              "id": "texture",
+              "applyUnknownType": false,
+              "doc": { "lines": ["The texture to draw. (Optional)"] },
+              "types": ["Zomboid.Texture"]
+            },
+            {
+              "id": "x",
+              "applyUnknownType": false,
+              "doc": { "lines": ["The x coordinate on the screen. (In pixels)"] },
+              "types": ["number"]
+            },
+            {
+              "id": "y",
+              "applyUnknownType": false,
+              "doc": { "lines": ["The y coordinate on the screen. (In pixels)"] },
+              "types": ["number"]
+            },
+            {
+              "id": "a",
+              "applyUnknownType": false,
+              "rename": "alpha",
+              "doc": { "lines": ["The alpha color channel. (0.0 - 1.0)"] },
+              "types": ["number"]
+            },
+            {
+              "id": "r",
+              "applyUnknownType": false,
+              "rename": "red",
+              "doc": { "lines": ["The red color channel. (0.0 - 1.0)"] },
+              "types": ["number"]
+            },
+            {
+              "id": "g",
+              "applyUnknownType": false,
+              "rename": "green",
+              "doc": { "lines": ["The green color channel. (0.0 - 1.0)"] },
+              "types": ["number"]
+            },
+            {
+              "id": "b",
+              "applyUnknownType": false,
+              "rename": "blue",
+              "doc": { "lines": ["The blue color channel. (0.0 - 1.0)"] },
+              "types": ["number"]
+            }
+          ],
+          "returns": {
+            "applyUnknownType": false,
+            "types": ["void"]
+          }
+        }
+      }
+    }
+  }
+}

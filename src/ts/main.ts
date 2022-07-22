@@ -1,8 +1,9 @@
-import { LuaLibrary } from './lua/LuaLibrary';
-import * as fs from 'fs';
 import * as hljs from 'highlight.js';
+import { LuaLibrary } from './lua/LuaLibrary';
+import { ModelLibrary } from './lua/model/ModelLibrary';
 
 const luaLibrary = new LuaLibrary();
+const modelLibrary = new ModelLibrary();
 
 // Entry Point from HTML.
 export let start = function () {
@@ -13,8 +14,10 @@ export let start = function () {
 
   luaLibrary.scan();
   luaLibrary.parse();
-
-  console.log(luaLibrary.compileProperties());
+  modelLibrary.scan();
+  modelLibrary.parse();
+  
+  console.log(modelLibrary);
 
   const code = luaLibrary.tables['luautils'].compile();
   const html = hljs.default.highlight(code, {language: 'typescript'}).value;
