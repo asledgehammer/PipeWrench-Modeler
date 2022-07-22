@@ -2,7 +2,7 @@ import { ParamDoc, ParamDocJson } from './doc/ParamDoc';
 
 /**
  * **ParamModel**
- * 
+ *
  * @author JabDoesThings
  */
 export class ParamModel {
@@ -31,6 +31,11 @@ export class ParamModel {
   }
 }
 
+/**
+ * **ParamModelJson**
+ *
+ * @author JabDoesThings
+ */
 export type ParamModelJson = {
   id: string;
   applyUnknownType: boolean;

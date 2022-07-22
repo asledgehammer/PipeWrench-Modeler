@@ -5,7 +5,7 @@ import { MethodModel, MethodModelJson } from './MethodModel';
 
 /**
  * **ClassModel**
- * 
+ *
  * @author JabDoesThings
  */
 export class ClassModel {
@@ -37,12 +37,12 @@ export class ClassModel {
     const fields: { [id: string]: FieldModelJson } = {};
     const methods: { [id: string]: MethodModelJson } = {};
 
-    for(const fieldName in Object.keys(this.fields)) {
+    for (const fieldName in Object.keys(this.fields)) {
       const fieldModel = this.fields[fieldName];
       fields[fieldName] = fieldModel.save();
     }
 
-    for(const methodName in Object.keys(this.methods)) {
+    for (const methodName in Object.keys(this.methods)) {
       const methodModel = this.methods[methodName];
       methods[methodName] = methodModel.save();
     }
@@ -50,10 +50,15 @@ export class ClassModel {
     const _constructor_ = this._constructor_.save();
     const doc = this.doc.save();
 
-    return {fields, methods, _constructor_, doc};
+    return { fields, methods, _constructor_, doc };
   }
 }
 
+/**
+ * **ClassJson**
+ * 
+ * @author JabDoesThings
+ */
 export type ClassJson = {
   doc: ClassDocJson;
   _constructor_: ConstructorModelJson;

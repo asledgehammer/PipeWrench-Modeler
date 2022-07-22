@@ -25,11 +25,6 @@ export abstract class BaseDoc {
   }
 }
 
-/**
- * **BaseDocJson**
- *
- * @author JabDoesThings
- */
 export type BaseDocJson = {
   /** Descriptor lines in the documentation. */
   lines: string[];

@@ -3,7 +3,7 @@ import { ParamModel, ParamModelJson } from './ParamModel';
 
 /**
  * **ConstructorModel**
- * 
+ *
  * @author JabDoesThings
  */
 export class ConstructorModel {
@@ -29,6 +29,11 @@ export class ConstructorModel {
   }
 }
 
+/**
+ * **ConstructorModelJson**
+ * 
+ * @author JabDoesThings
+ */
 export type ConstructorModelJson = {
   doc: ConstructorDocJson;
   params: ParamModelJson[];

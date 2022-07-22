@@ -30,11 +30,6 @@ export abstract class AuthoredDoc extends BaseDoc {
   }
 }
 
-/**
- * **AuthoredDocJson**
- *
- * @author JabDoesThings
- */
 export type AuthoredDocJson = BaseDocJson & {
   /** Authors of the documentation. */
   authors: string[];

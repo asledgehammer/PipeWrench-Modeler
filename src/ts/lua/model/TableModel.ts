@@ -1,24 +1,22 @@
-import { ClassDoc, ClassDocJson } from './doc/ClassDoc';
-import { ConstructorModel, ConstructorModelJson } from './ConstructorModel';
 import { FieldModel, FieldModelJson } from './FieldModel';
 import { MethodModel, MethodModelJson } from './MethodModel';
+import { TableDoc, TableDocJson } from './doc/TableDoc';
 
 /**
- * **ClassModel**
+ * **TableModel**
  * 
  * @author JabDoesThings
  */
-export class ClassModel {
+export class TableModel {
   fields: { [id: string]: FieldModel } = {};
   methods: { [id: string]: MethodModel } = {};
-  _constructor_: ConstructorModel;
-  doc: ClassDoc;
+  doc: TableDoc;
 
-  constructor(json?: ClassJson) {
+  constructor(json?: TableJson) {
     if (json) this.load(json);
   }
 
-  load(json: ClassJson) {
+  load(json: TableJson) {
     this.fields = {};
     for (const fieldName in Object.keys(json.fields)) {
       this.fields[fieldName] = new FieldModel(json.fields[fieldName]);
@@ -29,34 +27,32 @@ export class ClassModel {
       this.methods[methodName] = new MethodModel(json.methods[methodName]);
     }
 
-    this._constructor_ = new ConstructorModel(json._constructor_);
-    this.doc = new ClassDoc(json.doc);
+    this.doc = new TableDoc(json.doc);
   }
 
-  save(): ClassJson {
+  save(): TableJson {
     const fields: { [id: string]: FieldModelJson } = {};
     const methods: { [id: string]: MethodModelJson } = {};
-
     for(const fieldName in Object.keys(this.fields)) {
       const fieldModel = this.fields[fieldName];
       fields[fieldName] = fieldModel.save();
     }
-
     for(const methodName in Object.keys(this.methods)) {
       const methodModel = this.methods[methodName];
       methods[methodName] = methodModel.save();
     }
-
-    const _constructor_ = this._constructor_.save();
     const doc = this.doc.save();
-
-    return {fields, methods, _constructor_, doc};
+    return {fields, methods, doc};
   }
 }
 
-export type ClassJson = {
-  doc: ClassDocJson;
-  _constructor_: ConstructorModelJson;
+/**
+ * **TableJson**
+ * 
+ * @author JabDoesThings
+ */
+export type TableJson = {
+  doc: TableDocJson;
   fields: { [id: string]: FieldModelJson };
   methods: { [id: string]: MethodModelJson };
 };

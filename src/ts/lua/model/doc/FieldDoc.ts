@@ -25,11 +25,6 @@ export class FieldDoc extends BaseDoc {
   }
 }
 
-/**
- * **FieldDocJson**
- *
- * @author JabDoesThings
- */
 export type FieldDocJson = BaseDocJson & {
   annotations: { [annotation: string]: any };
 };
