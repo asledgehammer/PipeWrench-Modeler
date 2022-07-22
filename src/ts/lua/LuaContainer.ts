@@ -209,10 +209,14 @@ export class LuaContainer extends LuaElement {
 
       // Compile parameter(s). (If any)
       let paramS = '';
-      const params =
-        constructorModel && constructorModel.testSignature(_constructor_)
-          ? constructorModel.params
-          : fixParameters(_constructor_.params);
+      let params: string[] = [];
+
+      // If the model is present, set param names from it as some params may be renamed.
+      if (constructorModel && constructorModel.testSignature(_constructor_)) {
+        for (const param of constructorModel.params) params.push(param.name);
+      } else {
+        params = fixParameters(_constructor_.params);
+      }
       if (params.length) {
         for (const param of params) paramS += `${param}: unknown, `;
         paramS = paramS.substring(0, paramS.length - 2);
