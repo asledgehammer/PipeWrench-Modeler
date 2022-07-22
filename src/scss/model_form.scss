@@ -55,6 +55,8 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0,0,0,0.33);
+
+    overflow: scroll;
 }
 
 code {
@@ -71,8 +73,6 @@ code {
     font-family: Consolas, 'Courier New', monospace;
     font-size: 10pt;
     font-weight: unset;
-
-    overflow: hidden;
 
     .hljs {
         background-color: transparent;
