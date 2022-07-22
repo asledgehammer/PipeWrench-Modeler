@@ -33,6 +33,10 @@ export class ParamModel {
     const doc = this.doc.save();
     return { doc, id, applyUnknownType, rename, types };
   }
+
+  get name() {
+    return this.rename && this.rename.length ? this.rename : this.id;
+  }
 }
 
 /**
