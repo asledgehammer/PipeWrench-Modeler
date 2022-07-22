@@ -57,7 +57,6 @@ export class LuaContainer extends LuaElement {
   }
 
   generateClassDocumentation(prefix: string, model: ClassModel): string {
-    
     const doc = new DocBuilder();
     doc.appendAnnotation('customConstructor', `${this.name}:new`);
 
@@ -89,7 +88,7 @@ export class LuaContainer extends LuaElement {
 
       // Process lines. (If defined)
       if (lines && lines.length) {
-        if(!doc.isEmpty()) doc.appendLine();
+        if (!doc.isEmpty()) doc.appendLine();
         for (const line of lines) doc.appendLine(line);
       }
     }
@@ -133,15 +132,13 @@ export class LuaContainer extends LuaElement {
   }
 
   compile(prefix: string = ''): string {
-
-    const {library} = this.file;
+    const { library } = this.file;
 
     let doc: string;
 
     // Render empty classes & tables on one line.
     if (this instanceof LuaClass) {
-
-      const model = library.getClassModel(this as any); 
+      const model = library.getClassModel(this as any);
       doc = this.generateClassDocumentation(prefix, model);
 
       if (!Object.keys(this.fields).length && !Object.keys(this.methods).length && !this._constructor_) {
@@ -153,9 +150,9 @@ export class LuaContainer extends LuaElement {
         return ' {}';
       }
     } else {
-      const model = library.getTableModel(this as any); 
+      const model = library.getTableModel(this as any);
       doc = this.generateTableDocumentation(prefix, model);
-      
+
       let s = `${doc}\n`;
       if (!Object.keys(this.fields).length && !Object.keys(this.methods).length) {
         return `${s}\n${prefix}declare class ${this.name} {}`;
@@ -204,6 +201,61 @@ export class LuaContainer extends LuaElement {
       const { _constructor_ } = clazz;
       if (!_constructor_) return null;
 
+      const { library } = this.file;
+      const classModel = library.getClassModel(clazz);
+
+      let s = '';
+      if (classModel) {
+        const { _constructor_ } = classModel;
+
+        if (_constructor_ && _constructor_.testSignature(clazz._constructor_)) {
+          const doc = new DocBuilder();
+          const { doc: constructorDoc, params } = _constructor_;
+          if (constructorDoc) {
+            const { annotations, lines } = constructorDoc;
+            if (annotations) {
+              // Process annotations. (If defined)
+              const annoKeys = Object.keys(annotations);
+              if (annoKeys && annoKeys.length) {
+                for (const key of annoKeys) doc.appendAnnotation(key, annotations[key]);
+                doc.appendLine();
+              }
+            }
+            // Process lines. (If defined)
+            if (lines && lines.length) {
+              for (const line of lines) doc.appendLine(line);
+              doc.appendLine();
+            }
+
+            // Process params. (If defined)
+            if (params) {
+              for (const param of params) {
+                const { name, doc: paramDoc } = param;
+
+                if (!doc) {
+                  doc.appendParam(name);
+                  continue;
+                } else {
+                  const { lines } = paramDoc;
+
+                  if (!lines || !lines.length) {
+                    doc.appendParam(name);
+                    continue;
+                  }
+
+                  doc.appendParam(name, lines[0]);
+                  if (lines.length === 1) continue;
+                  for (let index = 1; index < lines.length; index++) {
+                    doc.appendLine(lines[index]);
+                  }
+                }
+              }
+            }
+          }
+          s = doc.build(newPrefix);
+        }
+      }
+
       // Compile parameter(s). (If any)
       let paramS = '';
       const params = fixParameters(_constructor_.params);
@@ -212,7 +264,7 @@ export class LuaContainer extends LuaElement {
         paramS = paramS.substring(0, paramS.length - 2);
       }
 
-      return `constructor(${paramS});`;
+      return `${s.length ? `${s}\n` : ''}${newPrefix}constructor(${paramS});`;
     };
 
     sortFields();
@@ -255,7 +307,7 @@ export class LuaContainer extends LuaElement {
     }
 
     if (this instanceof LuaClass) {
-      s += `${newPrefix}${compileConstructor(this)}\n`;
+      s += `${compileConstructor(this)}\n`;
     }
 
     // Render static method(s). (If any)
