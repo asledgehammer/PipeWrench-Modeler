@@ -15,7 +15,7 @@ export class FunctionDoc extends AuthoredDoc {
 
   load(json: FunctionDocJson) {
     super.load(json);
-    this.annotations = json.annotations;
+    if(json.annotations) this.annotations = json.annotations;
   }
 
   save(): FunctionDocJson {

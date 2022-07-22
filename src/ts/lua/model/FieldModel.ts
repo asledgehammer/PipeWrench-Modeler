@@ -15,6 +15,7 @@ export class FieldModel {
   }
 
   load(json: FieldModelJson) {
+    console.log(json);
     this.doc = new FieldDoc(json.doc);
     this.types = json.types;
     this.applyUnknownType = json.applyUnknownType;

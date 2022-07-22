@@ -8,8 +8,9 @@ import { ParamDoc, ParamDocJson } from './doc/ParamDoc';
 export class ParamModel {
   doc: ParamDoc;
   id: string;
-  applyUnknownType: boolean = true;
+  rename: string;
   types: string[] = [];
+  applyUnknownType: boolean = true;
 
   constructor(json?: ParamModelJson) {
     if (json) this.load(json);
@@ -19,15 +20,14 @@ export class ParamModel {
     this.doc = new ParamDoc(json.doc);
     this.id = json.id;
     this.applyUnknownType = json.applyUnknownType;
-    this.types = json.types;
+    this.rename = json.rename;
+    if(json.types) this.types = json.types;
   }
 
   save(): ParamModelJson {
+    const { id, applyUnknownType, rename, types } = this;
     const doc = this.doc.save();
-    const id = this.id;
-    const applyUnknownType = this.applyUnknownType;
-    const types = this.types;
-    return { doc, id, applyUnknownType, types };
+    return { doc, id, applyUnknownType, rename, types };
   }
 }
 
@@ -37,8 +37,9 @@ export class ParamModel {
  * @author JabDoesThings
  */
 export type ParamModelJson = {
+  doc: ParamDocJson;
   id: string;
   applyUnknownType: boolean;
-  doc: ParamDocJson;
+  rename: string;
   types: string[];
 };

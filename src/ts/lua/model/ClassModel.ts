@@ -14,26 +14,35 @@ export class ClassModel {
   _constructor_: ConstructorModel;
   doc: ClassDoc;
 
-  constructor(json?: ClassJson) {
+  constructor(json?: ClassModelJson) {
     if (json) this.load(json);
   }
 
-  load(json: ClassJson) {
+  load(json: ClassModelJson) {
+
     this.fields = {};
-    for (const fieldName in Object.keys(json.fields)) {
-      this.fields[fieldName] = new FieldModel(json.fields[fieldName]);
+
+    if (json.fields) {
+      for (const fieldName of Object.keys(json.fields)) {
+        this.fields[fieldName] = new FieldModel(json.fields[fieldName]);
+      }
     }
 
-    this.methods = {};
-    for (const methodName in Object.keys(json.methods)) {
-      this.methods[methodName] = new MethodModel(json.methods[methodName]);
+    if (json.methods) {
+      this.methods = {};
+      for (const methodName of Object.keys(json.methods)) {
+        this.methods[methodName] = new MethodModel(json.methods[methodName]);
+      }
     }
 
-    this._constructor_ = new ConstructorModel(json._constructor_);
+    if (json._constructor_) {
+      this._constructor_ = new ConstructorModel(json._constructor_);
+    }
+
     this.doc = new ClassDoc(json.doc);
   }
 
-  save(): ClassJson {
+  save(): ClassModelJson {
     const fields: { [id: string]: FieldModelJson } = {};
     const methods: { [id: string]: MethodModelJson } = {};
 
@@ -59,7 +68,7 @@ export class ClassModel {
  * 
  * @author JabDoesThings
  */
-export type ClassJson = {
+export type ClassModelJson = {
   doc: ClassDocJson;
   _constructor_: ConstructorModelJson;
   fields: { [id: string]: FieldModelJson };

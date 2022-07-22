@@ -15,7 +15,7 @@ export class ClassDoc extends AuthoredDoc {
 
   load(json: ClassDocJson) {
     super.load(json);
-    this.annotations = json.annotations;
+    if(json.annotations) this.annotations = json.annotations;
   }
 
   save(): ClassDocJson {

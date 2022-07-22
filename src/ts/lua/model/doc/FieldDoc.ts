@@ -15,7 +15,7 @@ export class FieldDoc extends BaseDoc {
 
   load(json: FieldDocJson) {
     super.load(json);
-    this.annotations = json.annotations;
+    if(json.annotations) this.annotations = json.annotations;
   }
 
   save(): FieldDocJson {

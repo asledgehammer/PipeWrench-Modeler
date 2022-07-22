@@ -15,7 +15,7 @@ export class TableDoc extends AuthoredDoc {
 
   load(json: TableDocJson) {
     super.load(json);
-    this.annotations = json.annotations;
+    if(json.annotations) this.annotations = json.annotations;
   }
 
   save(): TableDocJson {

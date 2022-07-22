@@ -12,25 +12,25 @@ export class TableModel {
   methods: { [id: string]: MethodModel } = {};
   doc: TableDoc;
 
-  constructor(json?: TableJson) {
+  constructor(json?: TableModelJson) {
     if (json) this.load(json);
   }
 
-  load(json: TableJson) {
+  load(json: TableModelJson) {
     this.fields = {};
-    for (const fieldName in Object.keys(json.fields)) {
+    for (const fieldName of Object.keys(json.fields)) {
       this.fields[fieldName] = new FieldModel(json.fields[fieldName]);
     }
 
     this.methods = {};
-    for (const methodName in Object.keys(json.methods)) {
+    for (const methodName of Object.keys(json.methods)) {
       this.methods[methodName] = new MethodModel(json.methods[methodName]);
     }
 
     this.doc = new TableDoc(json.doc);
   }
 
-  save(): TableJson {
+  save(): TableModelJson {
     const fields: { [id: string]: FieldModelJson } = {};
     const methods: { [id: string]: MethodModelJson } = {};
     for(const fieldName in Object.keys(this.fields)) {
@@ -51,7 +51,7 @@ export class TableModel {
  * 
  * @author JabDoesThings
  */
-export type TableJson = {
+export type TableModelJson = {
   doc: TableDocJson;
   fields: { [id: string]: FieldModelJson };
   methods: { [id: string]: MethodModelJson };

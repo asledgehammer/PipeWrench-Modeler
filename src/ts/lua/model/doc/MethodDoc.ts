@@ -15,7 +15,7 @@ export class MethodDoc extends BaseDoc {
 
   load(json: MethodDocJson) {
     super.load(json);
-    this.annotations = json.annotations;
+    if(json.annotations) this.annotations = json.annotations;
   }
 
   save(): MethodDocJson {

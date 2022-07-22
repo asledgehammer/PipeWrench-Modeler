@@ -15,7 +15,7 @@ export class ConstructorDoc extends BaseDoc {
 
   load(json: ConstructorDocJson) {
     super.load(json);
-    this.annotations = json.annotations;
+    if(json.annotations) this.annotations = json.annotations;
   }
 
   save(): ConstructorDocJson {
