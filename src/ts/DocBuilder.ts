@@ -32,6 +32,10 @@ export class DocBuilder {
     return this;
   }
 
+  appendAnnotation(name: string, value: string = ''): DocBuilder {
+    return this.appendLine(`@${name}${value.length ? ` ${value}` : ''}`);
+  }
+
   /**
    * Appends a parameter to the documentation.
    *
@@ -56,6 +60,13 @@ export class DocBuilder {
   /** (Proxy for `this.build()`) */
   toString(): string {
     return this.build();
+  }
+
+  /**
+   * @returns True if no lines are present.
+   */
+  isEmpty(): boolean {
+    return !this.size;
   }
 
   /**

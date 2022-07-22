@@ -3,7 +3,9 @@ import { LuaElement } from './LuaElement';
 import { LuaField } from './LuaField';
 import { LuaFile } from './LuaFile';
 import { LuaMethod } from './LuaMethod';
-import { fixParameters, sanitizeParameter } from './LuaUtils';
+import { fixParameters } from './LuaUtils';
+import { DocBuilder } from '../DocBuilder';
+import { LuaTable } from './LuaTable';
 
 /**
  * All types of LuaContainer instances.
@@ -55,18 +57,25 @@ export class LuaContainer extends LuaElement {
 
   compile(prefix: string = ''): string {
 
+    const docClass = new DocBuilder();
+
     // Render empty classes & tables on one line.
     if (this instanceof LuaClass) {
+
+      docClass.appendLine(`@customConstructor ${this.name}:new`);
+
       if (!Object.keys(this.fields).length && !Object.keys(this.methods).length && !this._constructor_) {
-        let s = `${prefix}declare class ${this.name}`;
+        let s = `${docClass.build(prefix)}\n`;
+        s += `${prefix}declare class ${this.name}`;
         if (this instanceof LuaClass && this.superClass) {
           s += ` extends ${this.superClass.name}`;
         }
         return ' {}';
       }
     } else {
+      let s = `${docClass.build(prefix)}\n`;
       if (!Object.keys(this.fields).length && !Object.keys(this.methods).length) {
-        return `${prefix}declare class ${this.name} {}`;
+        return `${s}\n${prefix}declare class ${this.name} {}`;
       }
     }
 
@@ -127,11 +136,22 @@ export class LuaContainer extends LuaElement {
     sortMethods();
 
     // Class Declaration line.
-    let s = `${prefix}declare class ${this.name}`;
+    let s = '';
+    
+    if(!docClass.isEmpty()) docClass.build(prefix);
+
+    s += `\n${prefix}declare class ${this.name}`;
     if (this instanceof LuaClass && this.superClass) {
       s += ` extends ${this.superClass.name}`;
     }
     s += ' {\n';
+
+    // Make sure that no one can try to use Lua tables as a class, even though we're using
+    // the class type for tables. This is to keep things clean. We *could* go with an interface,
+    // however values cannot be assigned to them in TypeScript like tables can in Lua.
+    if(this.type === 'table') {
+      s += `${newPrefix}private constructor();\n`
+    }
 
     // Render static field(s). (If any)
     if (staticFields.length) {
@@ -150,7 +170,7 @@ export class LuaContainer extends LuaElement {
     }
 
     if (this instanceof LuaClass) {
-      s += `\n${newPrefix}${compileConstructor(this)}\n`;
+      s += `${newPrefix}${compileConstructor(this)}\n`;
     }
 
     // Render static method(s). (If any)
@@ -166,8 +186,6 @@ export class LuaContainer extends LuaElement {
     }
 
     // End of Class Declaration line.
-    s += `${prefix}}`;
-
-    return s;
+    return `${s}${prefix}}`;
   }
 }

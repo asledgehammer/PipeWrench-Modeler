@@ -5,6 +5,7 @@ import { LuaField } from './LuaField';
 import { LuaLibrary } from './LuaLibrary';
 import { fixParameters, sanitizeParameter, scanBodyForFields } from './LuaUtils';
 import { Identifier } from 'luaparse';
+import { DocBuilder } from '../DocBuilder';
 
 /**
  * **LuaMethod**
@@ -35,6 +36,10 @@ export class LuaMethod extends LuaElement {
   }
 
   compile(prefix: string = ''): string {
+    
+    const doc = new DocBuilder();
+    if(this.isStatic) doc.appendLine('@noSelf');
+    
     // Compile parameter(s). (If any)
     let paramS = '';
     const { params } = this;
@@ -43,7 +48,9 @@ export class LuaMethod extends LuaElement {
       paramS = paramS.substring(0, paramS.length - 2);
     }
 
-    return `${prefix}${this.isStatic ? 'static ' : ''}${this.name}: ((${paramS})=>unknown) | unknown;`;
+    let s = '';
+    if(!doc.isEmpty()) s += `${doc.build(prefix)}\n`;
+    return `${s}${prefix}${this.isStatic ? 'static ' : ''}${this.name}: ((${paramS})=>unknown) | unknown;`;
   }
 
   scanAsConstructor() {

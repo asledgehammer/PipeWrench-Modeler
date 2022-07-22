@@ -85,49 +85,37 @@ export class LuaLibrary {
         for(const clazz of Object.values(this.classes)) clazz.scanMethods();
         this.linkClasses();
         this.audit();
-    
-        const compileClasses = () => {
-            const classNames = Object.keys(this.classes);
-            classNames.sort((o1, o2) => {
-              return o1.localeCompare(o2);
-            });
-            let s = '';
-            for(const className of classNames) s += `${this.classes[className].compile()}\n`;
-            console.log(s);
-        };
-
-        const compileTables = () => {
-            const tableNames = Object.keys(this.tables);
-            tableNames.sort((o1, o2) => {
-              return o1.localeCompare(o2);
-            });
-            let s = '';
-            for(const tableName of tableNames) s += `${this.tables[tableName].compile()}\n`;
-            console.log(s);
-        };
-
-        const compileProperties = () => {
-            const propNames = Object.keys(this.properties);
-            propNames.sort((o1, o2) => {
-              return o1.localeCompare(o2);
-            });
-            let s = '';
-            for(const propName of propNames) s += `${this.properties[propName].compile('')}\n`;
-            console.log(s);
-        };
-
-        // compileClasses();
-
-        compileProperties();
-
-        // const ISUIElement = this.classes['ISUIElement'];
-        // console.log(ISUIElement);
-        // console.log(ISUIElement.compile(''));
-
-        // const luautils = this.tables['luautils'];
-        // console.log(luautils);
-        // console.log(luautils.compile(''));
     }
+
+    compileClasses(prefix: string = ''): string {
+        const classNames = Object.keys(this.classes);
+        classNames.sort((o1, o2) => {
+          return o1.localeCompare(o2);
+        });
+        let s = '';
+        for(const className of classNames) s += `${this.classes[className].compile(prefix)}\n`;
+        return s;
+    };
+
+    compileTables(prefix: string = ''): string {
+        const tableNames = Object.keys(this.tables);
+        tableNames.sort((o1, o2) => {
+          return o1.localeCompare(o2);
+        });
+        let s = '';
+        for(const tableName of tableNames) s += `${this.tables[tableName].compile(prefix)}\n`;
+        return s;
+    };
+
+    compileProperties(prefix: string = ''): string {
+        const propNames = Object.keys(this.properties);
+        propNames.sort((o1, o2) => {
+          return o1.localeCompare(o2);
+        });
+        let s = '';
+        for(const propName of propNames) s += `${this.properties[propName].compile(prefix)}\n`;
+        return s;
+    };
 
     private audit() {
         // Classes takes precedence over duplicate tables.

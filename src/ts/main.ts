@@ -13,4 +13,11 @@ export let start = function () {
 
   luaLibrary.scan();
   luaLibrary.parse();
+
+  console.log(luaLibrary.compileProperties());
+
+  const code = luaLibrary.tables['luautils'].compile();
+  const html = hljs.default.highlight(code, {language: 'typescript'}).value;
+  let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>'
+  document.getElementById('code').innerHTML = s;
 };
