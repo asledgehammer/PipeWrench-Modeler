@@ -24,8 +24,8 @@ export class DocBuilder {
    * @returns this
    */
   appendLine(...lines: string[]): DocBuilder {
-    if (!lines || !lines.length) {
-      lines.push('');
+    if (!lines.length) {
+      this.lines.push('');
       return this;
     }
     for (const line of lines) this.lines.push(line);
