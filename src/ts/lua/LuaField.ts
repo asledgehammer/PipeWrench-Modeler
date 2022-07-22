@@ -63,7 +63,7 @@ export class LuaField extends LuaElement {
 
         // Process lines. (If defined)
         if (lines && lines.length) {
-          if(hasAnnotations) doc.appendLine();
+          if (hasAnnotations) doc.appendLine();
           for (const line of lines) doc.appendLine(line);
         }
 
@@ -74,22 +74,17 @@ export class LuaField extends LuaElement {
     const { container } = this;
     if (container) {
       const { library } = this.container.file;
-
       if (container instanceof LuaClass) {
         const classModel = library.getClassModel(container);
-        if (classModel && classModel.testSignature(container)) {
+        if (classModel) {
           const fieldModel = classModel.getField(this);
-          if (fieldModel && fieldModel.testSignature(this)) {
-            processField(fieldModel);
-          }
+          if (fieldModel) processField(fieldModel);
         }
       } else if (container instanceof LuaTable) {
         const tableModel = library.getTableModel(container);
-        if (tableModel && tableModel.testSignature(container)) {
+        if (tableModel) {
           const fieldModel = tableModel.getField(this);
-          if (fieldModel && fieldModel.testSignature(this)) {
-            processField(fieldModel);
-          }
+          if (fieldModel) processField(fieldModel);
         }
       }
     }
