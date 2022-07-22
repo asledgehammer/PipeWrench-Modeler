@@ -3,6 +3,13 @@ import { LuaFile } from './LuaFile';
 import { LuaClass } from './LuaClass';
 import { LuaElement } from './LuaElement';
 import { LuaTable } from './LuaTable';
+import { ModelLibrary } from './model/ModelLibrary';
+import { ClassModel } from './model/ClassModel';
+import { TableModel } from './model/TableModel';
+import { LuaField } from './LuaField';
+import { FieldModel } from './model/FieldModel';
+import { LuaFunction } from './LuaFunction';
+import { FunctionModel } from './model/FunctionModel';
 
 /**
  * **LuaLibrary**
@@ -10,151 +17,169 @@ import { LuaTable } from './LuaTable';
  * @author JabDoesThings
  */
 export class LuaLibrary {
+  readonly models: ModelLibrary = new ModelLibrary();
 
-    private files: string[] = [];
+  private files: string[] = [];
 
-    luaFiles: {[id: string]: LuaFile} = {};
-    classes: {[id: string]: LuaClass} = {};
-    tables: {[id: string]: LuaTable} = {};
-    properties: {[id: string]: LuaElement} = {};
+  luaFiles: { [id: string]: LuaFile } = {};
+  classes: { [id: string]: LuaClass } = {};
+  tables: { [id: string]: LuaTable } = {};
+  properties: { [id: string]: LuaElement } = {};
 
-    scan() {
-        this.files = [];
-        this.scanDir('./assets/media/lua/shared');
-        this.scanDir('./assets/media/lua/client');
-        this.scanDir('./assets/media/lua/server');
-        this.files.sort((a: string, b: string) => {
-            return a.localeCompare(b);
-        });
+  scan() {
+    this.models.scan();
+    this.files = [];
+    this.scanDir('./assets/media/lua/shared');
+    this.scanDir('./assets/media/lua/client');
+    this.scanDir('./assets/media/lua/server');
+    this.files.sort((a: string, b: string) => {
+      return a.localeCompare(b);
+    });
+  }
+
+  private scanDir(dir: string) {
+    const entries = fs.readdirSync(dir);
+    const dirs: string[] = [];
+
+    for (const entry of entries) {
+      const path = dir + '/' + entry;
+      if (path === '.' || path === '..' || path === '...') {
+        continue;
+      }
+      const stats = fs.lstatSync(path);
+      if (stats.isDirectory() && dirs.indexOf(path) === -1) {
+        dirs.push(path);
+        continue;
+      }
+      if (path.toLowerCase().endsWith('.lua') && this.files.indexOf(path) === -1) {
+        this.files.push(path);
+      }
     }
 
-    private scanDir(dir: string) {
+    if (dirs.length !== 0) {
+      for (const dir of dirs) {
+        this.scanDir(dir);
+      }
+    }
+  }
 
-        const entries = fs.readdirSync(dir);
-        const dirs: string[] = [];
+  parse() {
+    this.models.parse();
+    this.classes = {};
+    this.tables = {};
+    this.properties = {};
 
-        for (const entry of entries) {
-            const path = dir + '/' + entry;   
-            if(path === '.' || path === '..' || path === '...') {
-                continue;
-            }
-            const stats = fs.lstatSync(path);
-            if(stats.isDirectory() && dirs.indexOf(path) === -1) {
-                dirs.push(path);
-                continue;
-            }
-            if(path.toLowerCase().endsWith('.lua') && this.files.indexOf(path) === -1) {
-              this.files.push(path);
-            }
-        }
+    // The root class doesn't define itself using 'derive(type: string)'.
+    // Add it manually.
+    this.classes['ISBaseObject'] = new LuaClass(null, 'ISBaseObject');
 
-        if(dirs.length !== 0) {
-            for(const dir of dirs) {
-                this.scanDir(dir);
-            }
-        }
+    for (const file of this.files) {
+      const id = file
+        .replace('./assets/media/lua/client/', '')
+        .replace('./assets/media/lua/server/', '')
+        .replace('./assets/media/lua/shared/', '')
+        .replace('.lua', '')
+        .replace('.Lua', '')
+        .replace('.LUA', '');
+
+      const luaFile = new LuaFile(this, id, file);
+      luaFile.parse();
+      luaFile.scanRequires();
+
+      this.luaFiles[id] = luaFile;
     }
 
-    parse() {
-        this.classes = {};
-        this.tables = {};
-        this.properties = {};
+    for (const file of Object.values(this.luaFiles)) file.scanGlobals();
+    for (const file of Object.values(this.luaFiles)) file.scanMembers();
+    for (const clazz of Object.values(this.classes)) clazz.scanMethods();
+    this.linkClasses();
+    this.audit();
+  }
 
-        // The root class doesn't define itself using 'derive(type: string)'.
-        // Add it manually.
-        this.classes['ISBaseObject'] = new LuaClass(null, 'ISBaseObject');
+  compileClasses(prefix: string = ''): string {
+    const classNames = Object.keys(this.classes);
+    classNames.sort((o1, o2) => {
+      return o1.localeCompare(o2);
+    });
+    let s = '';
+    for (const className of classNames) s += `${this.classes[className].compile(prefix)}\n`;
+    return s;
+  }
 
-        for(const file of this.files) {
-            const id = file
-          .replace('./assets/media/lua/client/', '')
-          .replace('./assets/media/lua/server/', '')
-          .replace('./assets/media/lua/shared/', '')
-          .replace('.lua', '')
-          .replace('.Lua', '')
-          .replace('.LUA', '');
+  compileTables(prefix: string = ''): string {
+    const tableNames = Object.keys(this.tables);
+    tableNames.sort((o1, o2) => {
+      return o1.localeCompare(o2);
+    });
+    let s = '';
+    for (const tableName of tableNames) s += `${this.tables[tableName].compile(prefix)}\n`;
+    return s;
+  }
 
-          const luaFile = new LuaFile(this, id, file);
-          luaFile.parse();
-          luaFile.scanRequires();
+  compileProperties(prefix: string = ''): string {
+    const propNames = Object.keys(this.properties);
+    propNames.sort((o1, o2) => {
+      return o1.localeCompare(o2);
+    });
+    let s = '';
+    for (const propName of propNames) s += `${this.properties[propName].compile(prefix)}\n`;
+    return s;
+  }
 
-          this.luaFiles[id] = luaFile;
-        }
+  getClassModel(clazz: LuaClass): ClassModel {
+    return this.models ? this.models.getClassModel(clazz) : null;
+  }
 
-        for(const file of Object.values(this.luaFiles)) file.scanGlobals();
-        for(const file of Object.values(this.luaFiles)) file.scanMembers();
-        for(const clazz of Object.values(this.classes)) clazz.scanMethods();
-        this.linkClasses();
-        this.audit();
+  getTableModel(table: LuaTable): TableModel {
+    return this.models ? this.models.getTableModel(table) : null;
+  }
+
+  getGlobalFieldModel(field: LuaField): FieldModel {
+    return this.models ? this.models.getGlobalFieldModel(field) : null;
+  }
+
+  getGlobalFunctionModel(func: LuaFunction): FunctionModel {
+    return this.models ? this.models.getGlobalFunctionModel(func) : null;
+  }
+
+  private audit() {
+    // Classes takes precedence over duplicate tables.
+    for (const className of Object.keys(this.classes)) {
+      if (this.tables[className]) {
+        delete this.tables[className];
+      }
+      this.classes[className].audit();
     }
+  }
 
-    compileClasses(prefix: string = ''): string {
-        const classNames = Object.keys(this.classes);
-        classNames.sort((o1, o2) => {
-          return o1.localeCompare(o2);
-        });
-        let s = '';
-        for(const className of classNames) s += `${this.classes[className].compile(prefix)}\n`;
-        return s;
-    };
+  private linkClasses() {
+    for (const name of Object.keys(this.classes)) {
+      const clazz = this.classes[name];
 
-    compileTables(prefix: string = ''): string {
-        const tableNames = Object.keys(this.tables);
-        tableNames.sort((o1, o2) => {
-          return o1.localeCompare(o2);
-        });
-        let s = '';
-        for(const tableName of tableNames) s += `${this.tables[tableName].compile(prefix)}\n`;
-        return s;
-    };
+      let superClazz = this.classes[clazz.superClassName];
+      if (!superClazz) {
+        superClazz = this.resolveProxyClass(clazz.superClassName);
+      }
+      if (!superClazz) {
+        console.warn(`[LuaLibrary] Lua Superclass not found: ${clazz.name} extends ${clazz.superClassName}`);
+      }
 
-    compileProperties(prefix: string = ''): string {
-        const propNames = Object.keys(this.properties);
-        propNames.sort((o1, o2) => {
-          return o1.localeCompare(o2);
-        });
-        let s = '';
-        for(const propName of propNames) s += `${this.properties[propName].compile(prefix)}\n`;
-        return s;
-    };
-
-    private audit() {
-        // Classes takes precedence over duplicate tables.
-        for(const className of Object.keys(this.classes)) {
-            if(this.tables[className]) {
-                delete this.tables[className];
-            }
-            this.classes[className].audit();
-        }
+      clazz.superClass = superClazz;
     }
+  }
 
-    private linkClasses() {
-        for(const name of Object.keys(this.classes)) {
-            const clazz = this.classes[name];
-
-            let superClazz = this.classes[clazz.superClassName];
-            if(!superClazz) {
-                superClazz = this.resolveProxyClass(clazz.superClassName);
-            }
-            if(!superClazz) {
-                console.warn(`[LuaLibrary] Lua Superclass not found: ${clazz.name} extends ${clazz.superClassName}`);
-            }
-
-            clazz.superClass = superClazz;
-        }
+  private resolveProxyClass(clazzName: string): LuaClass | null {
+    for (const clazz of Object.values(this.luaFiles)) {
+      if (clazz.proxies[clazzName]) return this.classes[clazz.proxies[clazzName]];
     }
+    return null;
+  }
 
-    private resolveProxyClass(clazzName: string): LuaClass | null {
-        for(const clazz of Object.values(this.luaFiles)) {
-            if(clazz.proxies[clazzName]) return this.classes[clazz.proxies[clazzName]];
-        }
-        return null;
-    }
+  setClass(clazz: LuaClass) {
+    this.classes[clazz.name] = clazz;
+  }
 
-    setClass(clazz: LuaClass) {
-      this.classes[clazz.name] = clazz;
-    }
-
-    setProperty(element: LuaElement) {
-        this.properties[element.name] = element;
-    }
+  setProperty(element: LuaElement) {
+    this.properties[element.name] = element;
+  }
 }

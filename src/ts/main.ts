@@ -3,7 +3,6 @@ import { LuaLibrary } from './lua/LuaLibrary';
 import { ModelLibrary } from './lua/model/ModelLibrary';
 
 const luaLibrary = new LuaLibrary();
-const modelLibrary = new ModelLibrary();
 
 // Entry Point from HTML.
 export let start = function () {
@@ -14,12 +13,10 @@ export let start = function () {
 
   luaLibrary.scan();
   luaLibrary.parse();
-  modelLibrary.scan();
-  modelLibrary.parse();
   
-  console.log(modelLibrary);
+  console.log(luaLibrary.models);
 
-  const code = luaLibrary.tables['luautils'].compile();
+  const code = luaLibrary.classes['ISUIElement'].compile();
   const html = hljs.default.highlight(code, {language: 'typescript'}).value;
   let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>'
   document.getElementById('code').innerHTML = s;

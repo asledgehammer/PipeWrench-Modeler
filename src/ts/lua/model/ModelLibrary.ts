@@ -4,6 +4,10 @@ import { TableModel } from './TableModel';
 import { FunctionModel } from './FunctionModel';
 import { FieldModel } from './FieldModel';
 import { ModelFile } from './ModelFile';
+import { LuaClass } from '../LuaClass';
+import { LuaTable } from '../LuaTable';
+import { LuaFunction } from '../LuaFunction';
+import { LuaField } from '../LuaField';
 
 /**
  * **ModelLibrary**
@@ -57,6 +61,27 @@ export class ModelLibrary {
       modelFile.scan();
       this.modelFiles[id] = modelFile;
     }
+  }
+
+  getClassModel(clazz: LuaClass): ClassModel {
+    const model = this.classes[clazz.name];
+    console.log(this.classes);
+    return model && model.testSignature(clazz) ? model : null;
+  }
+
+  getTableModel(table: LuaTable): TableModel {
+    const model = this.tables[table.name];
+    return model && model.testSignature(table) ? model : null;
+  }
+
+  getGlobalFieldModel(field: LuaField): FieldModel {
+    const model = this.globalFields[field.name];
+    return model && model.testSignature(field) ? model : null;
+  }
+
+  getGlobalFunctionModel(func: LuaFunction): FunctionModel {
+    const model = this.globalFunctions[func.name];
+    return model && model.testSignature(func) ? model : null;
   }
 
   /**

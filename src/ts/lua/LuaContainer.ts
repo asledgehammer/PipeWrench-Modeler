@@ -5,7 +5,8 @@ import { LuaFile } from './LuaFile';
 import { LuaMethod } from './LuaMethod';
 import { fixParameters } from './LuaUtils';
 import { DocBuilder } from '../DocBuilder';
-import { LuaTable } from './LuaTable';
+import { ClassModel } from './model/ClassModel';
+import { TableModel } from './model/TableModel';
 
 /**
  * All types of LuaContainer instances.
@@ -50,22 +51,101 @@ export class LuaContainer extends LuaElement {
   }
 
   audit() {
-    for(const methodName of Object.keys(this.methods)) {
-      if(this.fields[methodName]) delete this.fields[methodName];
+    for (const methodName of Object.keys(this.methods)) {
+      if (this.fields[methodName]) delete this.fields[methodName];
     }
+  }
+
+  generateClassDocumentation(prefix: string, model: ClassModel): string {
+    
+    const doc = new DocBuilder();
+    doc.appendAnnotation('customConstructor', `${this.name}:new`);
+
+    // No further documentation available for the class.
+    if (!model) return doc.build(prefix);
+
+    const classDoc = model.doc;
+    if (classDoc) {
+      const { annotations, authors, lines } = classDoc;
+
+      // Process annotations. (If defined)
+      const annoKeys = Object.keys(annotations);
+      if (annoKeys && annoKeys.length) {
+        for (const key of annoKeys) doc.appendAnnotation(key, annotations[key]);
+      } else {
+        if (!authors || !authors.length) {
+          // The 'customConstructor' annotation is multi-line. Adding `@` terminates it.
+          doc.appendLine('@');
+        }
+      }
+
+      // Process authors. (If defined)
+      if (authors && authors.length) {
+        let s = '[';
+        for (const author of authors) s += `${author}, `;
+        s = `${s.substring(0, s.length - 2)}]`;
+        doc.appendAnnotation('author', s);
+      }
+
+      // Process lines. (If defined)
+      if (lines && lines.length) {
+        if(!doc.isEmpty()) doc.appendLine();
+        for (const line of lines) doc.appendLine(line);
+      }
+    }
+
+    return doc.build(prefix);
+  }
+
+  generateTableDocumentation(prefix: string, model: TableModel): string {
+    const doc = new DocBuilder();
+
+    // No further documentation available for the class.
+    if (!model) return doc.build(prefix);
+
+    const tableDoc = model.doc;
+    if (tableDoc) {
+      const { annotations, authors, lines } = tableDoc;
+
+      // Process annotations. (If defined)
+      const annoKeys = Object.keys(annotations);
+      if (annoKeys && annoKeys.length) {
+        for (const key of annoKeys) doc.appendAnnotation(key, annotations[key]);
+      }
+
+      // Process authors. (If defined)
+      if (authors && authors.length) {
+        let s = '[';
+        for (const author of authors) s += `${author}, `;
+        s = `${s.substring(0, s.length - 2)}]`;
+        doc.appendAnnotation('author', s);
+      }
+
+      doc.appendLine();
+
+      // Process lines. (If defined)
+      if (lines && lines.length) {
+        for (const line of lines) doc.appendLine(line);
+      }
+    }
+
+    return doc.build(prefix);
   }
 
   compile(prefix: string = ''): string {
 
-    const docClass = new DocBuilder();
+    const {library} = this.file;
+
+    let doc: string;
 
     // Render empty classes & tables on one line.
     if (this instanceof LuaClass) {
 
-      docClass.appendLine(`@customConstructor ${this.name}:new`);
+      const model = library.getClassModel(this as any); 
+      doc = this.generateClassDocumentation(prefix, model);
 
       if (!Object.keys(this.fields).length && !Object.keys(this.methods).length && !this._constructor_) {
-        let s = `${docClass.build(prefix)}\n`;
+        let s = `${doc}\n`;
         s += `${prefix}declare class ${this.name}`;
         if (this instanceof LuaClass && this.superClass) {
           s += ` extends ${this.superClass.name}`;
@@ -73,7 +153,10 @@ export class LuaContainer extends LuaElement {
         return ' {}';
       }
     } else {
-      let s = `${docClass.build(prefix)}\n`;
+      const model = library.getTableModel(this as any); 
+      doc = this.generateTableDocumentation(prefix, model);
+      
+      let s = `${doc}\n`;
       if (!Object.keys(this.fields).length && !Object.keys(this.methods).length) {
         return `${s}\n${prefix}declare class ${this.name} {}`;
       }
@@ -137,10 +220,12 @@ export class LuaContainer extends LuaElement {
 
     // Class Declaration line.
     let s = '';
-    
-    if(!docClass.isEmpty()) docClass.build(prefix);
 
-    s += `\n${prefix}declare class ${this.name}`;
+    console.log(doc);
+
+    if (doc && doc.length) s += `${doc}\n`;
+
+    s += `${prefix}declare class ${this.name}`;
     if (this instanceof LuaClass && this.superClass) {
       s += ` extends ${this.superClass.name}`;
     }
@@ -149,8 +234,8 @@ export class LuaContainer extends LuaElement {
     // Make sure that no one can try to use Lua tables as a class, even though we're using
     // the class type for tables. This is to keep things clean. We *could* go with an interface,
     // however values cannot be assigned to them in TypeScript like tables can in Lua.
-    if(this.type === 'table') {
-      s += `${newPrefix}private constructor();\n`
+    if (this.type === 'table') {
+      s += `${newPrefix}private constructor();\n`;
     }
 
     // Render static field(s). (If any)
