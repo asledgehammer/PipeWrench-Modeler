@@ -35,14 +35,16 @@ export class ClassModel {
     const { doc: constructorDoc, params } = _constructor_;
     if (constructorDoc) {
       const { annotations, lines } = constructorDoc;
+
+      // Process annotations. (If defined)
       if (annotations) {
-        // Process annotations. (If defined)
-        const annoKeys = Object.keys(annotations);
-        if (annoKeys && annoKeys.length) {
-          for (const key of annoKeys) doc.appendAnnotation(key, annotations[key]);
+        const keys = Object.keys(annotations);
+        if (keys && keys.length) {
+          for (const key of keys) doc.appendAnnotation(key, annotations[key]);
           doc.appendLine();
         }
       }
+
       // Process lines. (If defined)
       if (lines && lines.length) {
         for (const line of lines) doc.appendLine(line);
