@@ -16,7 +16,7 @@ export class DocBuilder {
     else if (la.length === 1) return `${prefix}/** ${la[0]} */`;
     let s = `${prefix}/**\n`;
     for (const l of la) s += !l || !l.length ? `${prefix} *\n` : `${prefix} * ${l}\n`;
-    return `${s} */`;
+    return `${s}${prefix} */`;
   }
 
   /**
@@ -43,8 +43,8 @@ export class DocBuilder {
    * @param description The text to append to the parameter.
    * @returns this
    */
-  appendParam(name: string, description: string): DocBuilder {
-    return this.appendLine(`@param ${name} ${description}`);
+  appendParam(name: string, description: string = ''): DocBuilder {
+    return this.appendLine(`@param ${name} ${description.length ? `- ${description}` : ''}`);
   }
 
   /**
