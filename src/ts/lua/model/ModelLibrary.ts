@@ -5,25 +5,44 @@ import { FunctionModel } from './FunctionModel';
 import { FieldModel } from './FieldModel';
 import { ModelFile } from './ModelFile';
 
+/**
+ * **ModelLibrary**
+ * 
+ * @author JabDoesThings
+ */
 export class ModelLibrary {
-  private files: string[] = [];
-  modelFiles: { [id: string]: ModelFile } = {};
-  classes: { [id: string]: ClassModel } = {};
-  tables: { [id: string]: TableModel } = {};
-  globalFields: { [id: string]: FieldModel } = {};
-  globalFunctions: { [id: string]: FunctionModel } = {};
+  /** All model files discovered from scanning directories. */
+  private readonly files: string[] = [];
 
+  /** All model files in the library. */
+  readonly modelFiles: { [id: string]: ModelFile } = {};
+
+  /** All class models in the library. */
+  readonly classes: { [id: string]: ClassModel } = {};
+
+  /** All table models in the library. */
+  readonly tables: { [id: string]: TableModel } = {};
+
+  /** All global field models in the library. */
+  readonly globalFields: { [id: string]: FieldModel } = {};
+
+  /** All global function models in the library. */
+  readonly globalFunctions: { [id: string]: FunctionModel } = {};
+
+  /**
+   * Scans and discovers JSON model files to load & read.
+   */
   scan() {
-    this.files = [];
+    this.files.length = 0;
     this.scanDir('./assets/media/models');
     this.files.sort((a: string, b: string) => a.localeCompare(b));
   }
 
+  /**
+   * Parses through all loaded ModelFiles, loading classes, tables, global fields, and global functions.
+   */
   parse() {
-    this.classes = {};
-    this.tables = {};
-    this.globalFields = {};
-    this.globalFunctions = {};
+    this.clear();
     for (const file of this.files) {
       let id: string;
       const path = file.replace('\\', '/').replace('.json', '').replace('.json', '').replace('.json', '');
@@ -40,6 +59,9 @@ export class ModelLibrary {
     }
   }
 
+  /**
+   * Clears all classes, tables, global fields, and global functions in the library.
+   */
   clear() {
     for (const id of Object.keys(this.classes)) delete this.classes[id];
     for (const id of Object.keys(this.tables)) delete this.tables[id];
@@ -48,6 +70,7 @@ export class ModelLibrary {
   }
 
   private scanDir(dir: string) {
+    this.files.length = 0;
     const entries = fs.readdirSync(dir);
     const dirs: string[] = [];
     for (const entry of entries) {

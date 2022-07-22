@@ -32,8 +32,11 @@ export class ModelFile {
   /** The name of the file. */
   readonly id: string;
 
-  /** The parsed chunk provided by LuaParse. */
+  /** The parsed JSON object. */
   parsed: ModelFileJson;
+
+  /** The format version of the file. */
+  version: number;
 
   /**
    * @param library The library storing all models.
@@ -52,8 +55,12 @@ export class ModelFile {
   parse() {
     const raw = fs.readFileSync(this.file).toString();
     this.parsed = JSON.parse(raw);
+    this.version = this.parsed.version;
   }
 
+  /**
+   * Scans the parsed JSON, loading classes, tables, global fields, and global functions.
+   */
   scan() {
     const { parsed } = this;
     const { classes, tables, globalFields, globalFunctions } = parsed;
@@ -61,31 +68,34 @@ export class ModelFile {
     this.clear();
 
     // Load class models.
-    if(classes) {
+    if (classes) {
       for (const id of Object.keys(classes)) {
         this.library.classes[id] = this.classes[id] = new ClassModel(classes[id]);
       }
     }
     // Load table models.
-    if(tables) {
+    if (tables) {
       for (const id of Object.keys(tables)) {
         this.library.tables[id] = this.tables[id] = new TableModel(tables[id]);
       }
     }
     // Load global field models.
-    if(globalFields) {
+    if (globalFields) {
       for (const id of Object.keys(globalFields)) {
         this.library.globalFields[id] = this.globalFields[id] = new FieldModel(globalFields[id]);
       }
     }
     // Load global function models.
-    if(globalFunctions) {
+    if (globalFunctions) {
       for (const id of Object.keys(globalFunctions)) {
         this.library.globalFunctions[id] = this.globalFunctions[id] = new FunctionModel(globalFunctions[id]);
       }
     }
   }
 
+  /**
+   * Clears all classes, tables, global fields, and global functions loaded from the file.
+   */
   private clear() {
     for (const id of Object.keys(this.classes)) delete this.classes[id];
     for (const id of Object.keys(this.tables)) delete this.tables[id];
@@ -94,7 +104,13 @@ export class ModelFile {
   }
 }
 
+/**
+ * **ModelFileJson**
+ * 
+ * @author JabDoesThings
+ */
 export type ModelFileJson = {
+  version: number;
   classes: { [id: string]: ClassModelJson };
   tables: { [id: string]: TableModelJson };
   globalFields: { [id: string]: FieldModelJson };
