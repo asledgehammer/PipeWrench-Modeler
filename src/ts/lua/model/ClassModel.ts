@@ -5,6 +5,7 @@ import { MethodModel, MethodModelJson } from './MethodModel';
 import { LuaClass } from '../LuaClass';
 import { LuaField } from '../LuaField';
 import { LuaMethod } from '../LuaMethod';
+import { DocBuilder } from '../../DocBuilder';
 
 /**
  * **ClassModel**
@@ -23,30 +24,85 @@ export class ClassModel {
     if (json) this.load(json);
   }
 
+  generateConstructorDoc(prefix: string, clazz: LuaClass): string {
+    const { _constructor_ } = this;
+
+    if (!_constructor_ || !_constructor_.testSignature(clazz._constructor_)) {
+      return '';
+    }
+
+    const doc = new DocBuilder();
+    const { doc: constructorDoc, params } = _constructor_;
+    if (constructorDoc) {
+      const { annotations, lines } = constructorDoc;
+      if (annotations) {
+        // Process annotations. (If defined)
+        const annoKeys = Object.keys(annotations);
+        if (annoKeys && annoKeys.length) {
+          for (const key of annoKeys) doc.appendAnnotation(key, annotations[key]);
+          doc.appendLine();
+        }
+      }
+      // Process lines. (If defined)
+      if (lines && lines.length) {
+        for (const line of lines) doc.appendLine(line);
+        doc.appendLine();
+      }
+
+      // Process params. (If defined)
+      if (params) {
+        for (const param of params) {
+          const { name, doc: paramDoc } = param;
+
+          if (!doc) {
+            doc.appendParam(name);
+            continue;
+          } else {
+            const { lines } = paramDoc;
+
+            // No lines. Print basic @param <name>
+            if (!lines || !lines.length) {
+              doc.appendParam(name);
+              continue;
+            }
+            
+            doc.appendParam(name, lines[0]);
+            
+            // Check if multi-line.
+            if (lines.length === 1) continue;
+            for (let index = 1; index < lines.length; index++) {
+              doc.appendLine(lines[index]);
+            }
+          }
+        }
+      }
+    }
+    return doc.build(prefix);
+  }
+
   testSignature(clazz: LuaClass): boolean {
     return clazz.name === this.name;
   }
 
   getField(field: LuaField): FieldModel {
     const model = this.fields[field.name];
-    if(model && model.testSignature(field)) return model;
+    if (model && model.testSignature(field)) return model;
     return null;
   }
 
   getMethod(method: LuaMethod): MethodModel {
     const model = this.methods[method.name];
-    if(model && model.testSignature(method)) return model;
+    if (model && model.testSignature(method)) return model;
     return null;
   }
 
   getConstructor(_constructor_: LuaMethod): ConstructorModel {
     const model = this._constructor_;
-    if(model && model.testSignature(_constructor_)) return model;
+    if (model && model.testSignature(_constructor_)) return model;
     return null;
   }
 
   load(json: ClassModelJson) {
-
     this.fields = {};
 
     if (json.fields) {
@@ -92,7 +148,7 @@ export class ClassModel {
 
 /**
  * **ClassJson**
- * 
+ *
  * @author JabDoesThings
  */
 export type ClassModelJson = {

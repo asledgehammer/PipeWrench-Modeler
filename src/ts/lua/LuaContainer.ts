@@ -204,67 +204,21 @@ export class LuaContainer extends LuaElement {
       const { library } = this.file;
       const classModel = library.getClassModel(clazz);
 
-      let s = '';
-      if (classModel) {
-        const { _constructor_ } = classModel;
-
-        if (_constructor_ && _constructor_.testSignature(clazz._constructor_)) {
-          const doc = new DocBuilder();
-          const { doc: constructorDoc, params } = _constructor_;
-          if (constructorDoc) {
-            const { annotations, lines } = constructorDoc;
-            if (annotations) {
-              // Process annotations. (If defined)
-              const annoKeys = Object.keys(annotations);
-              if (annoKeys && annoKeys.length) {
-                for (const key of annoKeys) doc.appendAnnotation(key, annotations[key]);
-                doc.appendLine();
-              }
-            }
-            // Process lines. (If defined)
-            if (lines && lines.length) {
-              for (const line of lines) doc.appendLine(line);
-              doc.appendLine();
-            }
-
-            // Process params. (If defined)
-            if (params) {
-              for (const param of params) {
-                const { name, doc: paramDoc } = param;
-
-                if (!doc) {
-                  doc.appendParam(name);
-                  continue;
-                } else {
-                  const { lines } = paramDoc;
-
-                  if (!lines || !lines.length) {
-                    doc.appendParam(name);
-                    continue;
-                  }
-
-                  doc.appendParam(name, lines[0]);
-                  if (lines.length === 1) continue;
-                  for (let index = 1; index < lines.length; index++) {
-                    doc.appendLine(lines[index]);
-                  }
-                }
-              }
-            }
-          }
-          s = doc.build(newPrefix);
-        }
-      }
+      const docs = classModel ? classModel.generateConstructorDoc(newPrefix, clazz) : '';
+      const constructorModel = classModel ? classModel._constructor_ : null;
 
       // Compile parameter(s). (If any)
       let paramS = '';
-      const params = fixParameters(_constructor_.params);
+      const params =
+        constructorModel && constructorModel.testSignature(_constructor_)
+          ? constructorModel.params
+          : fixParameters(_constructor_.params);
       if (params.length) {
         for (const param of params) paramS += `${param}: unknown, `;
         paramS = paramS.substring(0, paramS.length - 2);
       }
 
-      return `${s.length ? `${s}\n` : ''}${newPrefix}constructor(${paramS});`;
+      return `${docs.length ? `${docs}\n` : ''}${newPrefix}constructor(${paramS});`;
     };
 
     sortFields();
