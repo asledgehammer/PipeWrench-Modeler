@@ -92,8 +92,23 @@ export class ClassModel {
     return null;
   }
 
+  sanitizeMethodName(name: string) {
+    if(name === 'toString') {
+      return `_${name}`;
+    }
+    return name;
+  }
+
+  unsanitizeMethodName(name: string) {
+    if(name === '_toString') {
+      return name.substring(1);
+    }
+    return name;
+  }
+
   getMethod(method: LuaMethod): MethodModel {
-    const model = this.methods[method.name];
+    const name = this.sanitizeMethodName(method.name);
+    const model = this.methods[name];
     if (model && model.testSignature(method)) return model;
     return null;
   }
@@ -116,7 +131,7 @@ export class ClassModel {
     if (json.methods) {
       this.methods = {};
       for (const name of Object.keys(json.methods)) {
-        this.methods[name] = new MethodModel(name, json.methods[name]);
+        this.methods[this.sanitizeMethodName(name)] = new MethodModel(name, json.methods[name]);
       }
     }
 
@@ -136,9 +151,9 @@ export class ClassModel {
       fields[fieldName] = fieldModel.save();
     }
 
-    for (const methodName in Object.keys(this.methods)) {
-      const methodModel = this.methods[methodName];
-      methods[methodName] = methodModel.save();
+    for (const name in Object.keys(this.methods)) {
+      const methodModel = this.methods[name];
+      methods[this.unsanitizeMethodName(name)] = methodModel.save();
     }
 
     const _constructor_ = this._constructor_.save();

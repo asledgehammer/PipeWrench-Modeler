@@ -65,7 +65,6 @@ export class ModelLibrary {
 
   getClassModel(clazz: LuaClass): ClassModel {
     const model = this.classes[clazz.name];
-    console.log(this.classes);
     return model && model.testSignature(clazz) ? model : null;
   }
 

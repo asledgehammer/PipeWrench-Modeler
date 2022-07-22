@@ -1,11 +1,13 @@
+import * as ast from '../luaparser/ast';
 import { LuaContainer } from './LuaContainer';
 import { LuaElement } from './LuaElement';
-import * as ast from '../luaparser/ast';
 import { LuaField } from './LuaField';
 import { LuaLibrary } from './LuaLibrary';
-import { fixParameters, sanitizeParameter, scanBodyForFields } from './LuaUtils';
+import { fixParameters, scanBodyForFields } from './LuaUtils';
 import { Identifier } from 'luaparse';
-import { DocBuilder } from '../DocBuilder';
+import { LuaClass } from './LuaClass';
+import { LuaTable } from './LuaTable';
+import { MethodModel } from './model/MethodModel';
 
 /**
  * **LuaMethod**
@@ -37,20 +39,90 @@ export class LuaMethod extends LuaElement {
 
   compile(prefix: string = ''): string {
     
-    const doc = new DocBuilder();
-    if(this.isStatic) doc.appendLine('@noSelf');
+    let sDocs = '';
+    let methodModel: MethodModel = null;
     
+    const { container, library } = this;
+    if(container instanceof LuaClass) {
+      const classModel = library.getClassModel(container);
+      methodModel = classModel ? classModel.getMethod(this) : null;
+      sDocs = methodModel ? methodModel.generateDoc(prefix, this) : '';
+    } else if(container instanceof LuaTable) {
+      const tableModel = library.getTableModel(container);
+      methodModel = tableModel ? tableModel.getMethod(this) : null;
+      sDocs = methodModel ? methodModel.generateDoc(prefix, this) : '';
+    }
+
+    const compileTypes = (types: string[]): string => {
+      let returnS = '';
+      if(types && types.length) {
+        for(const type of types) {
+          if (returnS.length) returnS += ' | ';
+          returnS += type;
+        }
+      }
+      return returnS;
+    };
+
     // Compile parameter(s). (If any)
     let paramS = '';
-    const { params } = this;
+    let params: string[] = [];
+
+    // If the model is present, set param names from it as some params may be renamed.
+    if (methodModel) {
+      for (const param of methodModel.params) {
+        const types = param.types ? compileTypes(param.types) : 'unknown';
+        params.push(`${param.name}: ${types}`);
+      }
+    } else {
+      params = fixParameters(this.params).map((param) => `${param}: unknown`);
+    }
     if (params.length) {
-      for (const param of params) paramS += `${param}: unknown, `;
+      for (const param of params) paramS += `${param}, `;
       paramS = paramS.substring(0, paramS.length - 2);
     }
 
+    // Compile return type(s). (If any)
+    let returnS = '';
+    let returnTypes: string[] = [];
+    let applyUnknownType = true;
+
+    if(methodModel) {
+      const { returns } = methodModel;
+      if(returns) {
+        applyUnknownType = returns.applyUnknownType;
+        if(returns.types && returns.types.length) {
+          for(const type of returns.types) {
+            // Prevent duplicate return types.
+            if(returnTypes.indexOf(type) === -1) returnTypes.push(type);
+          }
+        }
+      }
+    }
+
+    if(returnTypes.length) {
+      returnS = ''
+      for(const type of returnTypes) {
+        if(returnS.length) returnS += ' | ';
+        returnS += type;
+      }
+    } else {
+      // Default return type.
+      returnS = 'unknown';
+    }
+
     let s = '';
-    if(!doc.isEmpty()) s += `${doc.build(prefix)}\n`;
-    return `${s}${prefix}${this.isStatic ? 'static ' : ''}${this.name}: ((${paramS})=>unknown) | unknown;`;
+    if(sDocs.length) s += `${sDocs}\n`;
+
+    let comp = `${s}${prefix}${this.isStatic ? 'static ' : ''}${this.name}: `;
+    if(applyUnknownType) comp += '(';
+    comp += `(${paramS}) => ${returnS}`;
+    if(applyUnknownType) comp += ') | unknown';
+    comp += ';';
+    
+    return comp;
+
+    // return `${s}${prefix}${this.isStatic ? 'static ' : ''}${this.name}: ((${paramS})=>unknown) | unknown;`;
   }
 
   scanAsConstructor() {

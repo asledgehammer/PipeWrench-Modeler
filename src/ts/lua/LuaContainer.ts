@@ -207,18 +207,32 @@ export class LuaContainer extends LuaElement {
       const docs = classModel ? classModel.generateConstructorDoc(newPrefix, clazz) : '';
       const constructorModel = classModel ? classModel._constructor_ : null;
 
+      const compileTypes = (types: string[]): string => {
+        let returnS = '';
+        if (types && types.length) {
+          for (const type of types) {
+            if (returnS.length) returnS += ' | ';
+            returnS += type;
+          }
+        }
+        return returnS;
+      };
+
       // Compile parameter(s). (If any)
       let paramS = '';
       let params: string[] = [];
 
       // If the model is present, set param names from it as some params may be renamed.
       if (constructorModel && constructorModel.testSignature(_constructor_)) {
-        for (const param of constructorModel.params) params.push(param.name);
+        for (const param of constructorModel.params) {
+          const types = param.types ? compileTypes(param.types) : 'unknown';
+          params.push(`${param.name}: ${types}`);
+        }
       } else {
-        params = fixParameters(_constructor_.params);
+        params = fixParameters(params).map((param) => `${param}: unknown`);
       }
       if (params.length) {
-        for (const param of params) paramS += `${param}: unknown, `;
+        for (const param of params) paramS += `${param}, `;
         paramS = paramS.substring(0, paramS.length - 2);
       }
 
@@ -231,15 +245,13 @@ export class LuaContainer extends LuaElement {
     // Class Declaration line.
     let s = '';
 
-    console.log(doc);
-
     if (doc && doc.length) s += `${doc}\n`;
 
     s += `${prefix}declare class ${this.name}`;
     if (this instanceof LuaClass && this.superClass) {
       s += ` extends ${this.superClass.name}`;
     }
-    s += ' {\n';
+    s += ' {\n\n';
 
     // Make sure that no one can try to use Lua tables as a class, even though we're using
     // the class type for tables. This is to keep things clean. We *could* go with an interface,
@@ -250,34 +262,30 @@ export class LuaContainer extends LuaElement {
 
     // Render static field(s). (If any)
     if (staticFields.length) {
-      s += `${newPrefix}/* STATIC FIELDS */\n`;
       for (const field of staticFields) {
-        s += `${field.compile(newPrefix)}\n`;
+        s += `${field.compile(newPrefix)}\n\n`;
       }
     }
 
     // Render static field(s). (If any)
     if (nonStaticFields.length) {
-      s += `${newPrefix}/* FIELDS */\n`;
       for (const field of nonStaticFields) {
-        s += `${field.compile(newPrefix)}\n`;
+        s += `${field.compile(newPrefix)}\n\n`;
       }
     }
 
     if (this instanceof LuaClass) {
-      s += `${compileConstructor(this)}\n`;
+      s += `${compileConstructor(this)}\n\n`;
     }
 
     // Render static method(s). (If any)
     if (nonStaticMethods.length) {
-      s += `${newPrefix}/* METHODS */\n`;
-      for (const method of nonStaticMethods) s += `${method.compile(newPrefix)}\n`;
+      for (const method of nonStaticMethods) s += `${method.compile(newPrefix)}\n\n`;
     }
 
     // Render static method(s). (If any)
     if (staticMethods.length) {
-      s += `${newPrefix}/* STATIC METHODS */\n`;
-      for (const method of staticMethods) s += `${method.compile(newPrefix)}\n`;
+      for (const method of staticMethods) s += `${method.compile(newPrefix)}\n\n`;
     }
 
     // End of Class Declaration line.

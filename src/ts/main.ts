@@ -14,9 +14,9 @@ export let start = function () {
   luaLibrary.scan();
   luaLibrary.parse();
   
-  console.log(luaLibrary.models);
-
   const code = luaLibrary.classes['ISUIElement'].compile();
+  console.log(code);
+
   const html = hljs.default.highlight(code, {language: 'typescript'}).value;
   let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>'
   document.getElementById('code').innerHTML = s;

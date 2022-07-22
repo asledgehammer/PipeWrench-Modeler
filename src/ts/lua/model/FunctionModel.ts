@@ -1,3 +1,4 @@
+import { DocBuilder } from '../../DocBuilder';
 import { LuaFunction } from '../LuaFunction';
 import { FunctionDoc, FunctionDocJson } from './doc/FunctionDoc';
 import { ParamModel, ParamModelJson } from './ParamModel';
@@ -16,6 +17,64 @@ export class FunctionModel {
   constructor(name: string, json?: FunctionModelJson) {
     this.name = name;
     if (json) this.load(json);
+  }
+
+  generateDoc(prefix: string, func: LuaFunction): string {
+
+    if (!this.testSignature(func)) return '';
+
+    const { doc: funcDoc, params } = this;
+
+    const doc = new DocBuilder();
+    doc.appendAnnotation('noSelf');
+
+    if (funcDoc) {
+      const { annotations, lines } = funcDoc;
+
+      // Process annotations. (If defined)
+      if (annotations) {
+        const keys = Object.keys(annotations);
+        if (keys && keys.length) {
+          for (const key of keys) doc.appendAnnotation(key, annotations[key]);
+          doc.appendLine();
+        }
+      }
+
+      // Process lines. (If defined)
+      if (lines && lines.length) {
+        for (const line of lines) doc.appendLine(line);
+        doc.appendLine();
+      }
+
+      // Process params. (If defined)
+      if (params) {
+        for (const param of params) {
+          const { name, doc: paramDoc } = param;
+
+          if (!doc) {
+            doc.appendParam(name);
+            continue;
+          } else {
+            const { lines } = paramDoc;
+
+            // No lines. Print basic @param <name>
+            if (!lines || !lines.length) {
+              doc.appendParam(name);
+              continue;
+            }
+            
+            doc.appendParam(name, lines[0]);
+            
+            // Check if multi-line.
+            if (lines.length === 1) continue;
+            for (let index = 1; index < lines.length; index++) {
+              doc.appendLine(lines[index]);
+            }
+          }
+        }
+      }
+    }
+    return doc.build(prefix);
   }
 
   testSignature(func: LuaFunction): boolean {
