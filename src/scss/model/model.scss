@@ -1,4 +1,60 @@
 @import '../vars';
+@import 'pane';
+@import 'class_model';
+
+$model_pane_padding: 24px;
+
+.model-pane {
+  position: relative;
+  top: 0;
+  left: 0;
+  width: calc(100% - (#{$model_pane_padding} * 2));
+  height: calc(100% - (#{$model_pane_padding} * 2));
+  
+  overflow-y: auto;
+
+  padding: $model_pane_padding;
+
+  .model {
+    display: block;
+    position: relative;
+    width: inherit;
+    height: 200px;
+    overflow: hidden;
+
+    margin-bottom: 24px;
+    
+    background-color: $color_card;
+
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+
+    transition: height 200ms, border-bottom-left-radius 200ms, border-bottom-right-radius 200ms;
+    
+    .model-header {
+      width: 100%;
+      height: 24px;
+      background-color: $color_hover_color;
+      box-shadow: 0px -1px 6px 2px rgba(0,0,0,0.4);
+
+      label {
+        position: relative;
+        font-family: Consolas, 'Courier New', monospace;
+        color: $color_primary_text;
+        top: 2px;
+        left: 6px;
+      }
+    }
+  }
+
+  .model.collapsed {
+    height: 24px;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+  }
+}
 
 .model-form {
   position: absolute;
@@ -8,9 +64,10 @@
   height: 100%;
   
   border-radius: 4px;
-  overflow: hidden;
   backdrop-filter: contrast(1.1) brightness(0.4);
+  overflow: hidden;
 }
+
 
 #code {
   position: relative;

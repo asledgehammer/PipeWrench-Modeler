@@ -1,0 +1,10 @@
+@import '../vars';
+
+.model-pane {
+  .model.class-model {
+    position: absolute;
+    height: 200px;
+
+    background-color: $color_card;
+  }
+}
