@@ -1,38 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>PipeWrench Modeler</title>
-    <link rel="stylesheet" href="assets/css/project.min.css"/>
-    <link rel="stylesheet" href="node_modules/highlight.js/styles/base16/gigavolt.css"/>
+  <meta charset="UTF-8">
+  <title>PipeWrench Modeler</title>
+  <link rel="stylesheet" href="assets/css/project.min.css"/>
+  <link rel="stylesheet" href="node_modules/highlight.js/styles/base16/gigavolt.css"/>
 </head>
 <body>
     
-    <div class="model_list">
-        <div class="model_list_entry">
-            <span class="label_code_font">ISUIElement</span>
+  <div class="panel left-panel">
+    <div class="item-list">
+      <div class="list-header">
+        <label>Classes</label>
+      </div>
+      <div id="class-list" class="list-contents">
+        <div class="item selected">
+          <div class="hover-cube"></div>
+          <label>ISUIElement</label>
         </div>
-    </div>
-    <div class="right_side">
-        <div class="background"></div>
-        <div class="background_filter"></div>
-        <div class="grid"></div>
-        <div class="grid_shadow"></div>
-        <div class="model_form class_model_form">
-            <div class="model_form_background"></div>
-            <div class="model_form_background_filter"></div>
-            <div class="model_form_border"></div>
-            <div id="code"></div>
+        <div class="item">
+          <div class="hover-cube"></div>
+          <label>SomeClass</label>
         </div>
+        <div class="item">
+          <div class="hover-cube"></div>
+          <label>ISBaseObject</label>
+        </div>
+      </div>
     </div>
+  </div>
   
-    <script type="module">
-        window.$ = window.jQuery = require('jquery');
+  <div class="panel center-panel">
+    <div class="model-pane">
+    </div>
+  </div>
 
-        $(document).on('dragstart', '*', function (event) { event.preventDefault() });
+  <div class="panel right-panel">
+    <div class="bg"></div>
+    <div class="bg-fx"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-gradient"></div>
+    <div id="code"></div>
+  </div>
 
-        // Start application.
-        $(function () { require("./assets/js/main.js").start() });
-    </script>
+  <script type="module">
+      window.$ = window.jQuery = require('jquery');
+      // $('#code').smoothScroll();
+
+      $(document).on('dragstart', '*', function (event) { event.preventDefault() });
+      $(function () { require("./assets/js/main.js").start() });
+  </script>
+
+  <script type="module">
+  </script>
 </body>
 </html>

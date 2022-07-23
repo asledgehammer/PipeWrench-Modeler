@@ -30,6 +30,7 @@
     "@types/luaparse": "^0.2.8",
     "highlight.js": "^11.6.0",
     "jquery": "^3.5.1",
+    "jquery-smooth-scroll": "^2.2.0",
     "luaparse": "^0.3.1"
   },
   "staticFiles": {

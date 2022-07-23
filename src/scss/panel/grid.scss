@@ -1,0 +1,31 @@
+@import '../vars';
+
+.grid {
+  z-index: 0;
+  position: absolute;
+  background-size: 24px 24px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.22;
+  background-attachment: fixed;
+  background-position: center;
+  background-image:
+    linear-gradient(to right, $color_grid0 1px, transparent 1px),
+    linear-gradient(to bottom, $color_grid0 1px, transparent 1px);
+}
+
+.grid.grid-front {
+  background-image:
+    linear-gradient(to right, $color_grid0 1px, transparent 1px),
+    linear-gradient(to bottom, $color_grid0 1px, transparent 1px);
+}
+
+.grid.grid-shadow {
+  top: 3px;
+  left: 3px;
+  background-image:
+    linear-gradient(to right, $color_grid1 3px, transparent 1px),
+    linear-gradient(to bottom, $color_grid1 3px, transparent 1px);
+}

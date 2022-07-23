@@ -1,0 +1,72 @@
+.panel {
+
+  .bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background-image: url(../media/background.png);
+    background-repeat: no-repeat;
+    background-position: center;
+  
+    opacity: 0.67;
+  }
+
+  .bg-noise {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background-image: $noise;
+    filter: brightness(1.1) invert(1);
+  }
+  
+  .bg-fx {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    overflow: hidden;
+    backdrop-filter: contrast(1.1) brightness(0.6) blur(4px) saturate(0.4);
+  }
+
+  .bg-filter {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background: $noise;
+    opacity: 0.5;
+    backdrop-filter: blur(4px);
+    border-radius: 4px;
+  }
+
+  .bg-gradient {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    
+    background: linear-gradient(to bottom, transparent 67%, rgba(0,0,0,0.8) 100%);
+  }
+
+  .bg-border {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    border: 1px solid rgba(0,0,0,0.5);
+    border-radius: 4px;
+  }
+}
