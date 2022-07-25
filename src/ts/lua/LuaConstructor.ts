@@ -78,7 +78,7 @@ export class LuaConstructor extends LuaMethod {
     // Go through all local assignments and add the ones matching the returnName as fields to the containser.
     for (const ref of fieldRefs) {
       if (ref.containerName === returnName) {
-        const { containerName, fieldName } = ref;
+        const { fieldName } = ref;
         if (!this.container.fields[fieldName]) {
           const field = new LuaField(this.container, ref.fieldName, false);
           container.fields[fieldName] = field;

@@ -20,6 +20,26 @@ export class MethodModel {
     if (json) this.load(json);
   }
 
+  load(json: MethodModelJson) {
+    this.clear();
+    if (json.doc) this.doc.load(json.doc);
+    if (json.params) for (const param of json.params) this.params.push(new ParamModel(param));
+    if (json.returns) this.returns.load(json.returns);
+  }
+
+  save(): MethodModelJson {
+    const doc = this.doc.save();
+    const params = this.params.map((param) => param.save());
+    const { returns } = this;
+    return { doc, params, returns };
+  }
+
+  clear() {
+    this.doc.clear();
+    this.params.length = 0;
+    this.returns.clear();
+  }
+
   generateDoc(prefix: string, method: LuaMethod): string {
     if (!this.testSignature(method)) return '';
 
@@ -85,26 +105,6 @@ export class MethodModel {
       }
     }
     return true;
-  }
-
-  load(json: MethodModelJson) {
-    this.clear();
-    if (json.doc) this.doc.load(json.doc);
-    if (json.params) for (const param of json.params) this.params.push(new ParamModel(param));
-    if (json.returns) this.returns.load(json.returns);
-  }
-
-  save(): MethodModelJson {
-    const doc = this.doc.save();
-    const params = this.params.map((param) => param.save());
-    const { returns } = this;
-    return { doc, params, returns };
-  }
-
-  clear() {
-    this.doc.clear();
-    this.params.length = 0;
-    this.returns.clear();
   }
 }
 
