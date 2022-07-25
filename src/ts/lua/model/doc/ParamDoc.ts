@@ -10,10 +10,6 @@ export class ParamDoc extends BaseDoc {
     super();
     if (json) this.load(json);
   }
-
-  clear() {
-    super.clear();
-  }
 }
 
 export type ParamDocJson = BaseDocJson;

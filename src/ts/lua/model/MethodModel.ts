@@ -2,6 +2,7 @@ import { DocBuilder } from '../../DocBuilder';
 import { LuaMethod } from '../LuaMethod';
 import { MethodDoc, MethodDocJson } from './doc/MethodDoc';
 import { ParamModel, ParamModelJson } from './ParamModel';
+import { ReturnModel, ReturnModelJson } from './ReturnModel';
 
 /**
  * **MethodModel**
@@ -9,9 +10,9 @@ import { ParamModel, ParamModelJson } from './ParamModel';
  * @author JabDoesThings
  */
 export class MethodModel {
-  doc: MethodDoc;
-  params: ParamModel[] = [];
-  returns: { applyUnknownType: boolean; types: string[] } = { applyUnknownType: true, types: [] };
+  readonly doc = new MethodDoc();
+  readonly params: ParamModel[] = [];
+  readonly returns = new ReturnModel();
   readonly name: string;
 
   constructor(name: string, json?: MethodModelJson) {
@@ -20,11 +21,10 @@ export class MethodModel {
   }
 
   generateDoc(prefix: string, method: LuaMethod): string {
-
     if (!this.testSignature(method)) return '';
 
     const doc = new DocBuilder();
-    if(method.isStatic) doc.appendAnnotation('noSelf');
+    if (method.isStatic) doc.appendAnnotation('noSelf');
 
     const { doc: methodDoc, params } = this;
     if (methodDoc) {
@@ -61,9 +61,9 @@ export class MethodModel {
               doc.appendParam(name);
               continue;
             }
-            
+
             doc.appendParam(name, lines[0]);
-            
+
             // Check if multi-line.
             if (lines.length === 1) continue;
             for (let index = 1; index < lines.length; index++) {
@@ -77,46 +77,44 @@ export class MethodModel {
   }
 
   testSignature(func: LuaMethod): boolean {
-    if(func.name !== this.name) return false;
-    if(func.params.length !== this.params.length) return false;
-    if(this.params.length) {
-      for(let index = 0; index < this.params.length; index++) {
-        if(!this.params[index].testSignature(func.params[index])) return false;
+    if (func.name !== this.name) return false;
+    if (func.params.length !== this.params.length) return false;
+    if (this.params.length) {
+      for (let index = 0; index < this.params.length; index++) {
+        if (!this.params[index].testSignature(func.params[index])) return false;
       }
     }
     return true;
   }
 
   load(json: MethodModelJson) {
-    this.doc = new MethodDoc(json.doc);
-    this.params = [];
-    for (const param of json.params) {
-      this.params.push(new ParamModel(param));
-    }
-    this.returns = json.returns;
+    this.clear();
+    if (json.doc) this.doc.load(json.doc);
+    if (json.params) for (const param of json.params) this.params.push(new ParamModel(param));
+    if (json.returns) this.returns.load(json.returns);
   }
 
   save(): MethodModelJson {
     const doc = this.doc.save();
-    const params: ParamModelJson[] = [];
-    for (const param of this.params) {
-      params.push(param.save());
-    }
-    const returns = this.returns;
+    const params = this.params.map((param) => param.save());
+    const { returns } = this;
     return { doc, params, returns };
+  }
+
+  clear() {
+    this.doc.clear();
+    this.params.length = 0;
+    this.returns.clear();
   }
 }
 
 /**
  * **MethodModelJson**
- * 
+ *
  * @author JabDoesThings
  */
 export type MethodModelJson = {
   doc: MethodDocJson;
   params: ParamModelJson[];
-  returns: {
-    applyUnknownType: boolean;
-    types: string[];
-  };
+  returns: ReturnModelJson;
 };

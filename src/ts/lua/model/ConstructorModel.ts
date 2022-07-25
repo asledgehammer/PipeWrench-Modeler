@@ -25,13 +25,18 @@ export class ConstructorModel {
   load(json: ConstructorModelJson) {
     this.clear();
     if (json.doc) this.doc.load(json.doc);
-    for (const param of json.params) this.params.push(new ParamModel(param));
+    if (json.params) for (const param of json.params) this.params.push(new ParamModel(param));
   }
 
   save(): ConstructorModelJson {
     const params: ParamModelJson[] = [];
     const doc: ConstructorDocJson = this.doc.save();
     return { doc, params };
+  }
+
+  clear() {
+    this.doc.clear();
+    this.params.length = 0;
   }
 
   generateDoc(prefix: string, _constructor_: LuaConstructor): string {
@@ -96,11 +101,6 @@ export class ConstructorModel {
       }
     }
     return true;
-  }
-
-  clear() {
-    this.doc.clear();
-    this.params.length = 0;
   }
 }
 

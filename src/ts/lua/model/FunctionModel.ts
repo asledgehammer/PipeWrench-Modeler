@@ -2,6 +2,7 @@ import { DocBuilder } from '../../DocBuilder';
 import { LuaFunction } from '../LuaFunction';
 import { FunctionDoc, FunctionDocJson } from './doc/FunctionDoc';
 import { ParamModel, ParamModelJson } from './ParamModel';
+import { ReturnModel, ReturnModelJson } from './ReturnModel';
 
 /**
  * **FunctionModel**
@@ -9,9 +10,9 @@ import { ParamModel, ParamModelJson } from './ParamModel';
  * @author JabDoesThings
  */
 export class FunctionModel {
-  doc: FunctionDoc;
-  params: ParamModel[] = [];
-  returns: { applyUnknownType: boolean; types: string[] } = { applyUnknownType: true, types: [] };
+  readonly doc = new FunctionDoc();
+  readonly params: ParamModel[] = [];
+  readonly returns = new ReturnModel();
   readonly name: string;
 
   constructor(name: string, json?: FunctionModelJson) {
@@ -19,8 +20,27 @@ export class FunctionModel {
     if (json) this.load(json);
   }
 
-  generateDoc(prefix: string, func: LuaFunction): string {
+  load(json: FunctionModelJson) {
+    this.clear();
+    if (json.doc) this.doc.load(json.doc);
+    if (json.params) for (const param of json.params) this.params.push(new ParamModel(param));
+    if (json.returns) this.returns.load(json.returns);
+  }
 
+  save(): FunctionModelJson {
+    const doc = this.doc.save();
+    const params = this.params.map((param) => param.save());
+    const { returns } = this;
+    return { doc, params, returns };
+  }
+
+  clear() {
+    this.doc.clear();
+    this.params.length = 0;
+    this.returns.clear();
+  }
+
+  generateDoc(prefix: string, func: LuaFunction): string {
     if (!this.testSignature(func)) return '';
 
     const { doc: funcDoc, params } = this;
@@ -62,9 +82,9 @@ export class FunctionModel {
               doc.appendParam(name);
               continue;
             }
-            
+
             doc.appendParam(name, lines[0]);
-            
+
             // Check if multi-line.
             if (lines.length === 1) continue;
             for (let index = 1; index < lines.length; index++) {
@@ -78,46 +98,24 @@ export class FunctionModel {
   }
 
   testSignature(func: LuaFunction): boolean {
-    if(func.name !== this.name) return false;
-    if(func.params.length !== this.params.length) return false;
-    if(this.params.length) {
-      for(let index = 0; index < this.params.length; index++) {
-        if(!this.params[index].testSignature(func.params[index])) return false;
+    if (func.name !== this.name) return false;
+    if (func.params.length !== this.params.length) return false;
+    if (this.params.length) {
+      for (let index = 0; index < this.params.length; index++) {
+        if (!this.params[index].testSignature(func.params[index])) return false;
       }
     }
     return true;
-  }
-
-  load(json: FunctionModelJson) {
-    this.doc = new FunctionDoc(json.doc);
-    this.params = [];
-    for (const param of json.params) {
-      this.params.push(new ParamModel(param));
-    }
-    this.returns = json.returns;
-  }
-
-  save(): FunctionModelJson {
-    const doc = this.doc.save();
-    const params: ParamModelJson[] = [];
-    for (const param of this.params) {
-      params.push(param.save());
-    }
-    const returns = this.returns;
-    return { doc, params, returns };
   }
 }
 
 /**
  * **FunctionModelJson**
- * 
+ *
  * @author JabDoesThings
  */
 export type FunctionModelJson = {
   doc: FunctionDocJson;
   params: ParamModelJson[];
-  returns: {
-    applyUnknownType: boolean;
-    types: string[];
-  };
+  returns: ReturnModelJson;
 };

@@ -1,25 +1,21 @@
 import { LuaFile } from './LuaFile';
 import { LuaConstructor } from './LuaConstructor';
 import { LuaContainer } from './LuaContainer';
-import { LuaMethod } from './LuaMethod';
-import { LuaField } from './LuaField';
-import { fixParameters } from './LuaUtils';
 import { ClassModel } from './model/ClassModel';
-import { DocBuilder } from '../DocBuilder';
 
 /**
  * **LuaClass** represents tables that are declared using `ISBaseObject:derive(..)`. This is the
  * signature for all pseudo-classes in the codebase.
- * 
+ *
  * All pseudo-classes house a constructor-like method as follows:
  *  - `<class>:new(..)`
- * 
- * All functions that are assigned with ':' indexers are interpreted as methods. Functions that 
+ *
+ * All functions that are assigned with ':' indexers are interpreted as methods. Functions that
  * are assigned with '.' are considered as static functions.
- * 
- * All 'self.<property>' calls are interpreted as fields in the pseudo-class. All 
+ *
+ * All 'self.<property>' calls are interpreted as fields in the pseudo-class. All
  * '<class>.<property>' calls are interpreted as static fields.
- * 
+ *
  * @author JabDoesThings
  */
 export class LuaClass extends LuaContainer {
@@ -58,36 +54,9 @@ export class LuaClass extends LuaContainer {
       return `${s} {}`;
     }
 
+    const { staticFields, nonStaticFields } = this.sortFields();
+    const { staticMethods, nonStaticMethods } = this.sortMethods();
     const newPrefix = prefix + '  ';
-    const staticFields: LuaField[] = [];
-    const nonStaticFields: LuaField[] = [];
-    const staticMethods: LuaMethod[] = [];
-    const nonStaticMethods: LuaMethod[] = [];
-
-    const sortFields = () => {
-      // Sort fields by name alphanumerically.
-      const fieldNames = Object.keys(this.fields);
-      fieldNames.sort((o1, o2): number => o1.localeCompare(o2));
-      for (const fieldName of fieldNames) {
-        const field = this.fields[fieldName];
-        if (field.isStatic) staticFields.push(field);
-        else nonStaticFields.push(field);
-      }
-    };
-
-    const sortMethods = () => {
-      // Sort methods by name alphanumerically.
-      const methodNames = Object.keys(this.methods);
-      methodNames.sort((o1, o2): number => o1.localeCompare(o2));
-      for (const methodName of methodNames) {
-        const method = this.methods[methodName];
-        if (method.isStatic) staticMethods.push(method);
-        else nonStaticMethods.push(method);
-      }
-    };
-
-    sortFields();
-    sortMethods();
 
     // Class Declaration line.
     let s = '';
@@ -126,50 +95,12 @@ export class LuaClass extends LuaContainer {
   }
 
   generateDoc(prefix: string, model: ClassModel): string {
-    const doc = new DocBuilder();
-    doc.appendAnnotation('customConstructor', `${this.name}:new`);
-
-    // No further documentation available for the class.
-    if (!model) return doc.build(prefix);
-
-    const classDoc = model.doc;
-    if (classDoc) {
-      const { annotations, authors, lines } = classDoc;
-
-      // Process annotations. (If defined)
-      const annoKeys = Object.keys(annotations);
-      if (annoKeys && annoKeys.length) {
-        for (const key of annoKeys) doc.appendAnnotation(key, annotations[key]);
-      } else {
-        if (!authors || !authors.length) {
-          // The 'customConstructor' annotation is multi-line. Adding `@` terminates it.
-          doc.appendLine('@');
-        }
-      }
-
-      // Process authors. (If defined)
-      if (authors && authors.length) {
-        let s = '[';
-        for (const author of authors) s += `${author}, `;
-        s = `${s.substring(0, s.length - 2)}]`;
-        doc.appendAnnotation('author', s);
-      }
-
-      // Process lines. (If defined)
-      if (lines && lines.length) {
-        if (!doc.isEmpty()) doc.appendLine();
-        for (const line of lines) doc.appendLine(line);
-      }
-    }
-
-    return doc.build(prefix);
+    return model ? model.generateDoc(prefix, this) : `/** @customConstructor ${this.name}:new */`;
   }
 
   scanMethods() {
     this._constructor_?.scan();
-    for(const method of Object.values(this.methods)) {
-        method.scanFields();
-    }
+    for (const method of Object.values(this.methods)) method.scanFields();
   }
 
   /**

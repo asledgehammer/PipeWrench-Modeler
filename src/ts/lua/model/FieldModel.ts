@@ -7,10 +7,10 @@ import { FieldDoc, FieldDocJson } from './doc/FieldDoc';
  * @author JabDoesThings
  */
 export class FieldModel {
-  doc: FieldDoc;
-  types: string[] = [];
-  applyUnknownType: boolean = true;
+  readonly doc = new FieldDoc();
+  readonly types: string[] = [];
   readonly name: string;
+  applyUnknownType: boolean = true;
 
   constructor(name: string, json?: FieldModelJson) {
     this.name = name;
@@ -22,16 +22,21 @@ export class FieldModel {
   }
 
   load(json: FieldModelJson) {
-    this.doc = new FieldDoc(json.doc);
-    this.types = json.types;
+    if(json.doc) this.doc.load(json.doc);
+    for(const type of json.types) this.types.push(type);
     this.applyUnknownType = json.applyUnknownType;
   }
 
   save(): FieldModelJson {
     const doc = this.doc.save();
-    const types = this.types;
-    const applyUnknownType = this.applyUnknownType;
+    const { types, applyUnknownType} = this;
     return { doc, types, applyUnknownType };
+  }
+
+  clear() {
+    this.doc.clear();
+    this.types.length = 0;
+    this.applyUnknownType = true;
   }
 }
 

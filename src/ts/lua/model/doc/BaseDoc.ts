@@ -13,7 +13,8 @@ export abstract class BaseDoc {
    * @param json The JSON data to load.
    */
   load(json: BaseDocJson) {
-    this.lines = ([] as string[]).concat(json.lines);
+    this.clear();
+    if(json.lines) for(const line of json.lines) this.lines.push(line);
   }
 
   /**

@@ -7,7 +7,7 @@ import { BaseDoc, BaseDocJson } from './BaseDoc';
  */
 export abstract class AuthoredDoc extends BaseDoc {
   /** Authors of the documentation. */
-  authors: string[] = [];
+  readonly authors: string[] = [];
 
   protected constructor() {
     super();
@@ -18,7 +18,7 @@ export abstract class AuthoredDoc extends BaseDoc {
    */
   load(json: AuthoredDocJson) {
     super.load(json);
-    this.authors = ([] as string[]).concat(json.authors);
+    if(json.authors) for(const author of json.authors) this.authors.push(author);
   }
 
   /**

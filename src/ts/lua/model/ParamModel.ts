@@ -6,26 +6,24 @@ import { ParamDoc, ParamDocJson } from './doc/ParamDoc';
  * @author JabDoesThings
  */
 export class ParamModel {
-  doc: ParamDoc;
-  id: string;
-  rename: string;
-  types: string[] = [];
+  readonly doc = new ParamDoc();
+  readonly types: string[] = [];
+  id = '';
+  rename = '';
   applyUnknownType: boolean = true;
 
   constructor(json?: ParamModelJson) {
     if (json) this.load(json);
   }
 
-  testSignature(paramName: string): boolean {
-    return paramName === this.id;
-  }
-
   load(json: ParamModelJson) {
-    this.doc = new ParamDoc(json.doc);
-    this.id = json.id;
-    this.applyUnknownType = json.applyUnknownType;
-    this.rename = json.rename;
-    if(json.types) this.types = json.types;
+    this.clear();
+    if(json.doc) this.doc.load(json.doc);
+    if(json.id) this.id = json.id;
+    else throw new Error('Param without ID.');
+    if(json.applyUnknownType != null) this.applyUnknownType = json.applyUnknownType;
+    if(json.rename) this.rename = json.rename;
+    if(json.types) for(const type of json.types) this.types.push(type);
   }
 
   save(): ParamModelJson {
@@ -34,7 +32,18 @@ export class ParamModel {
     return { doc, id, applyUnknownType, rename, types };
   }
 
-  get name() {
+  testSignature(paramName: string): boolean {
+    return paramName === this.id;
+  }
+
+  clear() {
+    this.doc.clear();
+    this.types.length = 0;
+    this.applyUnknownType = true;
+    this.rename = '';
+  }
+
+  get name(): string {
     return this.rename && this.rename.length ? this.rename : this.id;
   }
 }

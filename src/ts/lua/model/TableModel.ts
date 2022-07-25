@@ -4,6 +4,7 @@ import { TableDoc, TableDocJson } from './doc/TableDoc';
 import { LuaTable } from '../LuaTable';
 import { LuaField } from '../LuaField';
 import { LuaMethod } from '../LuaMethod';
+import { DocBuilder } from '../../DocBuilder';
 
 /**
  * **TableModel**
@@ -11,9 +12,9 @@ import { LuaMethod } from '../LuaMethod';
  * @author JabDoesThings
  */
 export class TableModel {
-  fields: { [id: string]: FieldModel } = {};
-  methods: { [id: string]: MethodModel } = {};
-  doc: TableDoc;
+  readonly doc: TableDoc = new TableDoc();
+  readonly fields: { [id: string]: FieldModel } = {};
+  readonly methods: { [id: string]: MethodModel } = {};
   readonly name: string;
 
   constructor(name: string, json?: TableModelJson) {
@@ -21,24 +22,9 @@ export class TableModel {
     if (json) this.load(json);
   }
 
-  testSignature(table: LuaTable): boolean {
-    return table.name === this.name;
-  }
-
-  getField(field: LuaField): FieldModel {
-    const model = this.fields[field.name];
-    if(model && model.testSignature(field)) return model;
-    return null;
-  }
-
-  getMethod(method: LuaMethod): MethodModel {
-    const model = this.methods[method.name];
-    if(model && model.testSignature(method)) return model;
-    return null;
-  }
-
   load(json: TableModelJson) {
-    this.fields = {};
+    this.clear();
+
     if (json.fields) {
       for (const name of Object.keys(json.fields)) {
         this.fields[name] = new FieldModel(name, json.fields[name]);
@@ -46,13 +32,12 @@ export class TableModel {
     }
 
     if (json.methods) {
-      this.methods = {};
       for (const name of Object.keys(json.methods)) {
         this.methods[name] = new MethodModel(name, json.methods[name]);
       }
     }
 
-    this.doc = new TableDoc(json.doc);
+    if (json.doc) this.doc.load(json.doc);
   }
 
   save(): TableModelJson {
@@ -68,6 +53,59 @@ export class TableModel {
     }
     const doc = this.doc.save();
     return { fields, methods, doc };
+  }
+
+  clear() {
+    for (const key of Object.keys(this.fields)) delete this.fields[key];
+    for (const key of Object.keys(this.methods)) delete this.methods[key];
+    this.doc.clear();
+  }
+
+  generateDoc(prefix: string, table: LuaTable): string {
+    const doc = new DocBuilder();
+    const { doc: tableDoc } = this;
+    if (tableDoc) {
+      const { annotations, authors, lines } = tableDoc;
+
+      // Process annotations. (If defined)
+      const annoKeys = Object.keys(annotations);
+      if (annoKeys && annoKeys.length) {
+        for (const key of annoKeys) doc.appendAnnotation(key, annotations[key]);
+      }
+
+      // Process authors. (If defined)
+      if (authors && authors.length) {
+        let s = '[';
+        for (const author of authors) s += `${author}, `;
+        s = `${s.substring(0, s.length - 2)}]`;
+        doc.appendAnnotation('author', s);
+      }
+
+      doc.appendLine();
+
+      // Process lines. (If defined)
+      if (lines && lines.length) {
+        for (const line of lines) doc.appendLine(line);
+      }
+    }
+
+    return doc.build(prefix);
+  }
+
+  testSignature(table: LuaTable): boolean {
+    return table.name === this.name;
+  }
+
+  getField(field: LuaField): FieldModel {
+    const model = this.fields[field.name];
+    if (model && model.testSignature(field)) return model;
+    return null;
+  }
+
+  getMethod(method: LuaMethod): MethodModel {
+    const model = this.methods[method.name];
+    if (model && model.testSignature(method)) return model;
+    return null;
   }
 }
 
