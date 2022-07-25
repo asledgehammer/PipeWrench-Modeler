@@ -28,6 +28,11 @@ export abstract class AuthoredDoc extends BaseDoc {
     const { lines, authors } = this;
     return { lines, authors };
   }
+
+  clear() {
+    super.clear();
+    this.authors.length = 0;
+  }
 }
 
 export type AuthoredDocJson = BaseDocJson & {

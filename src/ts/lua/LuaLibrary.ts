@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { LuaFile } from './LuaFile';
 import { LuaClass } from './LuaClass';
-import { LuaElement } from './LuaElement';
+import { NamedElement } from './NamedElement';
 import { LuaTable } from './LuaTable';
 import { ModelLibrary } from './model/ModelLibrary';
 import { ClassModel } from './model/ClassModel';
@@ -13,7 +13,7 @@ import { FunctionModel } from './model/FunctionModel';
 
 /**
  * **LuaLibrary**
- * 
+ *
  * @author JabDoesThings
  */
 export class LuaLibrary {
@@ -24,7 +24,7 @@ export class LuaLibrary {
   luaFiles: { [id: string]: LuaFile } = {};
   classes: { [id: string]: LuaClass } = {};
   tables: { [id: string]: LuaTable } = {};
-  properties: { [id: string]: LuaElement } = {};
+  properties: { [id: string]: NamedElement } = {};
 
   scan() {
     this.models.scan();
@@ -43,9 +43,7 @@ export class LuaLibrary {
 
     for (const entry of entries) {
       const path = dir + '/' + entry;
-      if (path === '.' || path === '..' || path === '...') {
-        continue;
-      }
+      if (path === '.' || path === '..' || path === '...') continue;
       const stats = fs.lstatSync(path);
       if (stats.isDirectory() && dirs.indexOf(path) === -1) {
         dirs.push(path);
@@ -57,9 +55,7 @@ export class LuaLibrary {
     }
 
     if (dirs.length !== 0) {
-      for (const dir of dirs) {
-        this.scanDir(dir);
-      }
+      for (const dir of dirs) this.scanDir(dir);
     }
   }
 
@@ -98,9 +94,7 @@ export class LuaLibrary {
 
   compileClasses(prefix: string = ''): string {
     const classNames = Object.keys(this.classes);
-    classNames.sort((o1, o2) => {
-      return o1.localeCompare(o2);
-    });
+    classNames.sort((o1, o2) => o1.localeCompare(o2));
     let s = '';
     for (const className of classNames) s += `${this.classes[className].compile(prefix)}\n`;
     return s;
@@ -108,9 +102,7 @@ export class LuaLibrary {
 
   compileTables(prefix: string = ''): string {
     const tableNames = Object.keys(this.tables);
-    tableNames.sort((o1, o2) => {
-      return o1.localeCompare(o2);
-    });
+    tableNames.sort((o1, o2) => o1.localeCompare(o2));
     let s = '';
     for (const tableName of tableNames) s += `${this.tables[tableName].compile(prefix)}\n`;
     return s;
@@ -118,9 +110,7 @@ export class LuaLibrary {
 
   compileProperties(prefix: string = ''): string {
     const propNames = Object.keys(this.properties);
-    propNames.sort((o1, o2) => {
-      return o1.localeCompare(o2);
-    });
+    propNames.sort((o1, o2) => o1.localeCompare(o2));
     let s = '';
     for (const propName of propNames) s += `${this.properties[propName].compile(prefix)}\n`;
     return s;
@@ -143,11 +133,10 @@ export class LuaLibrary {
   }
 
   private audit() {
-    // Classes takes precedence over duplicate tables.
     for (const className of Object.keys(this.classes)) {
-      if (this.tables[className]) {
-        delete this.tables[className];
-      }
+      // Classes takes precedence over duplicate tables.
+      if (this.tables[className]) delete this.tables[className];
+      // Make sure that class properties are properly assigned.
       this.classes[className].audit();
     }
   }
@@ -155,15 +144,11 @@ export class LuaLibrary {
   private linkClasses() {
     for (const name of Object.keys(this.classes)) {
       const clazz = this.classes[name];
-
       let superClazz = this.classes[clazz.superClassName];
-      if (!superClazz) {
-        superClazz = this.resolveProxyClass(clazz.superClassName);
-      }
+      if (!superClazz) superClazz = this.resolveProxyClass(clazz.superClassName);
       if (!superClazz) {
         console.warn(`[LuaLibrary] Lua Superclass not found: ${clazz.name} extends ${clazz.superClassName}`);
       }
-
       clazz.superClass = superClazz;
     }
   }
@@ -179,7 +164,7 @@ export class LuaLibrary {
     this.classes[clazz.name] = clazz;
   }
 
-  setProperty(element: LuaElement) {
+  setProperty(element: NamedElement) {
     this.properties[element.name] = element;
   }
 }

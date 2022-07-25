@@ -3,6 +3,7 @@
 @import 'class_model';
 
 $model_pane_padding: 24px;
+$model_content_padding: 12px;
 
 .model-pane {
   position: relative;
@@ -18,11 +19,11 @@ $model_pane_padding: 24px;
   .model {
     display: block;
     position: relative;
-    width: inherit;
-    height: 200px;
-    overflow: hidden;
-
+    min-height: 64px;
+    height: fit-content;
     margin-bottom: 24px;
+    
+    overflow: hidden;
     
     background-color: $color_card;
 
@@ -38,21 +39,66 @@ $model_pane_padding: 24px;
       height: 24px;
       background-color: $color_hover_color;
       box-shadow: 0px -1px 6px 2px rgba(0,0,0,0.4);
+      margin-bottom: 6px;
 
       label {
         position: relative;
         font-family: Consolas, 'Courier New', monospace;
         color: $color_primary_text;
         top: 2px;
-        left: 6px;
+        left: 7px;
       }
+    }
+
+    .model-content {
+      position: relative;
+      bottom: 0;
+      width: calc(100% - (#{$model_content_padding} * 2));
+      height: calc(100% - #{$model_content_padding} * 2);
+
+      label {
+        position: relative;
+        display: block;
+        font-family: Consolas, 'Courier New', monospace;
+        color: $color_primary_text;
+        top: 2px;
+        margin-bottom: 6px;
+      }
+
+      textarea {
+        position: relative;
+        width: calc(100% - 4px);
+        top: 2px;
+        left: 0px;
+        min-height: 15px;
+        resize: vertical;
+
+        font-family: Consolas, 'Courier New', monospace;
+
+        background-color: black;
+        color: white;
+      }
+    }
+
+    .model-field.field-multi-line {
+      position: relative;
+      min-height: 27px;
+      padding-bottom: 8px;
     }
   }
 
   .model.collapsed {
+
+    min-height: 0px;
     height: 24px;
     border-bottom-left-radius: 3px;
     border-bottom-right-radius: 3px;
+
+    .model-field.field-multi-line {
+      position: relative;
+      min-height: 0;
+      padding-bottom: 8px;
+    }
   }
 }
 

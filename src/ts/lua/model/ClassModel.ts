@@ -13,73 +13,36 @@ import { DocBuilder } from '../../DocBuilder';
  * @author JabDoesThings
  */
 export class ClassModel {
-  fields: { [id: string]: FieldModel } = {};
-  methods: { [id: string]: MethodModel } = {};
-  _constructor_: ConstructorModel;
-  doc: ClassDoc;
+
+  static HTML_TEMPLATE: string = ''; 
+
+  readonly fields: { [id: string]: FieldModel } = {};
+  readonly methods: { [id: string]: MethodModel } = {};
+  readonly _constructor_: ConstructorModel;
+  readonly doc: ClassDoc = new ClassDoc();
   readonly name: string;
 
   constructor(name: string, json?: ClassModelJson) {
     this.name = name;
+    this.doc = new ClassDoc();
+    this._constructor_ = new ConstructorModel(this);
     if (json) this.load(json);
   }
 
-  generateConstructorDoc(prefix: string, clazz: LuaClass): string {
-    const { _constructor_ } = this;
+  createHTML() {
 
-    if (!_constructor_ || !_constructor_.testSignature(clazz._constructor_)) {
-      return '';
-    }
+    let html = ClassModel.HTML_TEMPLATE;
 
-    const doc = new DocBuilder();
-    const { doc: constructorDoc, params } = _constructor_;
-    if (constructorDoc) {
-      const { annotations, lines } = constructorDoc;
+    const replaceAll = (from: string, to: string) => {
+      const fromS = `${from}`;
+      while (html.indexOf(fromS) !== -1) html = html.replace(fromS, this.name);
+    };
 
-      // Process annotations. (If defined)
-      if (annotations) {
-        const keys = Object.keys(annotations);
-        if (keys && keys.length) {
-          for (const key of keys) doc.appendAnnotation(key, annotations[key]);
-          doc.appendLine();
-        }
-      }
+    let authors = '';
+    let linees = '';
 
-      // Process lines. (If defined)
-      if (lines && lines.length) {
-        for (const line of lines) doc.appendLine(line);
-        doc.appendLine();
-      }
-
-      // Process params. (If defined)
-      if (params) {
-        for (const param of params) {
-          const { name, doc: paramDoc } = param;
-
-          if (!doc) {
-            doc.appendParam(name);
-            continue;
-          } else {
-            const { lines } = paramDoc;
-
-            // No lines. Print basic @param <name>
-            if (!lines || !lines.length) {
-              doc.appendParam(name);
-              continue;
-            }
-            
-            doc.appendParam(name, lines[0]);
-            
-            // Check if multi-line.
-            if (lines.length === 1) continue;
-            for (let index = 1; index < lines.length; index++) {
-              doc.appendLine(lines[index]);
-            }
-          }
-        }
-      }
-    }
-    return doc.build(prefix);
+    replaceAll('CLASS_NAME', this.name);
+    replaceAll('AUTHORS', authors);
   }
 
   testSignature(clazz: LuaClass): boolean {
@@ -119,8 +82,15 @@ export class ClassModel {
     return null;
   }
 
+  clear() {
+    for(const key of Object.keys(this.fields)) delete this.fields[key];
+    for(const key of Object.keys(this.methods)) delete this.methods[key];
+    this._constructor_.clear();
+    this.doc.clear();
+  }
+
   load(json: ClassModelJson) {
-    this.fields = {};
+    this.clear();
 
     if (json.fields) {
       for (const name of Object.keys(json.fields)) {
@@ -129,18 +99,14 @@ export class ClassModel {
     }
 
     if (json.methods) {
-      this.methods = {};
       for (const name of Object.keys(json.methods)) {
         this.methods[this.sanitizeMethodName(name)] = new MethodModel(name, json.methods[name]);
       }
     }
 
-    if (json._constructor_) {
-      this._constructor_ = new ConstructorModel(this, json._constructor_);
-    }
-
-    this.doc = new ClassDoc(json.doc);
-  }
+    if (json._constructor_) this._constructor_.load(json._constructor_);
+    if (json.doc) this.doc.load(json.doc);
+}
 
   save(): ClassModelJson {
     const fields: { [id: string]: FieldModelJson } = {};

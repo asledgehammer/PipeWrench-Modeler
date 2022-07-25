@@ -1,5 +1,5 @@
 import * as ast from '../luaparser/ast';
-import { LuaElement } from './LuaElement';
+import { NamedElement } from './NamedElement';
 import { LuaFile } from './LuaFile';
 import { fixParameters } from './LuaUtils';
 import { FunctionModel } from './model/FunctionModel';
@@ -9,7 +9,7 @@ import { FunctionModel } from './model/FunctionModel';
  *
  * @author JabDoesThings
  */
-export class LuaFunction extends LuaElement {
+export class LuaFunction extends NamedElement {
   readonly file: LuaFile;
   readonly name: string;
   readonly params: string[];
@@ -30,7 +30,7 @@ export class LuaFunction extends LuaElement {
     this.isLocal = isLocal;
   }
 
-  compile(prefix: string = ''): string {
+  protected onCompile(prefix: string): string {
     
     const library = this.file.library;
 

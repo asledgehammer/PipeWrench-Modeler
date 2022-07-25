@@ -1,15 +1,21 @@
 import * as hljs from 'highlight.js';
 import { LuaLibrary } from './lua/LuaLibrary';
+import { ModelUIManager } from './ui/ModelUIManager';
 
-const luaLibrary = new LuaLibrary();
+var modelUIManager;
+var luaLibrary;
 
 // Entry Point from HTML.
 export let start = function () {
   setTimeout(() => {
+
+    modelUIManager = new ModelUIManager();
+
+    luaLibrary = new LuaLibrary();
     luaLibrary.scan();
     luaLibrary.parse();
-
     
+
     // const listItems = document.getElementById("class-list");
     // const classKeys = Object.keys(luaLibrary.classes);
     // classKeys.sort((o1, o2) => o1.localeCompare(o2));

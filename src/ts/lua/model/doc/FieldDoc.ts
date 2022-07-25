@@ -23,6 +23,11 @@ export class FieldDoc extends BaseDoc {
     json.annotations = this.annotations;
     return json;
   }
+
+  clear() {
+    super.clear();
+    for (const key of Object.keys(this.annotations)) delete this.annotations[key]; 
+  }
 }
 
 export type FieldDocJson = BaseDocJson & {

@@ -2,8 +2,9 @@ import * as fs from 'fs';
 import * as parser from 'luaparse';
 import * as ast from '../luaparser/ast';
 import { LuaClass } from './LuaClass';
+import { LuaConstructor } from './LuaConstructor';
 import { LuaLibrary } from './LuaLibrary';
-import { LuaElement } from './LuaElement';
+import { NamedElement } from './NamedElement';
 import { LuaFunction } from './LuaFunction';
 import { LuaTable } from './LuaTable';
 import { LuaMethod } from './LuaMethod';
@@ -38,7 +39,7 @@ export class LuaFile {
   readonly classes: { [id: string]: LuaClass } = {};
 
   /** All properties discovered in the file. (Fields) */
-  readonly properties: { [id: string]: LuaElement } = {};
+  readonly properties: { [id: string]: NamedElement } = {};
 
   /** All tables discovered in the file. */
   readonly tables: { [id: string]: LuaTable } = {};
@@ -114,10 +115,10 @@ export class LuaFile {
     const processTable = (statement: ast.AssignmentStatement): boolean => {
       const info = getTableConstructor(statement);
       if (!info) return false;
-      
+
       // Make sure that the root class isn't rendered as a table.
       if (info.name === 'ISBaseObject') return false;
-      
+
       const table = new LuaTable(this, info.name);
       this.library.tables[info.name] = table;
       // console.log(`Adding table: ${table.name}`);
@@ -187,10 +188,6 @@ export class LuaFile {
   scanMembers() {
     const { parsed } = this;
 
-    // if (this.id.endsWith('luautils')) {
-    //   console.log(parsed);
-    // }
-
     const processMethod = (declaration: ast.FunctionDeclaration): boolean => {
       const info = getMethodDeclaration(this.id.endsWith('luautils'), declaration);
       if (!info) return false;
@@ -203,10 +200,11 @@ export class LuaFile {
 
       const clazz = this.library.classes[info.className];
       if (clazz) {
-        const func = new LuaMethod(this.library, clazz, declaration, info.name, info.params, info.isStatic);
         if (!info.isStatic && info.name === 'new') {
+          const func = new LuaConstructor(this.library, clazz, declaration, info.params);
           clazz._constructor_ = func;
         } else {
+          const func = new LuaMethod(this.library, clazz, declaration, info.name, info.params, info.isStatic);
           clazz.methods[info.name] = func;
         }
         return true;
@@ -235,10 +233,11 @@ export class LuaFile {
 
       const clazz = this.library.classes[info.className];
       if (clazz) {
-        const func = new LuaMethod(this.library, clazz, statement, info.name, info.params, info.isStatic);
         if (!info.isStatic && info.name === 'new') {
+          const func = new LuaConstructor(this.library, clazz, statement, info.params);
           clazz._constructor_ = func;
         } else {
+          const func = new LuaMethod(this.library, clazz, statement, info.name, info.params, info.isStatic);
           clazz.methods[info.name] = func;
         }
         return true;

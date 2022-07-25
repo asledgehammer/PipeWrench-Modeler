@@ -1,10 +1,9 @@
 import * as ast from '../luaparser/ast';
 import { LuaContainer } from './LuaContainer';
-import { LuaElement } from './LuaElement';
+import { NamedElement } from './NamedElement';
 import { LuaField } from './LuaField';
 import { LuaLibrary } from './LuaLibrary';
 import { fixParameters, scanBodyForFields } from './LuaUtils';
-import { Identifier } from 'luaparse';
 import { LuaClass } from './LuaClass';
 import { LuaTable } from './LuaTable';
 import { MethodModel } from './model/MethodModel';
@@ -14,7 +13,7 @@ import { MethodModel } from './model/MethodModel';
  *
  * @author JabDoesThings
  */
-export class LuaMethod extends LuaElement {
+export class LuaMethod extends NamedElement {
   readonly library: LuaLibrary;
   readonly container: LuaContainer;
   readonly params: string[];
@@ -37,7 +36,7 @@ export class LuaMethod extends LuaElement {
     this.isStatic = isStatic;
   }
 
-  compile(prefix: string = ''): string {
+  protected onCompile(prefix: string): string {
     
     let sDocs = '';
     let methodModel: MethodModel = null;
@@ -125,65 +124,21 @@ export class LuaMethod extends LuaElement {
     // return `${s}${prefix}${this.isStatic ? 'static ' : ''}${this.name}: ((${paramS})=>unknown) | unknown;`;
   }
 
-  scanAsConstructor() {
-    const D = this.container.name === 'ISUIElement';
-
-    const { parsed, container } = this;
-    if (!parsed || !container || container.type !== 'class') {
-      return;
-    }
-
-    const declaration = parsed as ast.FunctionDeclaration;
-    const fieldRefs = scanBodyForFields(declaration.body, this.container.name, [].concat(this.params), true);
-
-    // Grab the name of the returned local table. This is what initial values for fields are set.
-    let returnName;
-    for (let index = declaration.body.length - 1; index >= 0; index--) {
-      const statement = declaration.body[index];
-      if (statement.type === 'ReturnStatement') {
-        const returnStatement = statement as ast.ReturnStatement;
-        returnName = (returnStatement.arguments[0] as Identifier).name;
-        break;
-      }
-    }
-
-    // Go through all local assignments and add the ones matching the returnName as fields to the containser.
-    for (const ref of fieldRefs) {
-      if (ref.containerName === returnName) {
-        const { containerName, fieldName } = ref;
-        if (!this.container.fields[fieldName]) {
-          const field = new LuaField(this.container, ref.fieldName, false);
-          container.fields[fieldName] = field;
-        }
-      }
-    }
-  }
-
   scanFields() {
-    const D = false; /// this.container.name === 'ISUIElement';
-
-    if (D) {
-      let s = '';
-      for (const param of this.params) s += `${param}, `;
-      console.log(`${this.container.name}.${this.name}(` + s.substring(0, s.length - 2) + ')');
-    }
-
     const { parsed, container } = this;
     if (!parsed || !container || container.type !== 'class') {
       return;
     }
 
     if (parsed.type === 'FunctionDeclaration') {
-      this.scanFieldsAsFunctionDeclaration(parsed as ast.FunctionDeclaration, D);
+      this.scanFieldsAsFunctionDeclaration(parsed as ast.FunctionDeclaration);
     }
   }
 
-  private scanFieldsAsFunctionDeclaration(declaration: ast.FunctionDeclaration, D: boolean) {
+  private scanFieldsAsFunctionDeclaration(declaration: ast.FunctionDeclaration) {
     if (!declaration.body.length) return;
 
     const fieldRefs = scanBodyForFields(declaration.body, this.container.name, [].concat(this.params));
-
-    if (D && fieldRefs.length) console.log(fieldRefs);
 
     for (const ref of fieldRefs) {
       const { containerName, fieldName, isStatic } = ref;
@@ -191,8 +146,6 @@ export class LuaMethod extends LuaElement {
       let container: LuaContainer = this.library.classes[containerName];
       if (!container) container = this.library.tables[containerName];
       if (!container) continue;
-
-      if (D) console.log(`Field: ${!isStatic ? 'self' : containerName}.${fieldName}`);
 
       const field = new LuaField(this.container, fieldName, isStatic);
       container.fields[fieldName] = field;

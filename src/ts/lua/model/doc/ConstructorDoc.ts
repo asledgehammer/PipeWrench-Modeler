@@ -1,3 +1,4 @@
+import { LuaConstructor } from '../../LuaConstructor';
 import { BaseDoc, BaseDocJson } from './BaseDoc';
 
 /**
@@ -22,6 +23,11 @@ export class ConstructorDoc extends BaseDoc {
     const json = super.save() as ConstructorDocJson;
     json.annotations = this.annotations;
     return json;
+  }
+
+  clear() {
+    super.clear();
+    for (const key of Object.keys(this.annotations)) delete this.annotations[key]; 
   }
 }
 

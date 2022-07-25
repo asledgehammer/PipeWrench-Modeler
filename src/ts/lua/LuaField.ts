@@ -1,9 +1,8 @@
 import { DocBuilder } from '../DocBuilder';
 import { LuaClass } from './LuaClass';
 import { LuaContainer } from './LuaContainer';
-import { LuaElement } from './LuaElement';
+import { NamedElement } from './NamedElement';
 import { LuaTable } from './LuaTable';
-import { sanitizeParameter } from './LuaUtils';
 import { FieldModel } from './model/FieldModel';
 
 /**
@@ -13,7 +12,7 @@ import { FieldModel } from './model/FieldModel';
  *
  * @author JabDoesThings
  */
-export class LuaField extends LuaElement {
+export class LuaField extends NamedElement {
   /** (Optional) The container the field is assigned to. */
   readonly container: LuaContainer | null;
   /** (Optional) If assigned to a class, this tells the generator if the field should be accessed statically or accessed only from a class instance. */
@@ -30,7 +29,7 @@ export class LuaField extends LuaElement {
     this.isStatic = isStatic;
   }
 
-  compile(prefix: string = ''): string {
+  onCompile(prefix: string): string {
     const types: string[] = ['unknown'];
     let sDoc = '';
 

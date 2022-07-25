@@ -23,6 +23,10 @@ export abstract class BaseDoc {
     const { lines } = this;
     return { lines };
   }
+
+  clear() {
+    this.lines.length = 0;
+  }
 }
 
 export type BaseDocJson = {
