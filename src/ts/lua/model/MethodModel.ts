@@ -34,14 +34,14 @@ export class MethodModel extends Model<MethodModelJson> {
 
   create(method: LuaMethod) {
     for(const param of method.params) {
-      this.params.push(new ParamModel(param))
+      this.params.push(new ParamModel(this.name, param))
     }
   }
 
   load(json: MethodModelJson) {
     this.clear();
     if (json.doc) this.doc.load(json.doc);
-    if (json.params) for (const param of json.params) this.params.push(new ParamModel(param));
+    if (json.params) for (const param of json.params) this.params.push(new ParamModel(this.name, param));
     if (json.returns) this.returns.load(json.returns);
   }
 

@@ -13,14 +13,25 @@ $model_content_padding: 12px;
   width: calc(100% - (#{$model_pane_padding} * 2));
   height: calc(100% - (#{$model_pane_padding} * 2));
 
-  overflow-y: auto;
+  overflow-y: scroll;
 
   padding: $model_pane_padding;
+
+  .model.collapsed {
+    height: 24px;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+
+    .model-content {
+      position: relative;
+      height: 0;
+      padding-bottom: 8px;
+    }
+  }
 
   .model {
     display: block;
     position: relative;
-    min-height: 64px;
     height: fit-content;
     margin-bottom: 24px;
     
@@ -33,7 +44,7 @@ $model_content_padding: 12px;
     border-bottom-left-radius: 6px;
     border-bottom-right-radius: 6px;
 
-    transition: height 200ms, border-bottom-left-radius 200ms, border-bottom-right-radius 200ms;
+    transition: height 400ms ease-out, border-bottom-left-radius 200ms, border-bottom-right-radius 200ms;
     
     .model-header {
       width: 100%;
@@ -68,63 +79,67 @@ $model_content_padding: 12px;
         padding-left: 2px;
       }
 
-    .model-field {
+      .model-field {
+        position: relative;
+        min-height: 27px;
+        margin-bottom: 4px;
+      }
+    }
+
+    textarea, input[type=text] {
+      transition: color 120ms ease-out, border-color 120ms ease-out;
+      font-family: Consolas, 'Courier New', monospace;
+
+      background-color: black;
+      border: 1px solid transparent;
+      color: $color_secondary_text;
+      outline: none !important;
+      outline-width: 0 !important;
+
+      padding: 2px 4px;
+    }
+
+    textarea {
       position: relative;
-      min-height: 27px;
-      margin-bottom: 4px;
+      width: calc(100% - 9px);
+      top: 2px;
+      left: 0px;
+      resize: none;
+
+      font-family: Consolas, 'Courier New', monospace;
+      padding: 2px 4px;
+    }
+
+    textarea:focus, input[type=text]:focus {
+      transition: color 30ms ease-out, border-color 30ms ease-out;
+
+      border-color: $color_secondary_text;
+      border: 1px solid $color_secondary_text;
+      outline: none !important;
+      color: white;
+
+      box-shadow: 0px 0px 1px 2px rgba(0,0,0,0.33);
     }
   }
 
   .model.collapsed {
-
     min-height: 0px;
     height: 24px;
     border-bottom-left-radius: 3px;
     border-bottom-right-radius: 3px;
 
-    .model-field {
+    .model-content {
+      display: none;
       position: relative;
       min-height: 0;
+      height: 0;
       padding-bottom: 8px;
+
+      .group-field {
+        display: none;
+      }
     }
   }
-
-  textarea, input[type=text] {
-    transition: color 120ms ease-out, border-color 120ms ease-out;
-    font-family: Consolas, 'Courier New', monospace;
-
-    background-color: black;
-    border: 1px solid transparent;
-    color: $color_secondary_text;
-    outline: none !important;
-    outline-width: 0 !important;
-
-    padding: 2px 4px;
-  }
-
-  textarea {
-    position: relative;
-    width: calc(100% - 9px);
-    top: 2px;
-    left: 0px;
-    resize: none;
-
-    font-family: Consolas, 'Courier New', monospace;
-    padding: 2px 4px;
-  }
-
-  textarea:focus, input[type=text]:focus {
-
-    transition: color 30ms ease-out, border-color 30ms ease-out;
-
-    border-color: $color_secondary_text;
-    border: 1px solid $color_secondary_text;
-    outline: none !important;
-    color: white;
-
-    box-shadow: 0px 0px 1px 2px rgba(0,0,0,0.33);
-  }
-}
 }
 
 .model-form {
@@ -138,6 +153,51 @@ $model_content_padding: 12px;
   backdrop-filter: contrast(1.1) brightness(0.4);
   overflow: hidden;
 }
+
+.model > .model-header {
+  .collapse-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 12px;
+    height: 12px;
+
+    border: 1px solid $color_secondary_text;
+    // border-radius: 3px;
+    background-color: $color_secondary_text;
+
+    transition: border 100ms ease-out, background-color 100ms ease-out, border-radius 100ms ease-out;
+
+    cursor: pointer;
+  }
+
+  .collapse-button:hover {
+    border: 1px solid $color_primary_text;
+    background-color: $color_primary_text;
+  }
+}
+
+.model.collapsed > .model-header {
+  .collapse-button {
+    border: 1px solid $color_secondary_text;
+    background-color: $color_background;
+    border-radius: 0;
+
+    transition: border 200ms ease-out, background-color 200ms ease-out, border-radius 100ms ease-out;
+  }
+
+  .collapse-button:hover {
+    border: 1px solid $color_secondary_text;
+    // border-radius: 3px;
+    background-color: $color_secondary_text;
+  }
+}
+
+
+
+
+
+
 
 
 #code {

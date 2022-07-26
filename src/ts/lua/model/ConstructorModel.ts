@@ -33,7 +33,7 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
     const {_constructor_} = this.clazz.clazz;
     if(_constructor_) {
       for (const param of _constructor_.params) {
-        this.params.push(new ParamModel(param));
+        this.params.push(new ParamModel('constructor', param));
       }
     }
   }
@@ -49,7 +49,7 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
 
       if(json.params.length === _constructor_.params.length) {
         console.log('c', json.params.length);
-        for (const param of json.params) this.params.push(new ParamModel(param));
+        for (const param of json.params) this.params.push(new ParamModel('constructor', param));
         console.log('c2', this.params);
       } else {
         console.log('d');
@@ -90,6 +90,7 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
       }
 
       // Process lines. (If defined)
+      console.log('lines: ', lines);
       if (lines && lines.length) {
         for (const line of lines) doc.appendLine(line);
         doc.appendLine();
@@ -154,6 +155,7 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
       }
     }
 
+    replaceAll('CLASS_NAME', this.clazz.name);
     replaceAll('LINES', linesS);
     replaceAll('PARAMS', paramsS);
 
@@ -168,6 +170,13 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
       }
     }
     return true;
+  }
+
+  getParamModel(name: string) {
+    for(const param of this.params) {
+      if(param.name === name) return param;
+    }
+    return null;
   }
 }
 

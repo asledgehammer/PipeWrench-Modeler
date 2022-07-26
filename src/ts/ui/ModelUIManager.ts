@@ -37,7 +37,7 @@ export class ModelUIManager {
     const dir = './assets/html';
     const getModelTemplate = (id: string): string => {
       const path = `${dir}/model_${id}_template.html`;
-      if(!fs.existsSync(path)) return '';
+      if (!fs.existsSync(path)) return '';
       return fs.readFileSync(path).toString();
     };
 
@@ -52,18 +52,16 @@ export class ModelUIManager {
 
   setClass(className: string) {
     const clazz = this.luaLibrary.classes[className];
-    if(!clazz) return;
+    if (!clazz) return;
 
     this.selectedClass = clazz;
 
     const updateCode = () => {
-
       let code = '';
-      if(this.selectedClass) code = this.selectedClass.compile();
-      console.log(code);
-      const html = hljs.default.highlight(code, {language: 'typescript'}).value;
-      let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>'
-    
+      if (this.selectedClass) code = this.selectedClass.compile();
+      const html = hljs.default.highlight(code, { language: 'typescript' }).value;
+      let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>';
+
       // console.log(s);
       this.$code.empty();
       this.$code.append(s);
@@ -72,7 +70,6 @@ export class ModelUIManager {
     // let clazzModel = this.luaLibrary.getClassModel(clazz);
     // if(!clazzModel) clazzModel = clazz.generateModel();
     let clazzModel = clazz.generateModel();
-
     clazz.model = clazzModel;
 
     let dom = '';
@@ -82,13 +79,13 @@ export class ModelUIManager {
 
     const fieldNames = Object.keys(clazzModel.fields);
     fieldNames.sort((o1, o2) => o1.localeCompare(o2));
-    for(const fieldName of fieldNames) {
+    for (const fieldName of fieldNames) {
       dom += clazzModel.fields[fieldName].generateDom();
     }
 
     const methodNames = Object.keys(clazzModel.methods);
     methodNames.sort((o1, o2) => o1.localeCompare(o2));
-    for(const methodName of methodNames) {
+    for (const methodName of methodNames) {
       dom += clazzModel.methods[methodName].generateDom();
     }
 
@@ -97,33 +94,78 @@ export class ModelUIManager {
     this.$modelPane.append(dom);
 
     const $textAreas = this.$modelPane.find('textarea');
-    $textAreas.each(function () {
-      this.setAttribute('style', `height: ${this.scrollHeight}px; overflow-y:hidden;`);
-    }).on('input', function () {
-      this.style.height = 'auto';
-      this.style.height = `${this.scrollHeight}px`;
+    $textAreas
+      .each(function () {
+        this.setAttribute('style', `height: ${this.scrollHeight}px; overflow-y:hidden;`);
+      })
+      .on('input', function () {
+        this.style.height = 'auto';
+        this.style.height = `${this.scrollHeight}px`;
+      });
+
+    $('.collapse-button').on('click', function () {
+      const model = $($($(this).parent()).parent());
+
+      if (model.hasClass('collapsed')) {
+        model.removeClass('collapsed');
+      } else {
+        model.addClass('collapsed');
+      }
     });
 
-    $('textarea[target]').on('input', function() {
+    $('*[target]').on('input', function () {
       const textarea = this as HTMLTextAreaElement;
       const target = this.getAttribute('target');
-      if(target) {
+      if (target) {
         const paths = target.split(':');
         console.log(paths);
-        const clazzName = paths[0];
-        const type = paths[1];
-        const field = paths[2];
 
-        if(type === 'class') {
-          if(field === 'lines') {
+        if (paths[0] === 'class') {
+          if (paths[1] === 'lines') {
             const raw = textarea.value.split('\n');
             clazzModel.doc.lines.length = 0;
-            for(const line of raw) clazzModel.doc.lines.push(line);
-          } else if(field === 'authors') {
+            for (let line of raw) {
+              line = line.trim();
+              if (line.length) clazzModel.doc.lines.push(line);
+            }
+          } else if (paths[1] === 'authors') {
             const raw = textarea.value.split('\n');
             clazzModel.doc.authors.length = 0;
-            for(const line of raw) clazzModel.doc.authors.push(line);
-            console.log(clazzModel.doc.authors);
+            for (let line of raw) {
+              line = line.trim();
+              if (line.length) clazzModel.doc.authors.push(line);
+            }
+          }
+        } else if (paths[0] === 'constructor') {
+          if (paths[1] === 'lines') {
+            const raw = textarea.value.split('\n');
+            clazzModel._constructor_.doc.lines.length = 0;
+            for (let line of raw) {
+              line = line.trim();
+              if (line.length) clazzModel._constructor_.doc.lines.push(line);
+            }
+          } else if (paths[1] === 'param') {
+            const paramName = paths[2];
+            const field = paths[3];
+            const paramModel = clazzModel._constructor_.getParamModel(paramName);
+            if (field === 'rename') {
+              console.log(textarea.value);
+              paramModel.rename = textarea.value.trim();
+            } else if(field === 'lines') {
+              const raw = textarea.value.split('\n');
+              paramModel.doc.lines.length = 0;
+              for (let line of raw) {
+                line = line.trim();
+                if (line.length) paramModel.doc.lines.push(line);
+              }
+            } else if(field === 'types') {
+              const raw = textarea.value.split('\n');
+              paramModel.types.length = 0;
+              for (let line of raw) {
+                line = line.trim();
+                if (line.length) paramModel.types.push(line);
+              }
+            }
           }
         }
       }

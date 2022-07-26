@@ -29,7 +29,7 @@ export class FunctionModel extends Model<FunctionModelJson> {
   load(json: FunctionModelJson) {
     this.clear();
     if (json.doc) this.doc.load(json.doc);
-    if (json.params) for (const param of json.params) this.params.push(new ParamModel(param));
+    if (json.params) for (const param of json.params) this.params.push(new ParamModel(this.name, param));
     if (json.returns) this.returns.load(json.returns);
   }
 

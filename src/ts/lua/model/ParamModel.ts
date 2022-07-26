@@ -11,13 +11,14 @@ export class ParamModel extends Model<ParamModelJson> {
   static HTML_TEMPLATE: string = '';
 
   readonly doc = new ParamDoc();
-  readonly types: string[] = [];
+  readonly types: string[] = ['unknown'];
+  readonly methodName: string;
   id = '';
   rename = '';
-  applyUnknownType: boolean = true;
 
-  constructor(src?: ParamModelJson | string) {
+  constructor(methodName: string, src?: ParamModelJson | string) {
     super();
+    this.methodName = methodName;
     if (src) {
       if(typeof src === 'string') {
         this.create(src);
@@ -37,21 +38,19 @@ export class ParamModel extends Model<ParamModelJson> {
     if(json.doc) this.doc.load(json.doc);
     if(json.id) this.id = json.id;
     else throw new Error('Param without ID.');
-    if(json.applyUnknownType != null) this.applyUnknownType = json.applyUnknownType;
     if(json.rename) this.rename = json.rename;
     if(json.types) for(const type of json.types) this.types.push(type);
   }
 
   save(): ParamModelJson {
-    const { id, applyUnknownType, rename, types } = this;
+    const { id, rename, types } = this;
     const doc = this.doc.save();
-    return { doc, id, applyUnknownType, rename, types };
+    return { doc, id, rename, types };
   }
 
   clear() {
     this.doc.clear();
     this.types.length = 0;
-    this.applyUnknownType = true;
     this.rename = '';
   }
 
@@ -63,6 +62,7 @@ export class ParamModel extends Model<ParamModelJson> {
       while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
     };
 
+    replaceAll('METHOD_NAME', this.methodName);
     replaceAll('PARAM_NAME', this.id);
     return dom;
   }
@@ -84,7 +84,6 @@ export class ParamModel extends Model<ParamModelJson> {
 export type ParamModelJson = {
   doc: ParamDocJson;
   id: string;
-  applyUnknownType: boolean;
   rename: string;
   types: string[];
 };

@@ -21,7 +21,8 @@ export class LuaConstructor extends LuaMethod {
   protected onCompile(prefix: string): string {
     const { clazz } = this;
     const { library } = this.clazz.file;
-    const classModel = library.getClassModel(clazz);
+    let classModel = this.clazz.model;
+    if(!classModel) classModel = library.getClassModel(clazz);
     const constructorModel = classModel ? classModel._constructor_ : null;
     const docs = constructorModel ? constructorModel.generateDoc(prefix, this) : '';
 
@@ -32,6 +33,8 @@ export class LuaConstructor extends LuaMethod {
           if (returnS.length) returnS += ' | ';
           returnS += type;
         }
+      } else {
+        returnS = 'unknown';
       }
       return returnS;
     };
