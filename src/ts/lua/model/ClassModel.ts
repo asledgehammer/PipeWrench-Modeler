@@ -35,7 +35,7 @@ export class ClassModel extends Model<ClassModelJson> {
     this._constructor_ = new ConstructorModel(this);
 
     this.create(clazz);
-    if(src) this.load(src);
+    if (src) this.load(src);
     this.dom = this.generateDom();
   }
 
@@ -104,7 +104,7 @@ export class ClassModel extends Model<ClassModelJson> {
       if (annoKeys && annoKeys.length) {
         for (const key of annoKeys) doc.appendAnnotation(key, annotations[key]);
       } else {
-        if (!authors || !authors.length) {
+        if (!authors || !authors.length || !authors[0].length) {
           // The 'customConstructor' annotation is multi-line. Adding `@` terminates it.
           doc.appendLine('@');
         }
@@ -112,19 +112,34 @@ export class ClassModel extends Model<ClassModelJson> {
 
       // Process authors. (If defined)
       if (authors && authors.length) {
-        let s = '[';
+        let s = '';
         for (let author of authors) {
           author = author.trim();
-          if(author.length) s += `${author}, `;
+          if (author.length) {
+            if (!s.length) s += '[';
+            s += `${author}, `;
+          }
         }
-        s = `${s.substring(0, s.length - 2)}]`;
-        doc.appendAnnotation('author', s);
+        if (s.length) {
+          s = `${s.substring(0, s.length - 2)}]`;
+          doc.appendAnnotation('author', s);
+        }
       }
 
       // Process lines. (If defined)
       if (lines && lines.length) {
-        if (!doc.isEmpty()) doc.appendLine();
-        for (const line of lines) doc.appendLine(line);
+        let foundLine = false;
+
+        for (let line of lines) {
+          line = line.trim();
+          if (line.length) {
+            if (!foundLine) {
+              if (!doc.isEmpty()) doc.appendLine();
+              foundLine = true;
+            }
+            doc.appendLine(line);
+          }
+        }
       }
     }
 
@@ -135,7 +150,7 @@ export class ClassModel extends Model<ClassModelJson> {
     let dom = ClassModel.HTML_TEMPLATE;
 
     const replaceAll = (from: string, to: string) => {
-      const fromS = '${' + from + "}";
+      const fromS = '${' + from + '}';
       while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
     };
 
@@ -143,14 +158,14 @@ export class ClassModel extends Model<ClassModelJson> {
     let linesS = '';
 
     const { doc } = this;
-    if(doc) {
+    if (doc) {
       const { authors, lines } = doc;
-      if(authors.length) {
-        if(authors) for(const author of authors) authorsS += `${author}\n`;
+      if (authors.length) {
+        if (authors) for (const author of authors) authorsS += `${author}\n`;
         authorsS = authorsS.substring(0, authorsS.length - 1);
       }
-      if(lines.length) {
-        for(const line of lines) linesS += `${line}\n`;
+      if (lines.length) {
+        for (const line of lines) linesS += `${line}\n`;
         linesS = linesS.substring(0, linesS.length - 1);
       }
     }
@@ -158,7 +173,7 @@ export class ClassModel extends Model<ClassModelJson> {
     replaceAll('CLASS_NAME', this.name);
     if (authorsS.length) replaceAll('AUTHORS', authorsS);
     if (linesS.length) replaceAll('LINES', linesS);
-    
+
     return dom;
   }
 

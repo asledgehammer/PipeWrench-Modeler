@@ -54,10 +54,13 @@ export class ModelUIManager {
     const clazz = this.luaLibrary.classes[className];
     if(!clazz) return;
 
+    this.selectedClass = clazz;
+
     const updateCode = () => {
 
       let code = '';
       if(this.selectedClass) code = this.selectedClass.compile();
+      console.log(code);
       const html = hljs.default.highlight(code, {language: 'typescript'}).value;
       let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>'
     
@@ -66,11 +69,11 @@ export class ModelUIManager {
       this.$code.append(s);
     };
 
-    this.selectedClass = clazz;
-
     // let clazzModel = this.luaLibrary.getClassModel(clazz);
     // if(!clazzModel) clazzModel = clazz.generateModel();
     let clazzModel = clazz.generateModel();
+
+    clazz.model = clazzModel;
 
     let dom = '';
 
@@ -106,6 +109,7 @@ export class ModelUIManager {
       const target = this.getAttribute('target');
       if(target) {
         const paths = target.split(':');
+        console.log(paths);
         const clazzName = paths[0];
         const type = paths[1];
         const field = paths[2];
@@ -119,6 +123,7 @@ export class ModelUIManager {
             const raw = textarea.value.split('\n');
             clazzModel.doc.authors.length = 0;
             for(const line of raw) clazzModel.doc.authors.push(line);
+            console.log(clazzModel.doc.authors);
           }
         }
       }
@@ -127,7 +132,6 @@ export class ModelUIManager {
     });
 
     this.$modelPane.fadeIn();
-
-    
+    updateCode();
   }
 }

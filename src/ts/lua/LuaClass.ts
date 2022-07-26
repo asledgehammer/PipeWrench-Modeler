@@ -31,6 +31,8 @@ export class LuaClass extends LuaContainer {
   /** The function <class>:new(..) in the class table. */
   _constructor_: LuaConstructor | null;
 
+  model: ClassModel;
+
   /**
    * @param file The file containing the pseudo-class declaration.
    * @param name The name of the pseudo-class table. (In global)
@@ -65,7 +67,8 @@ export class LuaClass extends LuaContainer {
 
     let doc: string;
 
-    const model = library.getClassModel(this as any);
+    const model = this.model;
+    if(!model) library.getClassModel(this as any);
     doc = this.generateDoc(prefix, model);
 
     // Render empty classes on one line.
