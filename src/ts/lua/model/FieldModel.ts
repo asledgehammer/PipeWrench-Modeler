@@ -30,7 +30,29 @@ export class FieldModel extends Model<FieldModelJson> {
   }
 
   generateDom(): string {
-    return '';
+    let dom = FieldModel.HTML_TEMPLATE;
+
+    const replaceAll = (from: string, to: string) => {
+      const fromS = '${' + from + "}";
+      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
+    };
+
+    let linesS = '';
+
+    const { doc } = this;
+    if(doc) {
+      const { lines } = doc;
+      if (lines) {
+        linesS = '';
+        for (const line of lines) linesS += `${line}\n`;
+        linesS = linesS.substring(0, linesS.length - 1);
+      }
+    }
+
+    replaceAll('FIELD_NAME', this.name);
+    replaceAll('LINES', linesS);
+
+    return dom;
   }
 
   testSignature(field: LuaField): boolean {

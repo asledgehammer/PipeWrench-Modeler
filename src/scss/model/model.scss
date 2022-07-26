@@ -19,8 +19,22 @@ $model_content_padding: 12px;
 
   .model.collapsed {
     height: 24px;
-    border-bottom-left-radius: 3px;
-    border-bottom-right-radius: 3px;
+    margin-bottom: 1px;
+
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+
+    box-shadow: none;
+
+    .model-header {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      box-shadow: none;
+    }
 
     .model-content {
       position: relative;
@@ -122,11 +136,16 @@ $model_content_padding: 12px;
     }
   }
 
+  /** This allows for folded models to space prior to an open model. */
+  .model.collapsed + :not(.collapsed) {
+    margin-top: 24px;
+  }
+
   .model.collapsed {
     min-height: 0px;
     height: 24px;
-    border-bottom-left-radius: 3px;
-    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 
     .model-content {
       display: none;

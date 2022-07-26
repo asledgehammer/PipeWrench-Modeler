@@ -171,8 +171,8 @@ export class ClassModel extends Model<ClassModelJson> {
     }
 
     replaceAll('CLASS_NAME', this.name);
-    if (authorsS.length) replaceAll('AUTHORS', authorsS);
-    if (linesS.length) replaceAll('LINES', linesS);
+    replaceAll('AUTHORS', authorsS);
+    replaceAll('LINES', linesS);
 
     return dom;
   }
