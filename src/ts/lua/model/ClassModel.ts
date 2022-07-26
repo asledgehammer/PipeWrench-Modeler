@@ -23,22 +23,19 @@ export class ClassModel extends Model<ClassModelJson> {
   readonly methods: { [id: string]: MethodModel } = {};
   readonly _constructor_: ConstructorModel;
   readonly doc = new ClassDoc();
+  readonly clazz: LuaClass;
   readonly name: string;
   dom: string = '';
 
-  constructor(name: string, src?: ClassModelJson | LuaClass) {
+  constructor(clazz: LuaClass, name: string, src?: ClassModelJson) {
     super();
+    this.clazz = clazz;
     this.name = name;
     this.doc = new ClassDoc();
     this._constructor_ = new ConstructorModel(this);
 
-    if(src) {
-      if(src instanceof LuaClass) {
-        this.create(src);
-      } else {
-        if (src) this.load(src);
-      }
-    }
+    this.create(clazz);
+    if(src) this.load(src);
     this.dom = this.generateDom();
   }
 

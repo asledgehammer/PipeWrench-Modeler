@@ -16,10 +16,16 @@ export class FieldModel extends Model<FieldModelJson> {
   readonly name: string;
   applyUnknownType: boolean = true;
 
-  constructor(name: string, json?: FieldModelJson) {
+  constructor(name: string, src?: FieldModelJson | LuaField) {
     super();
     this.name = name;
-    if (json) this.load(json);
+    if (src) {
+      if(src instanceof LuaField) {
+        this.create(src);
+      } else {
+        this.load(src);
+      }
+    }
     this.dom = this.generateDom();
   }
 
@@ -29,6 +35,10 @@ export class FieldModel extends Model<FieldModelJson> {
 
   testSignature(field: LuaField): boolean {
     return field.name === this.name;
+  }
+
+  create(field: LuaField) {
+
   }
 
   load(json: FieldModelJson) {

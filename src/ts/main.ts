@@ -25,9 +25,9 @@ export let start = function () {
       // listItems.innerHTML += s;
     // }
 
-    const code = luaLibrary.classes['ISUIElement'].compile();
-    const html = hljs.default.highlight(code, {language: 'typescript'}).value;
-    let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>'
-    document.getElementById('code').innerHTML += s;    
+    // const code = luaLibrary.classes['ISUIElement'].compile();
+    // const html = hljs.default.highlight(code, {language: 'typescript'}).value;
+    // let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>'
+    // document.getElementById('code').innerHTML += s;    
   }, 100);
 };

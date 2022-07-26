@@ -24,14 +24,41 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
     super();
     this.clazz = clazz;
     this.doc = new ConstructorDoc();
-    this.dom = this.generateDom();
+    if(clazz) this.create();
     if (json) this.load(json);
+
+  }
+
+  create() {
+    const {_constructor_} = this.clazz.clazz;
+    if(_constructor_) {
+      for (const param of _constructor_.params) {
+        this.params.push(new ParamModel(param));
+      }
+    }
   }
 
   load(json: ConstructorModelJson) {
     this.clear();
     if (json.doc) this.doc.load(json.doc);
-    if (json.params) for (const param of json.params) this.params.push(new ParamModel(param));
+    
+    if (json.params && this.clazz._constructor_) {
+      console.log('a');
+      const {_constructor_} = this.clazz.clazz;
+      console.log('b');
+
+      if(json.params.length === _constructor_.params.length) {
+        console.log('c', json.params.length);
+        for (const param of json.params) this.params.push(new ParamModel(param));
+        console.log('c2', this.params);
+      } else {
+        console.log('d');
+        for (const param of _constructor_.params) {
+          this.params.push(new ParamModel(param));
+        }
+        console.log('d2', this.params);
+      }
+    }
   }
 
   save(): ConstructorModelJson {
@@ -100,7 +127,7 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
   }
 
   generateDom(): string {
-    let dom = ClassModel.HTML_TEMPLATE;
+    let dom = ConstructorModel.HTML_TEMPLATE;
 
     const replaceAll = (from: string, to: string) => {
       const fromS = '${' + from + "}";
@@ -114,11 +141,21 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
       const { lines } = doc;
       if (lines) {
         linesS = '';
-        for (const line of lines) linesS += `${lines}\n`;
+        for (const line of lines) linesS += `${line}\n`;
         linesS = linesS.substring(0, linesS.length - 1);
       }
     }
+
+    let paramsS = '';
+    console.log(this.params);
+    if(this.params.length) {
+      for(const param of this.params) {
+        paramsS += param.generateDom();
+      }
+    }
+
     replaceAll('LINES', linesS);
+    replaceAll('PARAMS', paramsS);
 
     return dom;
   }

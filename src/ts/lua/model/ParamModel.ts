@@ -16,10 +16,20 @@ export class ParamModel extends Model<ParamModelJson> {
   rename = '';
   applyUnknownType: boolean = true;
 
-  constructor(json?: ParamModelJson) {
+  constructor(src?: ParamModelJson | string) {
     super();
-    if (json) this.load(json);
+    if (src) {
+      if(typeof src === 'string') {
+        this.create(src);
+      } else {      
+        this.load(src);
+      }
+    }
     this.dom = this.generateDom();
+  }
+
+  create(id: string) {
+    this.id = id;
   }
 
   load(json: ParamModelJson) {
@@ -46,7 +56,15 @@ export class ParamModel extends Model<ParamModelJson> {
   }
 
   generateDom(): string {
-    return '';
+    let dom = ParamModel.HTML_TEMPLATE;
+
+    const replaceAll = (from: string, to: string) => {
+      const fromS = '${' + from + "}";
+      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
+    };
+
+    replaceAll('PARAM_NAME', this.id);
+    return dom;
   }
 
   testSignature(paramName: string): boolean {

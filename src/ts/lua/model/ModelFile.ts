@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import { LuaClass } from '../LuaClass';
 import { ClassModel, ClassModelJson } from './ClassModel';
 import { FieldModel, FieldModelJson } from './FieldModel';
 import { FunctionModel, FunctionModelJson } from './FunctionModel';
@@ -70,7 +71,8 @@ export class ModelFile {
     // Load class models.
     if (classes) {
       for (const name of Object.keys(classes)) {
-        this.library.classes[name] = this.classes[name] = new ClassModel(name, classes[name]);
+        const luaClass = this.library.luaLibrary.classes[name];
+        this.library.classes[name] = this.classes[name] = new ClassModel(luaClass, name, classes[name]);
       }
     }
     // Load table models.

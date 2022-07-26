@@ -47,7 +47,7 @@ export class LuaConstructor extends LuaMethod {
         params.push(`${param.name}: ${types}`);
       }
     } else {
-      params = fixParameters(params).map((param) => `${param}: unknown`);
+      params = fixParameters(this.params).map((param) => `${param}: unknown`);
     }
     if (params.length) {
       for (const param of params) paramS += `${param}, `;

@@ -7,4 +7,55 @@
 
     background-color: $color_card;
   }
+
+  .model {
+    .model-params {
+      display: inline-block;
+      position: relative;
+      width: 100%;
+      height: fit-content;
+      min-height: 16px;
+      // margin-bottom: 16px;
+
+      .model-param {
+        width: calc(100% - 2px);
+        margin-bottom: 12px;
+        background-color: $color_background;
+        
+        border-left: 1px solid black;
+        border-right: 1px solid black;
+        border-bottom: 1px solid black;
+
+        .param-header {
+          display: inline-block;
+          position: relative;
+          width: 100%;
+          height: 24px;
+          box-shadow: 0px -1px 6px 2px rgba(0,0,0,0.4);
+          margin-bottom: 6px;
+          background-color: $color_hover_color;
+
+          label {
+            position: relative;
+            font-family: Consolas, 'Courier New', monospace;
+            color: $color_primary_text;
+            top: 2px;
+            left: 7px;
+          }
+        }
+  
+        .param-content {
+          display: inline-block;
+          position: relative;
+          min-height: 16px;
+        
+          
+        }
+      }
+
+      label {
+        margin-bottom: 9px !important;
+      }
+    }
+  }
 }

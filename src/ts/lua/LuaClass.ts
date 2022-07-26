@@ -2,6 +2,9 @@ import { LuaFile } from './LuaFile';
 import { LuaConstructor } from './LuaConstructor';
 import { LuaContainer } from './LuaContainer';
 import { ClassModel } from './model/ClassModel';
+import { FieldModel } from './model/FieldModel';
+import { MethodModel } from './model/MethodModel';
+import { ConstructorModel } from './model/ConstructorModel';
 
 /**
  * **LuaClass** represents tables that are declared using `ISBaseObject:derive(..)`. This is the
@@ -40,7 +43,21 @@ export class LuaClass extends LuaContainer {
   }
 
   generateModel(): ClassModel {
-    return new ClassModel(this.name, this);
+    const model = new ClassModel(this, this.name);
+
+    const fieldNames = Object.keys(this.fields);
+    fieldNames.sort((o1, o2) => o1.localeCompare(o2));
+    for(const fieldName of fieldNames) {
+      model.fields[fieldName] = new FieldModel(fieldName, this.fields[fieldName]);
+    }
+
+    const methodNames = Object.keys(this.methods);
+    methodNames.sort((o1, o2) => o1.localeCompare(o2));
+    for(const methodName of methodNames) {
+      model.methods[methodName] = new MethodModel(methodName, this.methods[methodName]);
+    }
+
+    return model;
   }
 
   protected onCompile(prefix: string): string {

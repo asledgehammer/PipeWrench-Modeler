@@ -19,11 +19,23 @@ export class MethodModel extends Model<MethodModelJson> {
   readonly returns = new ReturnModel();
   readonly name: string;
 
-  constructor(name: string, json?: MethodModelJson) {
+  constructor(name: string, src?: MethodModelJson | LuaMethod) {
     super();
     this.name = name;
-    if (json) this.load(json);
+    if (src) {
+     if(src instanceof LuaMethod) {
+        this.create(src);
+     } else {
+       this.load(src);
+     }
+    }
     this.dom = this.generateDom();
+  }
+
+  create(method: LuaMethod) {
+    for(const param of method.params) {
+      this.params.push(new ParamModel(param))
+    }
   }
 
   load(json: MethodModelJson) {

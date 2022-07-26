@@ -8,6 +8,7 @@ import { LuaClass } from '../LuaClass';
 import { LuaTable } from '../LuaTable';
 import { LuaFunction } from '../LuaFunction';
 import { LuaField } from '../LuaField';
+import { LuaLibrary } from '../LuaLibrary';
 
 /**
  * **ModelLibrary**
@@ -32,6 +33,12 @@ export class ModelLibrary {
 
   /** All global function models in the library. */
   readonly globalFunctions: { [id: string]: FunctionModel } = {};
+
+  readonly luaLibrary: LuaLibrary;
+
+  constructor(luaLibrary: LuaLibrary) {
+    this.luaLibrary = luaLibrary;
+  }
 
   /**
    * Scans and discovers JSON model files to load & read.

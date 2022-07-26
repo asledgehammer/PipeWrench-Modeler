@@ -17,7 +17,7 @@ import { FunctionModel } from './model/FunctionModel';
  * @author JabDoesThings
  */
 export class LuaLibrary {
-  readonly models: ModelLibrary = new ModelLibrary();
+  readonly models: ModelLibrary = new ModelLibrary(this);
 
   private files: string[] = [];
 
@@ -27,7 +27,6 @@ export class LuaLibrary {
   properties: { [id: string]: NamedElement } = {};
 
   scan() {
-    this.models.scan();
     this.files = [];
     this.scanDir('./assets/media/lua/shared');
     this.scanDir('./assets/media/lua/client');
@@ -35,6 +34,7 @@ export class LuaLibrary {
     this.files.sort((a: string, b: string) => {
       return a.localeCompare(b);
     });
+    this.models.scan();
   }
 
   private scanDir(dir: string) {
@@ -60,7 +60,6 @@ export class LuaLibrary {
   }
 
   parse() {
-    this.models.parse();
     this.classes = {};
     this.tables = {};
     this.properties = {};
@@ -90,6 +89,7 @@ export class LuaLibrary {
     for (const clazz of Object.values(this.classes)) clazz.scanMethods();
     this.linkClasses();
     this.audit();
+    this.models.parse();
   }
 
   compileClasses(prefix: string = ''): string {

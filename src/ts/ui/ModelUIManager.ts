@@ -68,10 +68,26 @@ export class ModelUIManager {
 
     this.selectedClass = clazz;
 
-    let clazzModel = this.luaLibrary.getClassModel(clazz);
-    if(!clazzModel) clazzModel = clazz.generateModel();
+    // let clazzModel = this.luaLibrary.getClassModel(clazz);
+    // if(!clazzModel) clazzModel = clazz.generateModel();
+    let clazzModel = clazz.generateModel();
 
-    const dom = clazzModel.generateDom();
+    let dom = '';
+
+    dom += clazzModel.generateDom();
+    dom += clazzModel._constructor_?.generateDom();
+
+    const fieldNames = Object.keys(clazzModel.fields);
+    fieldNames.sort((o1, o2) => o1.localeCompare(o2));
+    for(const fieldName of fieldNames) {
+      dom += clazzModel.fields[fieldName].generateDom();
+    }
+
+    const methodNames = Object.keys(clazzModel.methods);
+    methodNames.sort((o1, o2) => o1.localeCompare(o2));
+    for(const methodName of methodNames) {
+      dom += clazzModel.methods[methodName].generateDom();
+    }
 
     this.$modelPane.empty();
     // this.$modelPane.fadeOut();

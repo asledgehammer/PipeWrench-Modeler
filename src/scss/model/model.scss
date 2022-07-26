@@ -67,16 +67,29 @@ $model_content_padding: 12px;
 
       textarea {
         position: relative;
-        width: calc(100% - 4px);
+        width: calc(100% - 8px);
         top: 2px;
         left: 0px;
-        min-height: 15px;
         resize: none;
+
+        transition: color 120ms ease-out, border-color 120ms ease-out;
 
         font-family: Consolas, 'Courier New', monospace;
 
         background-color: black;
+        border-color: 1px solid $color_background;
+        color: $color_secondary_text;
+
+        padding: 2px 4px;
+      }
+
+      textarea:focus {
+        border-color: $color_secondary_text;
+        border: 1px solid $color_3;
+        outline: none !important;
         color: white;
+
+        box-shadow: 0px 0px 1px 2px rgba(0,0,0,0.33);
       }
     }
 
