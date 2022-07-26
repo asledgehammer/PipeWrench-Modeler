@@ -81,7 +81,7 @@ $model_content_padding: 12px;
     border-bottom-left-radius: 3px;
     border-bottom-right-radius: 3px;
 
-    .model-field.field-multi-line {
+    .model-field {
       position: relative;
       min-height: 0;
       padding-bottom: 8px;
@@ -103,7 +103,7 @@ $model_content_padding: 12px;
 
   textarea {
     position: relative;
-    width: calc(100% - 8px);
+    width: calc(100% - 9px);
     top: 2px;
     left: 0px;
     resize: none;

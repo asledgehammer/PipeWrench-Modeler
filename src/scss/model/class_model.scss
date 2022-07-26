@@ -9,15 +9,15 @@
   }
 
   .model {
-    .model-params {
+    .model-groups {
       display: inline-block;
       position: relative;
       width: 100%;
       height: fit-content;
       min-height: 16px;
-      // margin-bottom: 16px;
+      margin-bottom: -8px;
 
-      .model-param {
+      .model-group {
         width: calc(100% - 2px);
         margin-bottom: 12px;
         background-color: $color_background;
@@ -28,8 +28,10 @@
 
         border-top-left-radius: 3px;
         border-top-right-radius: 3px;
+        border-bottom-left-radius: 3px;
+        border-bottom-right-radius: 3px;
 
-        .param-header {
+        .group-header {
           display: inline-block;
           position: relative;
           width: 100%;
@@ -50,7 +52,7 @@
           }
         }
   
-        .param-content {
+        .group-content {
           display: inline-block;
           position: relative;
           width: calc(100% - 18px);
@@ -61,8 +63,8 @@
           padding-left: 8px;
           padding-right: 8px;
 
-          .param-content {
-            margin-bottom: 4px;
+          textarea {
+            width: calc(100% - 8px);
           }
 
           label {
