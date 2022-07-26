@@ -115,7 +115,38 @@ export class MethodModel extends Model<MethodModelJson> {
   }
 
   generateDom(): string {
-      return '';
+    let dom = MethodModel.HTML_TEMPLATE;
+
+    const replaceAll = (from: string, to: string) => {
+      const fromS = '${' + from + "}";
+      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
+    };
+
+    let linesS = '';
+
+    const { doc } = this;
+    if(doc) {
+      const { lines } = doc;
+      if (lines) {
+        linesS = '';
+        for (const line of lines) linesS += `${line}\n`;
+        linesS = linesS.substring(0, linesS.length - 1);
+      }
+    }
+
+    let paramsS = '';
+    if(this.params.length) {
+      for(const param of this.params) {
+        paramsS += param.generateDom();
+      }      
+    }
+
+    replaceAll('HAS_PARAMS', this.params.length ? 'inline-block' : 'none');
+    replaceAll('METHOD_NAME', this.name);
+    replaceAll('LINES', linesS);
+    replaceAll('PARAMS', paramsS);
+
+    return dom;
   }
 
   testSignature(func: LuaMethod): boolean {

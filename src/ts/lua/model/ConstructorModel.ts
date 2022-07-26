@@ -1,5 +1,4 @@
 import { DocBuilder } from '../../DocBuilder';
-import { LuaClass } from '../LuaClass';
 import { LuaConstructor } from '../LuaConstructor';
 import { LuaMethod } from '../LuaMethod';
 import { ClassModel } from './ClassModel';
@@ -43,20 +42,14 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
     if (json.doc) this.doc.load(json.doc);
     
     if (json.params && this.clazz._constructor_) {
-      console.log('a');
       const {_constructor_} = this.clazz.clazz;
-      console.log('b');
 
       if(json.params.length === _constructor_.params.length) {
-        console.log('c', json.params.length);
         for (const param of json.params) this.params.push(new ParamModel('constructor', param));
-        console.log('c2', this.params);
       } else {
-        console.log('d');
         for (const param of _constructor_.params) {
           this.params.push(new ParamModel(param));
         }
-        console.log('d2', this.params);
       }
     }
   }
@@ -90,7 +83,6 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
       }
 
       // Process lines. (If defined)
-      console.log('lines: ', lines);
       if (lines && lines.length) {
         for (const line of lines) doc.appendLine(line);
         doc.appendLine();
@@ -148,13 +140,13 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
     }
 
     let paramsS = '';
-    console.log(this.params);
     if(this.params.length) {
       for(const param of this.params) {
         paramsS += param.generateDom();
       }
     }
 
+    replaceAll('HAS_PARAMS', this.params.length ? 'inline-block' : 'none');
     replaceAll('CLASS_NAME', this.clazz.name);
     replaceAll('LINES', linesS);
     replaceAll('PARAMS', paramsS);

@@ -62,36 +62,32 @@ export class ModelUIManager {
       const html = hljs.default.highlight(code, { language: 'typescript' }).value;
       let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>';
 
-      // console.log(s);
       this.$code.empty();
       this.$code.append(s);
     };
 
-    // let clazzModel = this.luaLibrary.getClassModel(clazz);
-    // if(!clazzModel) clazzModel = clazz.generateModel();
     let clazzModel = clazz.generateModel();
     clazz.model = clazzModel;
 
-    let dom = '';
+    this.$modelPane.empty();
 
-    dom += clazzModel.generateDom();
-    dom += clazzModel._constructor_?.generateDom();
+    this.$modelPane.append(clazzModel.generateDom());
+    if(clazzModel._constructor_) {
+      this.$modelPane.append(clazzModel._constructor_.generateDom());
+    }
 
     const fieldNames = Object.keys(clazzModel.fields);
     fieldNames.sort((o1, o2) => o1.localeCompare(o2));
     for (const fieldName of fieldNames) {
-      dom += clazzModel.fields[fieldName].generateDom();
+      this.$modelPane.append(clazzModel.fields[fieldName].generateDom());
     }
 
     const methodNames = Object.keys(clazzModel.methods);
     methodNames.sort((o1, o2) => o1.localeCompare(o2));
     for (const methodName of methodNames) {
-      dom += clazzModel.methods[methodName].generateDom();
+      const method = clazzModel.methods[methodName];
+      this.$modelPane.append(method.generateDom());
     }
-
-    this.$modelPane.empty();
-    // this.$modelPane.fadeOut();
-    this.$modelPane.append(dom);
 
     const $textAreas = this.$modelPane.find('textarea');
     $textAreas
@@ -108,6 +104,10 @@ export class ModelUIManager {
 
       if (model.hasClass('collapsed')) {
         model.removeClass('collapsed');
+
+        model.find('.textarea').each(function() {
+          $(this).trigger('input');
+        });
       } else {
         model.addClass('collapsed');
       }

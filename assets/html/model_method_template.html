@@ -1,4 +1,29 @@
 <!-- Method Model -->
-<div class="model">
-  <div class="model-header"><label>Method</label></div>
+<div class="model collapsed">
+
+  <div class="model-header">
+    <label>Method - ${METHOD_NAME}</label>
+    <div class="collapse-button"></div>
+  </div>
+  
+  <div class="model-content">
+
+    <!-- Lines -->
+    <div class="model-field field-multi-line lines">
+      <label>Description</label>
+      <textarea target="method:${METHOD_NAME}:lines" type="text"></textarea>
+    </div>
+
+    <!-- Parameters -->
+    <div class="model-groups params" style="display: ${HAS_PARAMS};">
+      <label style="margin-bottom: 9px">Parameters</label>
+      ${PARAMS}
+    </div>
+
+    <!-- Return Types -->
+    <div class="model-field field-multi-line lines">
+      <label>Return Types</label>
+      <textarea target="method:${METHOD_NAME}:returntypes" type="text"></textarea>
+    </div>
+  </div>
 </div>
