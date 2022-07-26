@@ -1,4 +1,4 @@
-import { ModelUIManager } from '../../ui/ModelUIManager';
+import { Model } from './Model';
 import { ClassDoc, ClassDocJson } from './doc/ClassDoc';
 import { ConstructorModel, ConstructorModelJson } from './ConstructorModel';
 import { FieldModel, FieldModelJson } from './FieldModel';
@@ -8,12 +8,14 @@ import { LuaField } from '../LuaField';
 import { LuaMethod } from '../LuaMethod';
 import { DocBuilder } from '../../DocBuilder';
 
+import { sanitizeMethodName, unsanitizeMethodName } from './ModelUtils';
+
 /**
  * **ClassModel**
  *
  * @author JabDoesThings
  */
-export class ClassModel {
+export class ClassModel extends Model<ClassModelJson> {
   /** (Loaded via {@link ModelUIManager}) */
   static HTML_TEMPLATE: string = '';
 
@@ -22,12 +24,26 @@ export class ClassModel {
   readonly _constructor_: ConstructorModel;
   readonly doc = new ClassDoc();
   readonly name: string;
+  dom: string = '';
 
-  constructor(name: string, json?: ClassModelJson) {
+  constructor(name: string, src?: ClassModelJson | LuaClass) {
+    super();
     this.name = name;
     this.doc = new ClassDoc();
     this._constructor_ = new ConstructorModel(this);
-    if (json) this.load(json);
+
+    if(src) {
+      if(src instanceof LuaClass) {
+        this.create(src);
+      } else {
+        if (src) this.load(src);
+      }
+    }
+    this.dom = this.generateDom();
+  }
+
+  create(clazz: LuaClass) {
+    // TODO: Implement.
   }
 
   load(json: ClassModelJson) {
@@ -41,12 +57,14 @@ export class ClassModel {
 
     if (json.methods) {
       for (const name of Object.keys(json.methods)) {
-        this.methods[this.sanitizeMethodName(name)] = new MethodModel(name, json.methods[name]);
+        this.methods[sanitizeMethodName(name)] = new MethodModel(name, json.methods[name]);
       }
     }
 
     if (json._constructor_) this._constructor_.load(json._constructor_);
     if (json.doc) this.doc.load(json.doc);
+
+    this.dom = this.generateDom();
   }
 
   save(): ClassModelJson {
@@ -60,7 +78,7 @@ export class ClassModel {
 
     for (const name in Object.keys(this.methods)) {
       const methodModel = this.methods[name];
-      methods[this.unsanitizeMethodName(name)] = methodModel.save();
+      methods[unsanitizeMethodName(name)] = methodModel.save();
     }
 
     const _constructor_ = this._constructor_.save();
@@ -98,7 +116,10 @@ export class ClassModel {
       // Process authors. (If defined)
       if (authors && authors.length) {
         let s = '[';
-        for (const author of authors) s += `${author}, `;
+        for (let author of authors) {
+          author = author.trim();
+          if(author.length) s += `${author}, `;
+        }
         s = `${s.substring(0, s.length - 2)}]`;
         doc.appendAnnotation('author', s);
       }
@@ -113,19 +134,35 @@ export class ClassModel {
     return doc.build(prefix);
   }
 
-  createHTML() {
-    let html = ClassModel.HTML_TEMPLATE;
+  generateDom(): string {
+    let dom = ClassModel.HTML_TEMPLATE;
 
     const replaceAll = (from: string, to: string) => {
-      const fromS = `${from}`;
-      while (html.indexOf(fromS) !== -1) html = html.replace(fromS, this.name);
+      const fromS = '${' + from + "}";
+      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
     };
 
-    let authors = '';
-    let lines = '';
+    let authorsS = '';
+    let linesS = '';
+
+    const { doc } = this;
+    if(doc) {
+      const { authors, lines } = doc;
+      if(authors.length) {
+        if(authors) for(const author of authors) authorsS += `${author}\n`;
+        authorsS = authorsS.substring(0, authorsS.length - 1);
+      }
+      if(lines.length) {
+        for(const line of lines) linesS += `${line}\n`;
+        linesS = linesS.substring(0, linesS.length - 1);
+      }
+    }
 
     replaceAll('CLASS_NAME', this.name);
-    replaceAll('AUTHORS', authors);
+    if (authorsS.length) replaceAll('AUTHORS', authorsS);
+    if (linesS.length) replaceAll('LINES', linesS);
+    
+    return dom;
   }
 
   testSignature(clazz: LuaClass): boolean {
@@ -138,22 +175,8 @@ export class ClassModel {
     return null;
   }
 
-  sanitizeMethodName(name: string) {
-    if (name === 'toString') {
-      return `_${name}`;
-    }
-    return name;
-  }
-
-  unsanitizeMethodName(name: string) {
-    if (name === '_toString') {
-      return name.substring(1);
-    }
-    return name;
-  }
-
   getMethod(method: LuaMethod): MethodModel {
-    const name = this.sanitizeMethodName(method.name);
+    const name = sanitizeMethodName(method.name);
     const model = this.methods[name];
     if (model && model.testSignature(method)) return model;
     return null;

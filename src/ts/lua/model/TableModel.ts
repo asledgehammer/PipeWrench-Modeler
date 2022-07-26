@@ -5,21 +5,27 @@ import { LuaTable } from '../LuaTable';
 import { LuaField } from '../LuaField';
 import { LuaMethod } from '../LuaMethod';
 import { DocBuilder } from '../../DocBuilder';
+import { Model } from './Model';
 
 /**
  * **TableModel**
  *
  * @author JabDoesThings
  */
-export class TableModel {
+export class TableModel extends Model<TableModelJson> {
+  /** (Loaded via {@link ModelUIManager}) */
+  static HTML_TEMPLATE: string = '';
+
   readonly doc: TableDoc = new TableDoc();
   readonly fields: { [id: string]: FieldModel } = {};
   readonly methods: { [id: string]: MethodModel } = {};
   readonly name: string;
 
   constructor(name: string, json?: TableModelJson) {
+    super();
     this.name = name;
     if (json) this.load(json);
+    this.dom = this.generateDom();
   }
 
   load(json: TableModelJson) {
@@ -90,6 +96,10 @@ export class TableModel {
     }
 
     return doc.build(prefix);
+  }
+
+  generateDom(): string {
+    return '';
   }
 
   testSignature(table: LuaTable): boolean {

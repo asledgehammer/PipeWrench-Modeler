@@ -1,6 +1,7 @@
 import { DocBuilder } from '../../DocBuilder';
 import { LuaMethod } from '../LuaMethod';
 import { MethodDoc, MethodDocJson } from './doc/MethodDoc';
+import { Model } from './Model';
 import { ParamModel, ParamModelJson } from './ParamModel';
 import { ReturnModel, ReturnModelJson } from './ReturnModel';
 
@@ -9,15 +10,20 @@ import { ReturnModel, ReturnModelJson } from './ReturnModel';
  *
  * @author JabDoesThings
  */
-export class MethodModel {
+export class MethodModel extends Model<MethodModelJson> {
+  /** (Loaded via {@link ModelUIManager}) */
+  static HTML_TEMPLATE: string = '';
+
   readonly doc = new MethodDoc();
   readonly params: ParamModel[] = [];
   readonly returns = new ReturnModel();
   readonly name: string;
 
   constructor(name: string, json?: MethodModelJson) {
+    super();
     this.name = name;
     if (json) this.load(json);
+    this.dom = this.generateDom();
   }
 
   load(json: MethodModelJson) {
@@ -94,6 +100,10 @@ export class MethodModel {
       }
     }
     return doc.build(prefix);
+  }
+
+  generateDom(): string {
+      return '';
   }
 
   testSignature(func: LuaMethod): boolean {

@@ -11,7 +11,7 @@ $model_content_padding: 12px;
   left: 0;
   width: calc(100% - (#{$model_pane_padding} * 2));
   height: calc(100% - (#{$model_pane_padding} * 2));
-  
+
   overflow-y: auto;
 
   padding: $model_pane_padding;
@@ -71,7 +71,7 @@ $model_content_padding: 12px;
         top: 2px;
         left: 0px;
         min-height: 15px;
-        resize: vertical;
+        resize: none;
 
         font-family: Consolas, 'Courier New', monospace;
 

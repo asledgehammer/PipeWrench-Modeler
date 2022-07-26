@@ -1,20 +1,30 @@
 import { LuaField } from '../LuaField';
 import { FieldDoc, FieldDocJson } from './doc/FieldDoc';
+import { Model } from './Model';
 
 /**
  * **FieldModel**
  *
  * @author JabDoesThings
  */
-export class FieldModel {
+export class FieldModel extends Model<FieldModelJson> {
+  /** (Loaded via {@link ModelUIManager}) */
+  static HTML_TEMPLATE: string = '';
+
   readonly doc = new FieldDoc();
   readonly types: string[] = [];
   readonly name: string;
   applyUnknownType: boolean = true;
 
   constructor(name: string, json?: FieldModelJson) {
+    super();
     this.name = name;
     if (json) this.load(json);
+    this.dom = this.generateDom();
+  }
+
+  generateDom(): string {
+    return '';
   }
 
   testSignature(field: LuaField): boolean {

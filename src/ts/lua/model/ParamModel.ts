@@ -1,11 +1,15 @@
 import { ParamDoc, ParamDocJson } from './doc/ParamDoc';
+import { Model } from './Model';
 
 /**
  * **ParamModel**
  *
  * @author JabDoesThings
  */
-export class ParamModel {
+export class ParamModel extends Model<ParamModelJson> {
+  /** (Loaded via {@link ModelUIManager}) */
+  static HTML_TEMPLATE: string = '';
+
   readonly doc = new ParamDoc();
   readonly types: string[] = [];
   id = '';
@@ -13,7 +17,9 @@ export class ParamModel {
   applyUnknownType: boolean = true;
 
   constructor(json?: ParamModelJson) {
+    super();
     if (json) this.load(json);
+    this.dom = this.generateDom();
   }
 
   load(json: ParamModelJson) {
@@ -32,15 +38,19 @@ export class ParamModel {
     return { doc, id, applyUnknownType, rename, types };
   }
 
-  testSignature(paramName: string): boolean {
-    return paramName === this.id;
-  }
-
   clear() {
     this.doc.clear();
     this.types.length = 0;
     this.applyUnknownType = true;
     this.rename = '';
+  }
+
+  generateDom(): string {
+    return '';
+  }
+
+  testSignature(paramName: string): boolean {
+    return paramName === this.id;
   }
 
   get name(): string {

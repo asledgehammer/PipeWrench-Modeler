@@ -1,13 +1,16 @@
+import { Model } from "./Model";
+
 /**
  * **ReturnModel**
  * 
  * @author JabDoesThings
  */
-export class ReturnModel {
+export class ReturnModel extends Model<ReturnModelJson> {
   readonly types: string[] = [];
   applyUnknownType: boolean = true;
 
   constructor(json?: ReturnModelJson) {
+    super();
     if(json) this.load(json);
   }
 
@@ -24,6 +27,10 @@ export class ReturnModel {
   clear() {
     this.types.length = 0;
     this.applyUnknownType = true;
+  }
+
+  generateDom(): string {
+    return '';
   }
 }
 

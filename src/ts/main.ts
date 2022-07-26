@@ -9,11 +9,12 @@ var luaLibrary;
 export let start = function () {
   setTimeout(() => {
 
-    modelUIManager = new ModelUIManager();
-
     luaLibrary = new LuaLibrary();
     luaLibrary.scan();
     luaLibrary.parse();
+
+    modelUIManager = new ModelUIManager(luaLibrary);
+    modelUIManager.setClass('ISUIElement');
     
 
     // const listItems = document.getElementById("class-list");

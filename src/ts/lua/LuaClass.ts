@@ -39,6 +39,10 @@ export class LuaClass extends LuaContainer {
     this.superClassName = superClassName;
   }
 
+  generateModel(): ClassModel {
+    return new ClassModel(this.name, this);
+  }
+
   protected onCompile(prefix: string): string {
     const { library } = this.file;
 

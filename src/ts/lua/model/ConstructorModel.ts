@@ -4,6 +4,7 @@ import { LuaConstructor } from '../LuaConstructor';
 import { LuaMethod } from '../LuaMethod';
 import { ClassModel } from './ClassModel';
 import { ConstructorDoc, ConstructorDocJson } from './doc/ConstructorDoc';
+import { Model } from './Model';
 import { ParamModel, ParamModelJson } from './ParamModel';
 
 /**
@@ -11,14 +12,19 @@ import { ParamModel, ParamModelJson } from './ParamModel';
  *
  * @author JabDoesThings
  */
-export class ConstructorModel {
+export class ConstructorModel extends Model<ConstructorModelJson> {
+  /** (Loaded via {@link ModelUIManager}) */
+  static HTML_TEMPLATE: string = '';
+
   readonly params: ParamModel[] = [];
   readonly doc: ConstructorDoc;
   readonly clazz: ClassModel;
 
   constructor(clazz: ClassModel, json?: ConstructorModelJson) {
+    super();
     this.clazz = clazz;
     this.doc = new ConstructorDoc();
+    this.dom = this.generateDom();
     if (json) this.load(json);
   }
 
@@ -91,6 +97,30 @@ export class ConstructorModel {
       }
     }
     return doc.build(prefix);
+  }
+
+  generateDom(): string {
+    let dom = ClassModel.HTML_TEMPLATE;
+
+    const replaceAll = (from: string, to: string) => {
+      const fromS = '${' + from + "}";
+      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
+    };
+
+    let linesS = '';
+
+    const { doc } = this;
+    if(doc) {
+      const { lines } = doc;
+      if (lines) {
+        linesS = '';
+        for (const line of lines) linesS += `${lines}\n`;
+        linesS = linesS.substring(0, linesS.length - 1);
+      }
+    }
+    replaceAll('LINES', linesS);
+
+    return dom;
   }
 
   testSignature(_constructor_: LuaMethod): boolean {

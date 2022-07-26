@@ -1,6 +1,7 @@
 import { DocBuilder } from '../../DocBuilder';
 import { LuaFunction } from '../LuaFunction';
 import { FunctionDoc, FunctionDocJson } from './doc/FunctionDoc';
+import { Model } from './Model';
 import { ParamModel, ParamModelJson } from './ParamModel';
 import { ReturnModel, ReturnModelJson } from './ReturnModel';
 
@@ -9,15 +10,20 @@ import { ReturnModel, ReturnModelJson } from './ReturnModel';
  *
  * @author JabDoesThings
  */
-export class FunctionModel {
+export class FunctionModel extends Model<FunctionModelJson> {
+  /** (Loaded via {@link ModelUIManager}) */
+  static HTML_TEMPLATE: string = '';
+
   readonly doc = new FunctionDoc();
   readonly params: ParamModel[] = [];
   readonly returns = new ReturnModel();
   readonly name: string;
 
   constructor(name: string, json?: FunctionModelJson) {
+    super();
     this.name = name;
     if (json) this.load(json);
+    this.dom = this.generateDom();
   }
 
   load(json: FunctionModelJson) {
@@ -95,6 +101,10 @@ export class FunctionModel {
       }
     }
     return doc.build(prefix);
+  }
+
+  generateDom(): string {
+    return '';
   }
 
   testSignature(func: LuaFunction): boolean {
