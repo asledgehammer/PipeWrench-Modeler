@@ -172,9 +172,9 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
     return true;
   }
 
-  getParamModel(name: string) {
+  getParamModel(id: string) {
     for(const param of this.params) {
-      if(param.name === name) return param;
+      if(param.id === id) return param;
     }
     return null;
   }
