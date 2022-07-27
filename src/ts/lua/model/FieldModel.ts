@@ -20,7 +20,7 @@ export class FieldModel extends Model<FieldModelJson> {
     super();
     this.name = name;
     if (src) {
-      if(src instanceof LuaField) {
+      if (src instanceof LuaField) {
         this.create(src);
       } else {
         this.load(src);
@@ -33,14 +33,14 @@ export class FieldModel extends Model<FieldModelJson> {
     let dom = FieldModel.HTML_TEMPLATE;
 
     const replaceAll = (from: string, to: string) => {
-      const fromS = '${' + from + "}";
+      const fromS = '${' + from + '}';
       while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
     };
 
     let linesS = '';
 
     const { doc } = this;
-    if(doc) {
+    if (doc) {
       const { lines } = doc;
       if (lines) {
         linesS = '';
@@ -59,19 +59,17 @@ export class FieldModel extends Model<FieldModelJson> {
     return field.name === this.name;
   }
 
-  create(field: LuaField) {
-
-  }
+  create(field: LuaField) {}
 
   load(json: FieldModelJson) {
-    if(json.doc) this.doc.load(json.doc);
-    for(const type of json.types) this.types.push(type);
+    if (json.doc) this.doc.load(json.doc);
+    for (const type of json.types) this.types.push(type);
     this.applyUnknownType = json.applyUnknownType;
   }
 
   save(): FieldModelJson {
     const doc = this.doc.save();
-    const { types, applyUnknownType} = this;
+    const { types, applyUnknownType } = this;
     return { doc, types, applyUnknownType };
   }
 
@@ -84,7 +82,7 @@ export class FieldModel extends Model<FieldModelJson> {
 
 /**
  * **FieldModelJson**
- * 
+ *
  * @author JabDoesThings
  */
 export type FieldModelJson = {

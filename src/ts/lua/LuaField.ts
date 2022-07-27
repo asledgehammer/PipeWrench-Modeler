@@ -30,20 +30,24 @@ export class LuaField extends NamedElement {
   }
 
   onCompile(prefix: string): string {
-    const types: string[] = ['unknown'];
+    const types: string[] = [];
     let sDoc = '';
 
-    const processField = (fieldModel: FieldModel) => {
-      const { applyUnknownType, types: fTypes, doc: fieldDoc } = fieldModel;
+    const processField = (model: FieldModel) => {
+
+      console.log(`processField(${this.name})`);
+
+      const { types: fTypes, doc: fieldDoc } = model;
 
       // Process field types.
-      if (!applyUnknownType) types.length = 0;
       if (fTypes && fTypes.length) {
         for (const fType of fTypes) {
           // Prevent duplicate type entries.
           if (types.indexOf(fType) !== -1) continue;
           types.push(fType);
         }
+      } else {
+        types.push('unknown');
       }
 
       if (fieldDoc) {
@@ -61,31 +65,50 @@ export class LuaField extends NamedElement {
         }
 
         // Process lines. (If defined)
+        console.log(lines);
         if (lines && lines.length) {
           if (hasAnnotations) doc.appendLine();
           for (const line of lines) doc.appendLine(line);
         }
 
-        sDoc = doc.build(prefix);
+        if (!doc.isEmpty()) sDoc = doc.build(prefix);
+        
       }
     };
 
+    
     const { container } = this;
     if (container) {
-      const { library } = this.container.file;
-      if (container instanceof LuaClass) {
-        const classModel = library.getClassModel(container);
-        if (classModel) {
-          const fieldModel = classModel.getField(this);
-          if (fieldModel) processField(fieldModel);
+      let fieldModel: FieldModel;
+      if(container instanceof LuaClass) {
+        let clazzModel = container.model;
+        fieldModel = clazzModel ? clazzModel.getField(this) : null;
+      }
+
+      if(fieldModel) {
+        if (container instanceof LuaClass) {
+          processField(fieldModel);
+        } else if (container instanceof LuaTable) {
+          processField(fieldModel);
         }
-      } else if (container instanceof LuaTable) {
-        const tableModel = library.getTableModel(container);
-        if (tableModel) {
-          const fieldModel = tableModel.getField(this);
-          if (fieldModel) processField(fieldModel);
+      } else {
+        const { library } = this.container.file;
+        if (container instanceof LuaClass) {
+          const classModel = library.getClassModel(container);
+          if (classModel) {
+            fieldModel = classModel.getField(this);
+            if (fieldModel) processField(fieldModel);
+          }
+        } else if (container instanceof LuaTable) {
+          const tableModel = library.getTableModel(container);
+          if (tableModel) {
+            fieldModel = tableModel.getField(this);
+            if (fieldModel) processField(fieldModel);
+          }
         }
       }
+
+        
     }
 
     // Compile the gathered types as TypeScript syntax.

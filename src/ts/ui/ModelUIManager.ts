@@ -67,6 +67,7 @@ export class ModelUIManager {
     };
 
     let clazzModel = clazz.generateModel();
+    this.luaLibrary.models.classes[clazz.name] = clazzModel;
     clazz.model = clazzModel;
 
     this.$modelPane.empty();
@@ -113,63 +114,119 @@ export class ModelUIManager {
       }
     });
 
-    $('*[target]').on('input', function () {
-      const textarea = this as HTMLTextAreaElement;
-      const target = this.getAttribute('target');
-      if (target) {
-        const paths = target.split(':');
-        console.log(paths);
+    const handleClassTarget = (element: HTMLElement, paths: string[]) => {
+      if (paths[1] === 'lines') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        clazzModel.doc.lines.length = 0;
+        for (let line of raw) {
+          line = line.trim();
+          if (line.length) clazzModel.doc.lines.push(line);
+        }
+      } else if (paths[1] === 'authors') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        clazzModel.doc.authors.length = 0;
+        for (let line of raw) {
+          line = line.trim();
+          if (line.length) clazzModel.doc.authors.push(line);
+        }
+      }
+    };
 
-        if (paths[0] === 'class') {
-          if (paths[1] === 'lines') {
-            const raw = textarea.value.split('\n');
-            clazzModel.doc.lines.length = 0;
-            for (let line of raw) {
-              line = line.trim();
-              if (line.length) clazzModel.doc.lines.push(line);
-            }
-          } else if (paths[1] === 'authors') {
-            const raw = textarea.value.split('\n');
-            clazzModel.doc.authors.length = 0;
-            for (let line of raw) {
-              line = line.trim();
-              if (line.length) clazzModel.doc.authors.push(line);
-            }
+    const handleConstructorTarget = (element: HTMLElement, paths: string[]) => {
+      if (paths[1] === 'lines') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        clazzModel._constructor_.doc.lines.length = 0;
+        for (let line of raw) {
+          line = line.trim();
+          if (line.length) clazzModel._constructor_.doc.lines.push(line);
+        }
+      } else if (paths[1] === 'param') {
+        const input = element as HTMLInputElement;
+        const paramName = paths[2];
+        const field = paths[3];
+        const paramModel = clazzModel._constructor_.getParamModel(paramName);
+        if (field === 'rename') {
+          paramModel.rename = input.value.trim();
+        } else if(field === 'lines') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          paramModel.doc.lines.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) paramModel.doc.lines.push(line);
           }
-        } else if (paths[0] === 'constructor') {
-          if (paths[1] === 'lines') {
-            const raw = textarea.value.split('\n');
-            clazzModel._constructor_.doc.lines.length = 0;
-            for (let line of raw) {
-              line = line.trim();
-              if (line.length) clazzModel._constructor_.doc.lines.push(line);
-            }
-          } else if (paths[1] === 'param') {
-            const paramName = paths[2];
-            const field = paths[3];
-            const paramModel = clazzModel._constructor_.getParamModel(paramName);
-            if (field === 'rename') {
-              console.log(textarea.value);
-              paramModel.rename = textarea.value.trim();
-            } else if(field === 'lines') {
-              const raw = textarea.value.split('\n');
-              paramModel.doc.lines.length = 0;
-              for (let line of raw) {
-                line = line.trim();
-                if (line.length) paramModel.doc.lines.push(line);
-              }
-            } else if(field === 'types') {
-              const raw = textarea.value.split('\n');
-              paramModel.types.length = 0;
-              for (let line of raw) {
-                line = line.trim();
-                if (line.length) paramModel.types.push(line);
-              }
-            }
+        } else if(field === 'types') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          paramModel.types.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) paramModel.types.push(line);
           }
         }
       }
+    };
 
+    const handleFieldTarget = (element: HTMLElement, target: string[]) => {
+      const fieldName = target[1];
+      const field = clazz.fields[fieldName];
+
+      if(!field) {
+        console.warn(`Could not locate the field in class: ${clazz.name}.${field.name}`)
+        return;
+      }
+
+      const fieldModel = clazzModel.getField(field);
+
+      if(!fieldModel) {
+        console.warn(`Could not locate the FieldModel for field: ${clazz.name}.${field.name}`)
+        return;
+      }
+
+      if(target[2] === 'lines') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        fieldModel.doc.lines.length = 0;
+        for (let line of raw) fieldModel.doc.lines.push(line);
+      } else if (target[2] === 'returntypes') {
+        const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          fieldModel.types.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) fieldModel.types.push(line);
+          }
+      }
+
+      console.log(target);
+    };
+
+    const handleMethodTarget = (element: HTMLElement, paths: string[]) => {
+      console.log(paths);
+    };
+
+    // Any model-field with a target will fire this method. Changes to model values
+    // are handled here.
+    $('*[target]').on('input', function () {
+      const target = this.getAttribute('target');
+      if (target) {
+        const paths = target.split(':');
+        const type = paths[0];
+        if (type === 'class') {
+          handleClassTarget(this, paths);
+        } else if (type === 'constructor') {
+          handleConstructorTarget(this, paths);
+        } else if (type === 'field') {
+          handleFieldTarget(this, paths);
+        } else if (type === 'method') {
+          handleMethodTarget(this, paths);
+        }
+      }
+
+      // Reflect the changes to the model by updating the code-panel.
       updateCode();
     });
 
