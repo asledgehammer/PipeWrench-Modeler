@@ -23,14 +23,13 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
     super();
     this.clazz = clazz;
     this.doc = new ConstructorDoc();
-    if(clazz) this.create();
+    if (clazz) this.create();
     if (json) this.load(json);
-
   }
 
   create() {
-    const {_constructor_} = this.clazz.clazz;
-    if(_constructor_) {
+    const { _constructor_ } = this.clazz.clazz;
+    if (_constructor_) {
       for (const param of _constructor_.params) {
         this.params.push(new ParamModel('constructor', param));
       }
@@ -40,11 +39,11 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
   load(json: ConstructorModelJson) {
     this.clear();
     if (json.doc) this.doc.load(json.doc);
-    
-    if (json.params && this.clazz._constructor_) {
-      const {_constructor_} = this.clazz.clazz;
 
-      if(json.params.length === _constructor_.params.length) {
+    if (json.params && this.clazz._constructor_) {
+      const { _constructor_ } = this.clazz.clazz;
+
+      if (json.params.length === _constructor_.params.length) {
         for (const param of json.params) this.params.push(new ParamModel('constructor', param));
       } else {
         for (const param of _constructor_.params) {
@@ -55,8 +54,24 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
   }
 
   save(): ConstructorModelJson {
-    const params: ParamModelJson[] = [];
-    const doc: ConstructorDocJson = this.doc.save();
+    let params: ParamModelJson[] = undefined;
+    let oneParamChanged = false;
+    for (const param of this.params) {
+      if(!param.isDefault()) {
+        oneParamChanged = true;
+        break;
+      }
+    }
+    if(oneParamChanged) {
+      params = [];
+      for (const param of this.params) {
+        params.push(param.save());
+      }
+    }
+
+    let doc: ConstructorDocJson = undefined;
+    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
+
     return { doc, params };
   }
 
@@ -71,16 +86,7 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
     const doc = new DocBuilder();
     const { doc: constructorDoc, params } = this;
     if (constructorDoc) {
-      const { annotations, lines } = constructorDoc;
-
-      // Process annotations. (If defined)
-      if (annotations) {
-        const keys = Object.keys(annotations);
-        if (keys && keys.length) {
-          for (const key of keys) doc.appendAnnotation(key, annotations[key]);
-          doc.appendLine();
-        }
-      }
+      const { lines } = constructorDoc;
 
       // Process lines. (If defined)
       if (lines && lines.length) {
@@ -123,14 +129,14 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
     let dom = ConstructorModel.HTML_TEMPLATE;
 
     const replaceAll = (from: string, to: string) => {
-      const fromS = '${' + from + "}";
+      const fromS = '${' + from + '}';
       while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
     };
 
     let linesS = '';
 
     const { doc } = this;
-    if(doc) {
+    if (doc) {
       const { lines } = doc;
       if (lines) {
         linesS = '';
@@ -140,8 +146,8 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
     }
 
     let paramsS = '';
-    if(this.params.length) {
-      for(const param of this.params) {
+    if (this.params.length) {
+      for (const param of this.params) {
         paramsS += param.generateDom();
       }
     }
@@ -165,10 +171,16 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
   }
 
   getParamModel(id: string) {
-    for(const param of this.params) {
-      if(param.id === id) return param;
+    for (const param of this.params) {
+      if (param.id === id) return param;
     }
     return null;
+  }
+
+  isDefault(): boolean {
+    for (const param of Object.values(this.params)) if (!param.isDefault()) return false;
+    if (this.doc && !this.doc.isDefault()) return false;
+    return true;
   }
 }
 

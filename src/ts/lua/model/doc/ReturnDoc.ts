@@ -10,6 +10,10 @@ export class ReturnDoc extends BaseDoc {
     super();
     if (json) this.load(json);
   }
+
+  save(): ReturnDocJson {
+    return super.save() as ReturnDocJson;
+  }
 }
 
 export type ReturnDocJson = BaseDocJson;

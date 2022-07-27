@@ -6,6 +6,7 @@ import { LuaField } from '../LuaField';
 import { LuaMethod } from '../LuaMethod';
 import { DocBuilder } from '../../DocBuilder';
 import { Model } from './Model';
+import { unsanitizeMethodName } from './ModelUtils';
 
 /**
  * **TableModel**
@@ -25,7 +26,6 @@ export class TableModel extends Model<TableModelJson> {
     super();
     this.name = name;
     if (json) this.load(json);
-    this.dom = this.generateDom();
   }
 
   load(json: TableModelJson) {
@@ -47,17 +47,42 @@ export class TableModel extends Model<TableModelJson> {
   }
 
   save(): TableModelJson {
-    const fields: { [id: string]: FieldModelJson } = {};
-    const methods: { [id: string]: MethodModelJson } = {};
-    for (const fieldName in Object.keys(this.fields)) {
-      const fieldModel = this.fields[fieldName];
-      fields[fieldName] = fieldModel.save();
+    let fields: { [id: string]: FieldModelJson } = undefined;
+    let methods: { [id: string]: MethodModelJson } = undefined;
+
+    let oneFieldDifferent = false;
+    for (const field of Object.values(this.fields)) {
+      if (!field.isDefault()) {
+        oneFieldDifferent = true;
+        break;
+      } 
     }
-    for (const methodName in Object.keys(this.methods)) {
-      const methodModel = this.methods[methodName];
-      methods[methodName] = methodModel.save();
+    if (oneFieldDifferent) {
+      fields = {};
+      for (const fieldName of Object.keys(this.fields)) {
+        const fieldModel = this.fields[fieldName];
+        if (!fieldModel.isDefault()) fields[fieldName] = fieldModel.save();
+      }
     }
-    const doc = this.doc.save();
+
+    let oneMethodDifferent = false;
+    for (const method of Object.values(this.methods)) {
+      if (!method.isDefault()) {
+        oneMethodDifferent = true;
+        break;
+      } 
+    }
+    if (oneMethodDifferent) {
+      methods = {};
+      for (const name of Object.keys(this.methods)) {
+        const methodModel = this.methods[name];
+        if (!methodModel.isDefault()) methods[unsanitizeMethodName(name)] = methodModel.save();
+      }
+    }
+
+    let doc: TableDocJson = undefined;
+    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
+
     return { fields, methods, doc };
   }
 
@@ -71,13 +96,7 @@ export class TableModel extends Model<TableModelJson> {
     const doc = new DocBuilder();
     const { doc: tableDoc } = this;
     if (tableDoc) {
-      const { annotations, authors, lines } = tableDoc;
-
-      // Process annotations. (If defined)
-      const annoKeys = Object.keys(annotations);
-      if (annoKeys && annoKeys.length) {
-        for (const key of annoKeys) doc.appendAnnotation(key, annotations[key]);
-      }
+      const { authors, lines } = tableDoc;
 
       // Process authors. (If defined)
       if (authors && authors.length) {
@@ -116,6 +135,16 @@ export class TableModel extends Model<TableModelJson> {
     const model = this.methods[method.name];
     if (model && model.testSignature(method)) return model;
     return null;
+  }
+
+  isDefault(): boolean {
+    // Check fields.
+    for (const field of Object.values(this.fields)) if (!field.isDefault()) return false;
+    // Check methods.
+    for (const method of Object.values(this.methods)) if (!method.isDefault()) return false;
+    // Check doc.
+    if (this.doc && !this.doc.isDefault()) return false;
+    return true;
   }
 }
 

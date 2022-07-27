@@ -6,30 +6,14 @@ import { BaseDoc, BaseDocJson } from './BaseDoc';
  * @author JabDoesThings
  */
 export class MethodDoc extends BaseDoc {
-  annotations: { [annotation: string]: any } = {};
-
   constructor(json?: MethodDocJson) {
     super();
     if (json) this.load(json);
   }
 
-  load(json: MethodDocJson) {
-    super.load(json);
-    if(json.annotations) this.annotations = json.annotations;
-  }
-
   save(): MethodDocJson {
-    const json = super.save() as MethodDocJson;
-    json.annotations = this.annotations;
-    return json;
-  }
-
-  clear() {
-    super.clear();
-    for (const key of Object.keys(this.annotations)) delete this.annotations[key]; 
+    return super.save() as MethodDocJson;
   }
 }
 
-export type MethodDocJson = BaseDocJson & {
-  annotations: { [annotation: string]: any };
-};
+export type MethodDocJson = BaseDocJson & {};

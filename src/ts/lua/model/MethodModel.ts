@@ -23,18 +23,17 @@ export class MethodModel extends Model<MethodModelJson> {
     super();
     this.name = name;
     if (src) {
-     if(src instanceof LuaMethod) {
+      if (src instanceof LuaMethod) {
         this.create(src);
-     } else {
-       this.load(src);
-     }
+      } else {
+        this.load(src);
+      }
     }
-    this.dom = this.generateDom();
   }
 
   create(method: LuaMethod) {
-    for(const param of method.params) {
-      this.params.push(new ParamModel(this.name, param))
+    for (const param of method.params) {
+      this.params.push(new ParamModel(this.name, param));
     }
   }
 
@@ -46,9 +45,29 @@ export class MethodModel extends Model<MethodModelJson> {
   }
 
   save(): MethodModelJson {
-    const doc = this.doc.save();
-    const params = this.params.map((param) => param.save());
-    const { returns } = this;
+    let doc: MethodDocJson = undefined;
+    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
+
+    let params: ParamModelJson[] = undefined;
+    let oneParamChanged = false;
+    for (const param of this.params) {
+      if(!param.isDefault()) {
+        oneParamChanged = true;
+        break;
+      }
+    }
+    if(oneParamChanged) {
+      params = [];
+      for (const param of this.params) {
+        params.push(param.save());
+      }
+    }
+
+    let returns: ReturnModelJson = undefined;
+    if (this.returns && !this.returns.isDefault()) {
+      returns = this.returns.save();
+    }
+
     return { doc, params, returns };
   }
 
@@ -66,24 +85,15 @@ export class MethodModel extends Model<MethodModelJson> {
 
     const { doc: methodDoc, params } = this;
     if (methodDoc) {
-      const { annotations, lines } = methodDoc;
-
-      // Process annotations. (If defined)
-      if (annotations) {
-        const keys = Object.keys(annotations);
-        if (keys && keys.length) {
-          for (const key of keys) doc.appendAnnotation(key, annotations[key]);
-          doc.appendLine();
-        }
-      }
+      const { lines } = methodDoc;
 
       // Process lines. (If defined)
       if (lines && lines.length) {
         let oneLine = false;
         for (let line of lines) {
-          if(!oneLine) {
+          if (!oneLine) {
             line = line.trim();
-            if(line.length) {
+            if (line.length) {
               doc.appendLine(line);
               oneLine = true;
             }
@@ -126,14 +136,14 @@ export class MethodModel extends Model<MethodModelJson> {
     let dom = MethodModel.HTML_TEMPLATE;
 
     const replaceAll = (from: string, to: string) => {
-      const fromS = '${' + from + "}";
+      const fromS = '${' + from + '}';
       while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
     };
 
     let linesS = '';
 
     const { doc } = this;
-    if(doc) {
+    if (doc) {
       const { lines } = doc;
       if (lines) {
         linesS = '';
@@ -143,10 +153,10 @@ export class MethodModel extends Model<MethodModelJson> {
     }
 
     let paramsS = '';
-    if(this.params.length) {
-      for(const param of this.params) {
+    if (this.params.length) {
+      for (const param of this.params) {
         paramsS += param.generateDom();
-      }      
+      }
     }
 
     replaceAll('HAS_PARAMS', this.params.length ? 'inline-block' : 'none');
@@ -169,10 +179,17 @@ export class MethodModel extends Model<MethodModelJson> {
   }
 
   getParamModel(id: string) {
-    for(const param of this.params) {
-      if(param.id === id) return param;
+    for (const param of this.params) {
+      if (param.id === id) return param;
     }
     return null;
+  }
+
+  isDefault(): boolean {
+    if (this.doc && !this.doc.isDefault()) return false;
+    if (this.returns && !this.returns.isDefault()) return false;
+    for (const param of this.params) if (!param.isDefault) return false;
+    return true;
   }
 }
 

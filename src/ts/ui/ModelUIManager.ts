@@ -55,17 +55,6 @@ export class ModelUIManager {
     if (!clazz) return;
 
     this.selectedClass = clazz;
-
-    const updateCode = () => {
-      let code = '';
-      if (this.selectedClass) code = this.selectedClass.compile();
-      const html = hljs.default.highlight(code, { language: 'typescript' }).value;
-      let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>';
-
-      this.$code.empty();
-      this.$code.append(s);
-    };
-
     let clazzModel = clazz.generateModel();
     this.luaLibrary.models.classes[clazz.name] = clazzModel;
     clazz.model = clazzModel;
@@ -222,8 +211,6 @@ export class ModelUIManager {
         return;
       }
 
-      console.log(target);
-
       if(target[2] === 'lines') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
@@ -265,6 +252,18 @@ export class ModelUIManager {
         const checkbox = element as HTMLInputElement;
         methodModel.returns.applyUnknownType = checkbox.checked;
       }
+    };
+
+    const updateCode = () => {
+      let code = '';
+      if (this.selectedClass) code = this.selectedClass.compile();
+      const html = hljs.default.highlight(code, { language: 'typescript' }).value;
+      let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>';
+
+      this.$code.empty();
+      this.$code.append(s);
+
+      console.log(JSON.stringify(clazzModel.save(), null, 2));
     };
 
     // Any model-field with a target will fire this method. Changes to model values

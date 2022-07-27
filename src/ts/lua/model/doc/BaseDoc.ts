@@ -14,19 +14,25 @@ export abstract class BaseDoc {
    */
   load(json: BaseDocJson) {
     this.clear();
-    if(json.lines) for(const line of json.lines) this.lines.push(line);
+    if (json.lines) for (const line of json.lines) this.lines.push(line);
   }
 
   /**
    * @returns The documentation as JSON data.
    */
   save(): BaseDocJson {
-    const { lines } = this;
+    let lines: string[] = undefined;
+    if(this.lines.length) lines = ([] as string[]).concat(this.lines);
     return { lines };
   }
 
   clear() {
     this.lines.length = 0;
+  }
+
+  isDefault(): boolean {
+    if (this.lines && this.lines.length) return false;
+    return true;
   }
 }
 

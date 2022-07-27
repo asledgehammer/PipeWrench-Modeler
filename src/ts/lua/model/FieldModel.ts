@@ -26,7 +26,6 @@ export class FieldModel extends Model<FieldModelJson> {
         this.load(src);
       }
     }
-    this.dom = this.generateDom();
   }
 
   generateDom(): string {
@@ -62,14 +61,21 @@ export class FieldModel extends Model<FieldModelJson> {
   create(field: LuaField) {}
 
   load(json: FieldModelJson) {
+    this.clear();
     if (json.doc) this.doc.load(json.doc);
-    for (const type of json.types) this.types.push(type);
-    this.applyUnknownType = json.applyUnknownType;
+    if (json.types) for (const type of json.types) this.types.push(type);
+    if (json.applyUnknownType != null) this.applyUnknownType = json.applyUnknownType;
   }
 
   save(): FieldModelJson {
-    const doc = this.doc.save();
-    const { types, applyUnknownType } = this;
+    let doc: FieldDocJson = undefined;
+    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
+
+    let types: string[] = undefined;
+    if (this.types.length) types = ([] as string[]).concat(this.types);
+
+    let applyUnknownType = this.applyUnknownType ? undefined : false;
+
     return { doc, types, applyUnknownType };
   }
 
@@ -77,6 +83,13 @@ export class FieldModel extends Model<FieldModelJson> {
     this.doc.clear();
     this.types.length = 0;
     this.applyUnknownType = true;
+  }
+
+  isDefault(): boolean {
+    if (!this.applyUnknownType) return false;
+    if (this.doc && !this.doc.isDefault()) return false;
+    if (this.types.length) return false;
+    return true;
   }
 }
 

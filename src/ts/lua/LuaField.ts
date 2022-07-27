@@ -49,26 +49,14 @@ export class LuaField extends NamedElement {
 
       if (fieldDoc) {
         const doc = new DocBuilder();
-        const { annotations, lines } = fieldDoc;
-
-        // Process annotations. (If defined)
-        let hasAnnotations = false;
-        if (annotations) {
-          const keys = Object.keys(annotations);
-          if (keys && keys.length) {
-            hasAnnotations = true;
-            for (const key of keys) doc.appendAnnotation(key, annotations[key]);
-          }
-        }
+        const { lines } = fieldDoc;
 
         // Process lines. (If defined)
         if (lines && lines.length) {
-          if (hasAnnotations) doc.appendLine();
           for (const line of lines) doc.appendLine(line);
         }
 
         if (!doc.isEmpty()) sDoc = doc.build(prefix);
-        
       }
     };
 

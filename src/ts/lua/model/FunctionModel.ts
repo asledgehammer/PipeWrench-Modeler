@@ -23,7 +23,6 @@ export class FunctionModel extends Model<FunctionModelJson> {
     super();
     this.name = name;
     if (json) this.load(json);
-    this.dom = this.generateDom();
   }
 
   load(json: FunctionModelJson) {
@@ -34,9 +33,29 @@ export class FunctionModel extends Model<FunctionModelJson> {
   }
 
   save(): FunctionModelJson {
-    const doc = this.doc.save();
-    const params = this.params.map((param) => param.save());
-    const { returns } = this;
+    let doc: FunctionDocJson = undefined;
+    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
+
+    let params: ParamModelJson[] = undefined;
+    let oneParamChanged = false;
+    for (const param of this.params) {
+      if(!param.isDefault()) {
+        oneParamChanged = true;
+        break;
+      }
+    }
+    if(oneParamChanged) {
+      params = [];
+      for (const param of this.params) {
+        params.push(param.save());
+      }
+    }
+
+    let returns: ReturnModelJson = undefined;
+    if (this.returns && !this.returns.isDefault()) {
+      returns = this.returns.save();
+    }
+
     return { doc, params, returns };
   }
 
@@ -55,16 +74,7 @@ export class FunctionModel extends Model<FunctionModelJson> {
     doc.appendAnnotation('noSelf');
 
     if (funcDoc) {
-      const { annotations, lines } = funcDoc;
-
-      // Process annotations. (If defined)
-      if (annotations) {
-        const keys = Object.keys(annotations);
-        if (keys && keys.length) {
-          for (const key of keys) doc.appendAnnotation(key, annotations[key]);
-          doc.appendLine();
-        }
-      }
+      const { lines } = funcDoc;
 
       // Process lines. (If defined)
       if (lines && lines.length) {
@@ -119,10 +129,17 @@ export class FunctionModel extends Model<FunctionModelJson> {
   }
 
   getParamModel(id: string) {
-    for(const param of this.params) {
-      if(param.id === id) return param;
+    for (const param of this.params) {
+      if (param.id === id) return param;
     }
     return null;
+  }
+
+  isDefault(): boolean {
+    if (this.doc && !this.doc.isDefault()) return false;
+    if (this.returns && !this.returns.isDefault()) return false;
+    for (const param of this.params) if (!param.isDefault()) return false;
+    return true;
   }
 }
 

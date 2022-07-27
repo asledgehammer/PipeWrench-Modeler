@@ -12,7 +12,7 @@ import { LuaLibrary } from '../LuaLibrary';
 
 /**
  * **ModelLibrary**
- * 
+ *
  * @author JabDoesThings
  */
 export class ModelLibrary {

@@ -20,13 +20,12 @@ export class ParamModel extends Model<ParamModelJson> {
     super();
     this.methodName = methodName;
     if (src) {
-      if(typeof src === 'string') {
+      if (typeof src === 'string') {
         this.create(src);
-      } else {      
+      } else {
         this.load(src);
       }
     }
-    this.dom = this.generateDom();
   }
 
   create(id: string) {
@@ -35,22 +34,32 @@ export class ParamModel extends Model<ParamModelJson> {
 
   load(json: ParamModelJson) {
     this.clear();
-    if(json.doc) this.doc.load(json.doc);
-    if(json.id) this.id = json.id;
+    if (json.doc) this.doc.load(json.doc);
+    if (json.id) this.id = json.id;
     else throw new Error('Param without ID.');
-    if(json.rename) this.rename = json.rename;
-    if(json.types) for(const type of json.types) this.types.push(type);
+    if (json.rename) this.rename = json.rename;
+    if (json.types) for (const type of json.types) this.types.push(type);
   }
 
   save(): ParamModelJson {
-    const { id, rename, types } = this;
-    const doc = this.doc.save();
+    const { id } = this;
+
+    let doc: ParamDocJson = undefined;
+    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
+
+    let rename: string = undefined;
+    if (this.rename.length) rename = this.rename;
+
+    let types: string[] = undefined;
+    if (this.types.length) types = ([] as string[]).concat(this.types);
+
     return { doc, id, rename, types };
   }
 
   clear() {
     this.doc.clear();
     this.types.length = 0;
+    this.types.push('unknown');
     this.rename = '';
   }
 
@@ -58,7 +67,7 @@ export class ParamModel extends Model<ParamModelJson> {
     let dom = ParamModel.HTML_TEMPLATE;
 
     const replaceAll = (from: string, to: string) => {
-      const fromS = '${' + from + "}";
+      const fromS = '${' + from + '}';
       while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
     };
 
@@ -69,6 +78,17 @@ export class ParamModel extends Model<ParamModelJson> {
 
   testSignature(paramName: string): boolean {
     return paramName === this.id;
+  }
+
+  isDefault(): boolean {
+    
+    if (this.rename.length) return false;
+    if (this.doc && !this.doc.isDefault()) return false;
+
+    if(this.types.length === 1 && this.types[0] === 'unknown') return true;
+    else if (this.types.length) return false;
+    
+    return true;
   }
 
   get name(): string {

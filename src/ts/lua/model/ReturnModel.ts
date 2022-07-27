@@ -1,8 +1,8 @@
-import { Model } from "./Model";
+import { Model } from './Model';
 
 /**
  * **ReturnModel**
- * 
+ *
  * @author JabDoesThings
  */
 export class ReturnModel extends Model<ReturnModelJson> {
@@ -11,16 +11,20 @@ export class ReturnModel extends Model<ReturnModelJson> {
 
   constructor(json?: ReturnModelJson) {
     super();
-    if(json) this.load(json);
+    if (json) this.load(json);
   }
 
   load(json: ReturnModelJson) {
     if (json.applyUnknownType != null) this.applyUnknownType = json.applyUnknownType;
-    if(json.types) for(const type of json.types) this.types.push(type);
+    if (json.types) for (const type of json.types) this.types.push(type);
   }
 
   save(): ReturnModelJson {
-    const { types, applyUnknownType} = this;
+    let applyUnknownType = this.applyUnknownType ? undefined : false;
+
+    let types: string[] = undefined;
+    if (this.types.length) types = ([] as string[]).concat(this.types);
+
     return { types, applyUnknownType };
   }
 
@@ -31,6 +35,12 @@ export class ReturnModel extends Model<ReturnModelJson> {
 
   generateDom(): string {
     return '';
+  }
+
+  isDefault(): boolean {
+    if (!this.applyUnknownType) return false;
+    if (this.types.length) return false;
+    return true;
   }
 }
 

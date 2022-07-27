@@ -65,21 +65,44 @@ export class ClassModel extends Model<ClassModelJson> {
   }
 
   save(): ClassModelJson {
-    const fields: { [id: string]: FieldModelJson } = {};
-    const methods: { [id: string]: MethodModelJson } = {};
+    let fields: { [id: string]: FieldModelJson } = undefined;
+    let methods: { [id: string]: MethodModelJson } = undefined;
 
-    for (const fieldName in Object.keys(this.fields)) {
-      const fieldModel = this.fields[fieldName];
-      fields[fieldName] = fieldModel.save();
+    let oneFieldDifferent = false;
+    for (const field of Object.values(this.fields)) {
+      if (!field.isDefault()) {
+        oneFieldDifferent = true;
+        break;
+      } 
+    }
+    if (oneFieldDifferent) {
+      fields = {};
+      for (const fieldName of Object.keys(this.fields)) {
+        const fieldModel = this.fields[fieldName];
+        if (!fieldModel.isDefault()) fields[fieldName] = fieldModel.save();
+      }
     }
 
-    for (const name in Object.keys(this.methods)) {
-      const methodModel = this.methods[name];
-      methods[unsanitizeMethodName(name)] = methodModel.save();
+    let oneMethodDifferent = false;
+    for (const method of Object.values(this.methods)) {
+      if (!method.isDefault()) {
+        oneMethodDifferent = true;
+        break;
+      } 
+    }
+    if (oneMethodDifferent) {
+      methods = {};
+      for (const name of Object.keys(this.methods)) {
+        const methodModel = this.methods[name];
+        if (!methodModel.isDefault()) methods[unsanitizeMethodName(name)] = methodModel.save();
+      }
     }
 
-    const _constructor_ = this._constructor_.save();
-    const doc = this.doc.save();
+    let _constructor_: ConstructorModelJson = undefined;
+    if (this._constructor_ && !this._constructor_.isDefault()) _constructor_ = this._constructor_.save();
+
+    let doc: ClassDocJson = undefined;
+    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
 
     return { fields, methods, _constructor_, doc };
   }
@@ -97,18 +120,7 @@ export class ClassModel extends Model<ClassModelJson> {
 
     const { doc: classDoc } = this;
     if (classDoc) {
-      const { annotations, authors, lines } = classDoc;
-
-      // Process annotations. (If defined)
-      const annoKeys = Object.keys(annotations);
-      if (annoKeys && annoKeys.length) {
-        for (const key of annoKeys) doc.appendAnnotation(key, annotations[key]);
-      } else {
-        if (!authors || !authors.length || !authors[0].length) {
-          // The 'customConstructor' annotation is multi-line. Adding `@` terminates it.
-          doc.appendLine('@');
-        }
-      }
+      const { authors, lines } = classDoc;
 
       // Process authors. (If defined)
       if (authors && authors.length) {
@@ -175,6 +187,18 @@ export class ClassModel extends Model<ClassModelJson> {
     replaceAll('LINES', linesS);
 
     return dom;
+  }
+
+  isDefault(): boolean {
+    // Check fields.
+    for (const field of Object.values(this.fields)) if (!field.isDefault()) return false;
+    // Check methods.
+    for (const method of Object.values(this.methods)) if (!method.isDefault()) return false;
+    // Check constructor.
+    if (this._constructor_ && !this._constructor_.isDefault()) return false;
+    // Check doc.
+    if (this.doc && !this.doc.isDefault()) return false;
+    return true;
   }
 
   testSignature(clazz: LuaClass): boolean {
