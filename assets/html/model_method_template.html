@@ -11,7 +11,7 @@
     <!-- Lines -->
     <div class="model-field field-multi-line lines">
       <label>Description</label>
-      <textarea target="method:${METHOD_NAME}:lines" type="text"></textarea>
+      <textarea target="method:${METHOD_NAME}:lines"></textarea>
     </div>
 
     <!-- Parameters -->
@@ -23,7 +23,13 @@
     <!-- Return Types -->
     <div class="model-field field-multi-line lines">
       <label>Return Types</label>
-      <textarea target="method:${METHOD_NAME}:returntypes" type="text"></textarea>
+      <textarea target="method:${METHOD_NAME}:returntypes"></textarea>
+    </div>
+
+    <!-- Cast Unknown Type -->
+    <div class="model-field field-multi-line lines">
+      <input target="method:${METHOD_NAME}:wrapunknowntype" type="checkbox"></textarea>
+      <label>Wrap Unknown Type</label>
     </div>
   </div>
 </div>

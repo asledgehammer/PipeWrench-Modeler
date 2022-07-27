@@ -34,9 +34,6 @@ export class LuaField extends NamedElement {
     let sDoc = '';
 
     const processField = (model: FieldModel) => {
-
-      console.log(`processField(${this.name})`);
-
       const { types: fTypes, doc: fieldDoc } = model;
 
       // Process field types.
@@ -65,7 +62,6 @@ export class LuaField extends NamedElement {
         }
 
         // Process lines. (If defined)
-        console.log(lines);
         if (lines && lines.length) {
           if (hasAnnotations) doc.appendLine();
           for (const line of lines) doc.appendLine(line);

@@ -87,7 +87,8 @@ export class ModelUIManager {
     methodNames.sort((o1, o2) => o1.localeCompare(o2));
     for (const methodName of methodNames) {
       const method = clazzModel.methods[methodName];
-      this.$modelPane.append(method.generateDom());
+      const e = this.$modelPane.append(method.generateDom());
+      e.find('input[type=checkbox]').prop('checked', method.returns.applyUnknownType);
     }
 
     const $textAreas = this.$modelPane.find('textarea');
@@ -143,10 +144,10 @@ export class ModelUIManager {
           line = line.trim();
           if (line.length) clazzModel._constructor_.doc.lines.push(line);
         }
-      } else if (paths[1] === 'param') {
+      } else if (paths[2] === 'param') {
         const input = element as HTMLInputElement;
-        const paramName = paths[2];
-        const field = paths[3];
+        const paramName = paths[3];
+        const field = paths[4];
         const paramModel = clazzModel._constructor_.getParamModel(paramName);
         if (field === 'rename') {
           paramModel.rename = input.value.trim();
@@ -172,15 +173,14 @@ export class ModelUIManager {
 
     const handleFieldTarget = (element: HTMLElement, target: string[]) => {
       const fieldName = target[1];
-      const field = clazz.fields[fieldName];
 
+      const field = clazz.fields[fieldName];
       if(!field) {
         console.warn(`Could not locate the field in class: ${clazz.name}.${field.name}`)
         return;
       }
 
       const fieldModel = clazzModel.getField(field);
-
       if(!fieldModel) {
         console.warn(`Could not locate the FieldModel for field: ${clazz.name}.${field.name}`)
         return;
@@ -193,19 +193,78 @@ export class ModelUIManager {
         for (let line of raw) fieldModel.doc.lines.push(line);
       } else if (target[2] === 'returntypes') {
         const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          fieldModel.types.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) fieldModel.types.push(line);
-          }
+        const raw = textarea.value.split('\n');
+        fieldModel.types.length = 0;
+        for (let line of raw) {
+          line = line.trim();
+          if (line.length) fieldModel.types.push(line);
+        }
+      }
+    };
+
+    const handleMethodTarget = (element: HTMLElement, target: string[]) => {
+      const methodName = target[1];
+
+      if(methodName === 'constructor') {
+        handleConstructorTarget(element, target);
+        return;
+      }
+
+      const method = clazz.methods[methodName];
+      if(!method) {
+        console.warn(`Could not locate the method in class: ${clazz.name}.${method.name}`)
+        return;
+      }
+
+      const methodModel = clazzModel.getMethod(method);
+      if(!methodModel) {
+        console.warn(`Could not locate the MethodModel for field: ${clazz.name}.${method.name}`)
+        return;
       }
 
       console.log(target);
-    };
 
-    const handleMethodTarget = (element: HTMLElement, paths: string[]) => {
-      console.log(paths);
+      if(target[2] === 'lines') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        methodModel.doc.lines.length = 0;
+        for (let line of raw) methodModel.doc.lines.push(line);
+      } else if (target[2] === 'returntypes') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        methodModel.returns.types.length = 0;
+        for (let line of raw) {
+          line = line.trim();
+          if (line.length) methodModel.returns.types.push(line);
+        }
+      } else if (target[2] === 'param') {
+        const input = element as HTMLInputElement;
+        const paramName = target[3];
+        const field = target[4];
+        const paramModel = methodModel.getParamModel(paramName);
+        if (field === 'rename') {
+          paramModel.rename = input.value.trim();
+        } else if(field === 'lines') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          paramModel.doc.lines.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) paramModel.doc.lines.push(line);
+          }
+        } else if(field === 'types') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          paramModel.types.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) paramModel.types.push(line);
+          }
+        } 
+      } else if(target[2] === 'wrapunknowntype') {
+        const checkbox = element as HTMLInputElement;
+        methodModel.returns.applyUnknownType = checkbox.checked;
+      }
     };
 
     // Any model-field with a target will fire this method. Changes to model values

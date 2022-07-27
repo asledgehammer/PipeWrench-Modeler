@@ -83,9 +83,15 @@ $model_content_padding: 12px;
       height: calc(100% - #{$model_content_padding} * 2);
       padding-bottom: 8px;
 
+      input[type=checkbox] {
+        display: inline-block;
+        position: relative;
+        top: 4px;
+      }
+      
       label {
         position: relative;
-        display: block;
+        display: inline-block;
         font-family: Consolas, 'Courier New', monospace;
         color: $color_primary_text;
         top: 2px;

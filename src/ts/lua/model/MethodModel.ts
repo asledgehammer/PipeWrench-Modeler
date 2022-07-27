@@ -79,8 +79,19 @@ export class MethodModel extends Model<MethodModelJson> {
 
       // Process lines. (If defined)
       if (lines && lines.length) {
-        for (const line of lines) doc.appendLine(line);
-        doc.appendLine();
+        let oneLine = false;
+        for (let line of lines) {
+          if(!oneLine) {
+            line = line.trim();
+            if(line.length) {
+              doc.appendLine(line);
+              oneLine = true;
+            }
+          } else {
+            doc.appendLine(line);
+          }
+        }
+        if (oneLine) doc.appendLine();
       }
 
       // Process params. (If defined)
@@ -88,18 +99,15 @@ export class MethodModel extends Model<MethodModelJson> {
         for (const param of params) {
           const { name, doc: paramDoc } = param;
 
-          if (!doc) {
-            doc.appendParam(name);
+          if (!paramDoc) {
             continue;
           } else {
             const { lines } = paramDoc;
 
-            // No lines. Print basic @param <name>
-            if (!lines || !lines.length) {
-              doc.appendParam(name);
-              continue;
-            }
+            // No lines.
+            if (!lines || !lines.length) continue;
 
+            // Print first line as param.
             doc.appendParam(name, lines[0]);
 
             // Check if multi-line.
@@ -111,7 +119,7 @@ export class MethodModel extends Model<MethodModelJson> {
         }
       }
     }
-    return doc.build(prefix);
+    return !doc.isEmpty() ? doc.build(prefix) : '';
   }
 
   generateDom(): string {
@@ -158,6 +166,13 @@ export class MethodModel extends Model<MethodModelJson> {
       }
     }
     return true;
+  }
+
+  getParamModel(id: string) {
+    for(const param of this.params) {
+      if(param.id === id) return param;
+    }
+    return null;
   }
 }
 

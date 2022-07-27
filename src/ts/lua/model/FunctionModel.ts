@@ -117,6 +117,13 @@ export class FunctionModel extends Model<FunctionModelJson> {
     }
     return true;
   }
+
+  getParamModel(id: string) {
+    for(const param of this.params) {
+      if(param.id === id) return param;
+    }
+    return null;
+  }
 }
 
 /**
