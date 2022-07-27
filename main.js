@@ -11,6 +11,7 @@ app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096');
 let mainWindow;
 
 function createWindow() {
+
   mainWindow = new BrowserWindow({
     width: 1024,
     height: 768,
@@ -25,6 +26,7 @@ function createWindow() {
       nodeIntegrationInWorker: true,
       experimentalFeatures: true,
       contextIsolation: false,
+      safeDialogs: false,
       preload: path.join(__dirname, 'preload.js'),
     },
     icon: './assets/media/icon.png',

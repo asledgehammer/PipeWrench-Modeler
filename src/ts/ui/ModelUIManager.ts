@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as hljs from 'highlight.js';
+import * as electron from 'electron';
 import { LuaClass } from '../lua/LuaClass';
 import { LuaLibrary } from '../lua/LuaLibrary';
 import { ClassModel } from '../lua/model/ClassModel';
@@ -9,22 +10,26 @@ import { FunctionModel } from '../lua/model/FunctionModel';
 import { MethodModel } from '../lua/model/MethodModel';
 import { ParamModel as ParameterModel } from '../lua/model/ParamModel';
 import { TableModel } from '../lua/model/TableModel';
+import { ModelFile } from '../lua/model/ModelFile';
 
 export class ModelUIManager {
   readonly leftPanel: HTMLDivElement;
   readonly centerPanel: HTMLDivElement;
   readonly rightPanel: HTMLDivElement;
-
   readonly modelPane: HTMLDivElement;
-  readonly $modelPane: JQuery<HTMLDivElement>;
-
   readonly luaLibrary: LuaLibrary;
-  selectedClass: LuaClass;
-
+  readonly $modelPane: JQuery<HTMLDivElement>;
   readonly $code: JQuery<HTMLDivElement>;
+  selectedClass: LuaClass;
+  private path: string = null;
+
+  readonly modelFile: ModelFile;
 
   constructor(luaLibrary: LuaLibrary) {
     this.luaLibrary = luaLibrary;
+
+    this.modelFile = new ModelFile(luaLibrary.models, 'untitled', '');
+
     this.leftPanel = $('.left-panel').get(0) as HTMLDivElement;
     this.centerPanel = $('.center-panel').get(0) as HTMLDivElement;
     this.rightPanel = $('.right-panel').get(0) as HTMLDivElement;
@@ -48,7 +53,90 @@ export class ModelUIManager {
     MethodModel.HTML_TEMPLATE = getModelTemplate('method');
     FunctionModel.HTML_TEMPLATE = getModelTemplate('function');
     ParameterModel.HTML_TEMPLATE = getModelTemplate('parameter');
+
+    $(window).on('keypress', (event) => {
+      console.log('keypress', event);
+
+      if(event.ctrlKey) {
+        if(event.originalEvent.code === "KeyO" /* o */) this.open();
+        if(event.originalEvent.code === "KeyS" /* s */) this.save(!this.path || event.shiftKey);
+      } 
+    });
   }
+
+  open = (path: string = null) => {
+    const open = (_paths: string[]) => {
+      if (_paths == null || _paths.length === 0) {
+        return;
+      }
+      for (let index = 0; index < _paths.length; index++) {
+        console.log(_paths);
+      }
+    };
+  
+    if (path == null) {
+      const {dialog} = require('electron').remote;
+  
+      interface DialogResult {
+        canceled: boolean;
+        filePaths: string[];
+        bookmark: string;
+      }
+  
+      const promise: Promise<electron.OpenDialogReturnValue> = dialog.showOpenDialog(null, {
+          title: 'Open Model',
+          buttonLabel: 'Open',
+          filters: [
+            {name: 'PipeWrench Model', extensions: ['json']}
+          ]
+        }
+      );
+  
+      promise.then((result: DialogResult) => {
+        if (result.canceled || result.filePaths == null || result.filePaths.length === 0) {
+          return;
+        }
+        open(result.filePaths);
+      });
+    } else {
+      open([path]);
+    }
+  }
+
+  save = (as: boolean) => {
+    if (as) {
+      const {dialog} = require('electron').remote;
+
+      interface DialogResult {
+        canceled: boolean;
+        filePath: string;
+        bookmark: string;
+      }
+
+      const promise: Promise<electron.SaveDialogReturnValue> = dialog.showSaveDialog(null, {
+          title: 'Save Model',
+          buttonLabel: 'Save',
+          filters: [
+            {name: 'PipeWrench Model', extensions: ['json']}
+          ]
+        }
+      );
+
+      promise.then((result: DialogResult) => {
+        if (result.canceled || result.filePath == null) {
+          return;
+        }
+
+        // Ensure the file-name ends with the extension.
+        let path = result.filePath;
+        if (!path.toLowerCase().endsWith('.json')) {
+          path += '.json';
+        }
+
+        this.modelFile.save(path);
+      });
+    }
+  };
 
   setClass(className: string) {
     const clazz = this.luaLibrary.classes[className];
@@ -56,6 +144,7 @@ export class ModelUIManager {
 
     this.selectedClass = clazz;
     let clazzModel = clazz.generateModel();
+    this.modelFile.classes[clazz.name] = clazzModel;
     this.luaLibrary.models.classes[clazz.name] = clazzModel;
     clazz.model = clazzModel;
 
@@ -263,7 +352,7 @@ export class ModelUIManager {
       this.$code.empty();
       this.$code.append(s);
 
-      console.log(JSON.stringify(clazzModel.save(), null, 2));
+      // console.log(JSON.stringify(clazzModel.save(), null, 2));
     };
 
     // Any model-field with a target will fire this method. Changes to model values

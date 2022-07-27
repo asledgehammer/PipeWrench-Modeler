@@ -98,6 +98,44 @@ export class ModelFile {
     }
   }
 
+  save(path: string) {
+    let classes: ClassModelJson[] = undefined;
+    let classNames = Object.keys(this.classes);
+    if (classNames.length) {
+      classes = [];
+      classNames.sort((o1, o2) => o1.localeCompare(o2));
+      for (const className of classNames) classes.push(this.classes[className].save());
+    }
+
+    let tables: TableModelJson[] = undefined;
+    let tableNames = Object.keys(this.tables);
+    if (tableNames.length) {
+      tables = [];
+      tableNames.sort((o1, o2) => o1.localeCompare(o2));
+      for (const tableName of tableNames) tables.push(this.tables[tableName].save());
+    }
+
+    let globalFields: FieldModelJson[] = undefined;
+    let globalFieldNames = Object.keys(this.globalFields);
+    if (globalFieldNames.length) {
+      globalFields = [];
+      globalFieldNames.sort((o1, o2) => o1.localeCompare(o2));
+      for (const fieldName of globalFieldNames) globalFields.push(this.globalFields[fieldName].save());
+    }
+
+    let globalFunctions: FunctionModelJson[] = undefined;
+    let globalfunctionsNames = Object.keys(this.globalFunctions);
+    if (globalfunctionsNames.length) {
+      globalFunctions = [];
+      globalfunctionsNames.sort((o1, o2) => o1.localeCompare(o2));
+      for (const funcName of globalFieldNames) globalFunctions.push(this.globalFunctions[funcName].save());
+    }
+
+    const json = { version: 1, classes, tables, globalFields, globalFunctions };
+    const data = JSON.stringify(json, null, 2);
+    fs.writeFileSync(path, data);
+  }
+
   /**
    * Clears all classes, tables, global fields, and global functions loaded from the file.
    */
