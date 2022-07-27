@@ -1,10 +1,10 @@
+import * as prettier from 'prettier';
 import { LuaFile } from './LuaFile';
 import { LuaConstructor } from './LuaConstructor';
 import { LuaContainer } from './LuaContainer';
 import { ClassModel } from './model/ClassModel';
 import { FieldModel } from './model/FieldModel';
 import { MethodModel } from './model/MethodModel';
-import { ConstructorModel } from './model/ConstructorModel';
 
 /**
  * **LuaClass** represents tables that are declared using `ISBaseObject:derive(..)`. This is the
@@ -115,7 +115,13 @@ export class LuaClass extends LuaContainer {
     }
 
     // End of Class Declaration line.
-    return `${s}${prefix}}`;
+    s += `${prefix}}`;
+    return prettier.format(s, {
+      singleQuote: true, 
+      bracketSpacing: true, 
+      parser: 'typescript',
+      printWidth: 120
+    });
   }
 
   generateDoc(prefix: string, model: ClassModel): string {

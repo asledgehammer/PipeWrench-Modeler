@@ -69,7 +69,7 @@ export class LuaMethod extends NamedElement {
     // If the model is present, set param names from it as some params may be renamed.
     if (methodModel) {
       for (const param of methodModel.params) {
-        const types = param.types ? compileTypes(param.types) : 'unknown';
+        const types = param.types && param.types.length ? compileTypes(param.types) : 'unknown';
         params.push(`${param.name}: ${types}`);
       }
     } else {

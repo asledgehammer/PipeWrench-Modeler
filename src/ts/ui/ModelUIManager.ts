@@ -11,6 +11,7 @@ import { MethodModel } from '../lua/model/MethodModel';
 import { ParamModel as ParameterModel } from '../lua/model/ParamModel';
 import { TableModel } from '../lua/model/TableModel';
 import { ModelFile } from '../lua/model/ModelFile';
+import { LuaTable } from '../lua/LuaTable';
 
 export class ModelUIManager {
   readonly leftPanel: HTMLDivElement;
@@ -20,10 +21,14 @@ export class ModelUIManager {
   readonly luaLibrary: LuaLibrary;
   readonly $modelPane: JQuery<HTMLDivElement>;
   readonly $code: JQuery<HTMLDivElement>;
-  selectedClass: LuaClass;
+  readonly $searchBar: JQuery;
+  readonly $searchBarInput: JQuery;
+  readonly $searchBarSuggestions: JQuery;
+  readonly modelFile: ModelFile;
   private path: string = null;
 
-  readonly modelFile: ModelFile;
+  selectedClass: LuaClass;
+  selectedTable: LuaTable;
 
   constructor(luaLibrary: LuaLibrary) {
     this.luaLibrary = luaLibrary;
@@ -36,6 +41,10 @@ export class ModelUIManager {
 
     this.modelPane = $(this.centerPanel).find('.model-pane').get(0);
     this.$modelPane = $(this.modelPane);
+
+    this.$searchBar = $($('.search-bar').get(0));
+    this.$searchBarInput = $(this.$searchBar.find('input').get(0));
+    this.$searchBarSuggestions = $(this.$searchBar.find('.search-bar-suggestions').get(0));
 
     this.$code = $('#code');
 
@@ -55,12 +64,92 @@ export class ModelUIManager {
     ParameterModel.HTML_TEMPLATE = getModelTemplate('parameter');
 
     $(window).on('keypress', (event) => {
-      console.log('keypress', event);
+      // console.log('keypress', event);
 
       if(event.ctrlKey) {
         if(event.originalEvent.code === "KeyO" /* o */) this.open();
         if(event.originalEvent.code === "KeyS" /* s */) this.save(!this.path || event.shiftKey);
       } 
+    });
+
+    const _this = this;
+    this.$searchBarInput.on('input', function() {
+      const input = this as HTMLInputElement;
+      const { value } = input;
+
+      if(value.length) {
+        _this.$searchBarSuggestions.show();
+      } else {
+        _this.$searchBarSuggestions.hide();
+      }
+
+      _this.$searchBarSuggestions.empty();
+
+      if(!value.length) return;
+
+      const matches: string[] = [];
+
+      let allTypes: string[];
+      let valueLower = value.toLowerCase();
+      if(valueLower.indexOf('class:') === 0) {
+        valueLower = valueLower.substring(6);
+        const classNames = Object.keys(luaLibrary.classes);
+        allTypes = [].concat(classNames);
+      } else if(valueLower.indexOf('table:') === 0) {
+        valueLower = valueLower.substring(6);
+        const tableNames = Object.keys(luaLibrary.tables);
+        allTypes = [].concat(tableNames);
+      } else {
+        const classNames = Object.keys(luaLibrary.classes).map((e) => `class:${e}`);
+        const tableNames = Object.keys(luaLibrary.tables).map((e) => `table:${e}`);
+        allTypes = [].concat(classNames, tableNames);
+      }
+
+      allTypes.sort((o1, o2) => o1.localeCompare(o2));
+
+      for(const entry of allTypes) {
+        if (
+          entry
+            .substring(entry.indexOf('class:'))
+            .substring(entry.indexOf('table:'))
+            .toLowerCase()
+            .indexOf(valueLower) !== -1
+        )
+          matches.push(entry);
+      }
+
+      if(matches.length) {
+        for(const match of matches) {
+          const name = match.replace('class:', '').replace('table:', '');
+          if(match.indexOf('class:') === 0) {
+            _this.$searchBarSuggestions.append(`<label class="lua-class suggestion">${name}</label>`);
+          } else if(match.indexOf('table:') === 0) {
+            _this.$searchBarSuggestions.append(`<label class="lua-table suggestion">${name}</label>`);
+          }
+        }
+
+        const clear = () => {
+          _this.$searchBarInput.val('');
+          _this.$searchBarSuggestions.empty();
+          _this.$searchBarSuggestions.hide();
+        };
+
+        $('label.suggestion.lua-class').on('click', function() {
+          const className = this.innerHTML;
+          _this.setClass(className);
+          clear();
+        });
+
+        $('label.suggestion.lua-table').on('click', function() {
+          const tableName = this.innerHTML;
+          _this.setTable(tableName);
+          clear();
+        });
+
+      } else {
+        _this.$searchBarSuggestions.hide();
+      }
+      
     });
   }
 
@@ -139,11 +228,28 @@ export class ModelUIManager {
   };
 
   setClass(className: string) {
+    console.log(`setClass(${className})`);
+    // Make sure not to reload an already selected class.
+    if(this.selectedClass && this.selectedClass.name === className) return;
+    
     const clazz = this.luaLibrary.classes[className];
     if (!clazz) return;
 
+    $('#class-list .item').each(function() {
+      $(this).removeClass('selected');
+    });
+
+    this.selectedTable = null;
     this.selectedClass = clazz;
-    let clazzModel = clazz.generateModel();
+    let clazzModel = this.modelFile.classes[className];
+    if(!clazzModel) {
+      clazzModel = clazz.generateModel();
+      $('#class-list').append(
+        `<div class="item selected" element="${className}" onclick="setClass('${className}')">` + `<label>${className}</label>` + `</div>`
+      );
+    } else {
+      $(`#class-list .item[element=${className}`).addClass('selected');
+    }
     this.modelFile.classes[clazz.name] = clazzModel;
     this.luaLibrary.models.classes[clazz.name] = clazzModel;
     clazz.model = clazzModel;
@@ -366,6 +472,218 @@ export class ModelUIManager {
           handleClassTarget(this, paths);
         } else if (type === 'constructor') {
           handleConstructorTarget(this, paths);
+        } else if (type === 'field') {
+          handleFieldTarget(this, paths);
+        } else if (type === 'method') {
+          handleMethodTarget(this, paths);
+        }
+      }
+
+      // Reflect the changes to the model by updating the code-panel.
+      updateCode();
+    });
+
+    this.$modelPane.fadeIn();
+    updateCode();
+  }
+
+  setTable(tableName: string) {
+    console.log(`setTable(${tableName})`);
+    // Make sure not to reload an already selected table.
+    if(this.selectedTable && this.selectedTable.name === tableName) return;
+
+    const table = this.luaLibrary.tables[tableName];
+    if (!table) return;
+
+
+    $('#class-list .item').each(function() {
+      $(this).removeClass('selected');
+    });
+
+    this.selectedClass = null;
+    this.selectedTable = table;
+    let tableModel = this.modelFile.tables[tableName];
+    if(!tableModel) {
+      tableModel = table.generateModel();
+      $('#class-list').append(
+        `<div class="item selected" element="${tableName}" onclick="setTable('${tableName}')">` + `<label>${tableName}</label>` + `</div>`
+      );
+    } else {
+      $(`#class-list .item[element=${tableName}`).addClass('selected');
+    }
+    this.modelFile.tables[table.name] = tableModel;
+    this.luaLibrary.models.tables[table.name] = tableModel;
+    table.model = tableModel;
+
+    this.$modelPane.empty();
+    this.$modelPane.append(tableModel.generateDom());
+
+    const fieldNames = Object.keys(tableModel.fields);
+    fieldNames.sort((o1, o2) => o1.localeCompare(o2));
+    for (const fieldName of fieldNames) {
+      this.$modelPane.append(tableModel.fields[fieldName].generateDom());
+    }
+
+    const methodNames = Object.keys(tableModel.methods);
+    methodNames.sort((o1, o2) => o1.localeCompare(o2));
+    for (const methodName of methodNames) {
+      const method = tableModel.methods[methodName];
+      const e = this.$modelPane.append(method.generateDom());
+      e.find('input[type=checkbox]').prop('checked', method.returns.applyUnknownType);
+    }
+
+    const $textAreas = this.$modelPane.find('textarea');
+    $textAreas
+      .each(function () {
+        this.setAttribute('style', `height: ${this.scrollHeight}px; overflow-y:hidden;`);
+      })
+      .on('input', function () {
+        this.style.height = 'auto';
+        this.style.height = `${this.scrollHeight}px`;
+      });
+
+    $('.collapse-button').on('click', function () {
+      const model = $($($(this).parent()).parent());
+
+      if (model.hasClass('collapsed')) {
+        model.removeClass('collapsed');
+
+        model.find('.textarea').each(function() {
+          $(this).trigger('input');
+        });
+      } else {
+        model.addClass('collapsed');
+      }
+    });
+
+    const handleTableTarget = (element: HTMLElement, paths: string[]) => {
+      if (paths[1] === 'lines') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        tableModel.doc.lines.length = 0;
+        for (let line of raw) {
+          line = line.trim();
+          if (line.length) tableModel.doc.lines.push(line);
+        }
+      } else if (paths[1] === 'authors') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        tableModel.doc.authors.length = 0;
+        for (let line of raw) {
+          line = line.trim();
+          if (line.length) tableModel.doc.authors.push(line);
+        }
+      }
+    };
+
+    const handleFieldTarget = (element: HTMLElement, target: string[]) => {
+      const fieldName = target[1];
+
+      const field = table.fields[fieldName];
+      if(!field) {
+        console.warn(`Could not locate the field in class: ${table.name}.${field.name}`)
+        return;
+      }
+
+      const fieldModel = tableModel.getField(field);
+      if(!fieldModel) {
+        console.warn(`Could not locate the FieldModel for field: ${table.name}.${field.name}`)
+        return;
+      }
+
+      if(target[2] === 'lines') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        fieldModel.doc.lines.length = 0;
+        for (let line of raw) fieldModel.doc.lines.push(line);
+      } else if (target[2] === 'returntypes') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        fieldModel.types.length = 0;
+        for (let line of raw) {
+          line = line.trim();
+          if (line.length) fieldModel.types.push(line);
+        }
+      }
+    };
+
+    const handleMethodTarget = (element: HTMLElement, target: string[]) => {
+      const methodName = target[1];
+
+      const method = table.methods[methodName];
+      if(!method) {
+        console.warn(`Could not locate the method in table: ${table.name}.${method.name}`)
+        return;
+      }
+
+      const methodModel = tableModel.getMethod(method);
+      if(!methodModel) {
+        console.warn(`Could not locate the MethodModel for field: ${table.name}.${method.name}`)
+        return;
+      }
+
+      if(target[2] === 'lines') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        methodModel.doc.lines.length = 0;
+        for (let line of raw) methodModel.doc.lines.push(line);
+      } else if (target[2] === 'returntypes') {
+        const textarea = element as HTMLTextAreaElement;
+        const raw = textarea.value.split('\n');
+        methodModel.returns.types.length = 0;
+        for (let line of raw) {
+          line = line.trim();
+          if (line.length) methodModel.returns.types.push(line);
+        }
+      } else if (target[2] === 'param') {
+        const input = element as HTMLInputElement;
+        const paramName = target[3];
+        const field = target[4];
+        const paramModel = methodModel.getParamModel(paramName);
+        if (field === 'rename') {
+          paramModel.rename = input.value.trim();
+        } else if(field === 'lines') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          paramModel.doc.lines.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) paramModel.doc.lines.push(line);
+          }
+        } else if(field === 'types') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          paramModel.types.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) paramModel.types.push(line);
+          }
+        } 
+      } else if(target[2] === 'wrapunknowntype') {
+        const checkbox = element as HTMLInputElement;
+        methodModel.returns.applyUnknownType = checkbox.checked;
+      }
+    };
+
+    const updateCode = () => {
+      let code = '';
+      if (this.selectedTable) code = this.selectedTable.compile();
+      const html = hljs.default.highlight(code, { language: 'typescript' }).value;
+      let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>';
+
+      this.$code.empty();
+      this.$code.append(s);
+    };
+
+    // Any model-field with a target will fire this method. Changes to model values
+    // are handled here.
+    $('*[target]').on('input', function () {
+      const target = this.getAttribute('target');
+      if (target) {
+        const paths = target.split(':');
+        const type = paths[0];
+        if (type === 'class') {
+          handleTableTarget(this, paths);
         } else if (type === 'field') {
           handleFieldTarget(this, paths);
         } else if (type === 'method') {

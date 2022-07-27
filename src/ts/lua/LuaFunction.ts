@@ -55,7 +55,7 @@ export class LuaFunction extends NamedElement {
     // If the model is present, set param names from it as some params may be renamed.
     if (funcModel) {
       for (const param of funcModel.params) {
-        const types = param.types ? compileTypes(param.types) : 'unknown';
+        const types = param.types && param.types.length ? compileTypes(param.types) : 'unknown';
         params.push(`${param.name}: ${types}`);
       }
     } else {

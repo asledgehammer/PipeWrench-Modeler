@@ -46,7 +46,7 @@ export class LuaConstructor extends LuaMethod {
     // If the model is present, set param names from it as some params may be renamed.
     if (constructorModel && constructorModel.testSignature(this)) {
       for (const param of constructorModel.params) {
-        const types = param.types ? compileTypes(param.types) : 'unknown';
+        const types = param.types && param.types.length ? compileTypes(param.types) : 'unknown';
         params.push(`${param.name}: ${types}`);
       }
     } else {

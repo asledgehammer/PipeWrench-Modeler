@@ -105,20 +105,46 @@ export class TableModel extends Model<TableModelJson> {
         s = `${s.substring(0, s.length - 2)}]`;
         doc.appendAnnotation('author', s);
       }
-
-      doc.appendLine();
-
+      
       // Process lines. (If defined)
       if (lines && lines.length) {
+        if(authors && authors.length) doc.appendLine();
         for (const line of lines) doc.appendLine(line);
       }
     }
 
-    return doc.build(prefix);
+    return doc.isEmpty() ? '' : doc.build(prefix);
   }
 
   generateDom(): string {
-    return '';
+    let dom = TableModel.HTML_TEMPLATE;
+
+    const replaceAll = (from: string, to: string) => {
+      const fromS = '${' + from + '}';
+      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
+    };
+
+    let authorsS = '';
+    let linesS = '';
+
+    const { doc } = this;
+    if (doc) {
+      const { authors, lines } = doc;
+      if (authors.length) {
+        if (authors) for (const author of authors) authorsS += `${author}\n`;
+        authorsS = authorsS.substring(0, authorsS.length - 1);
+      }
+      if (lines.length) {
+        for (const line of lines) linesS += `${line}\n`;
+        linesS = linesS.substring(0, linesS.length - 1);
+      }
+    }
+
+    replaceAll('TABLE_NAME', this.name);
+    replaceAll('AUTHORS', authorsS);
+    replaceAll('LINES', linesS);
+
+    return dom;
   }
 
   testSignature(table: LuaTable): boolean {

@@ -18,7 +18,7 @@
   .list-header {
     position: relative;
     padding-left: 9px;
-    margin-bottom: 6px;
+    // margin-bottom: 6px;
 
     background-color: $color_hover_color;
     
@@ -125,5 +125,71 @@
       color: $color_hover_color;
       font-weight: bolder;
     }
+  }
+ }
+
+ .search-bar {
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 100%;
+  margin-bottom: 7px;
+
+  font-family: Consolas, 'Courier New', monospace;
+
+  .search-bar-suggestions {
+    z-index: 5;
+    display: none;
+    position: absolute;
+    top: 16px;
+    left: 1px;
+    width: calc(100% - 3px);
+    max-height: 512px;
+
+    background-color: white;
+    color: black;
+    border: 1px solid black;
+    // user-select: none;
+
+    overflow-y: scroll;
+    
+
+    .suggestion {
+      display: block;
+      
+      font-weight: 400;
+      font-size: 13px;
+
+      border: 1px solid transparent;
+
+      cursor: pointer;
+    }
+
+    .suggestion:hover {
+      background-color: $color_3;
+      border: 1px solid rgba(0,0,0,0.5);
+    }
+  }
+
+  input[type=text] {
+    position: relative;
+    top: 0;
+    left: 2px;
+    width: calc(100% - 5px);
+    background-color: white;
+    color: black;
+    border: 1px solid transparent;
+    outline: none !important;
+    outline-width: 0 !important;
+  }
+
+  input[type=text]:focus {
+    transition: color 30ms ease-out, border-color 30ms ease-out;
+
+    border-color: $color_secondary_text;
+    border: 1px solid $color_secondary_text;
+    outline: none !important;
+
+    box-shadow: 0px 0px 1px 2px rgba(0,0,0,0.33);
   }
  }

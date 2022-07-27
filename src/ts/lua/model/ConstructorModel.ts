@@ -122,7 +122,7 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
         }
       }
     }
-    return doc.build(prefix);
+    return doc.isEmpty() ? '' : doc.build(prefix);
   }
 
   generateDom(): string {

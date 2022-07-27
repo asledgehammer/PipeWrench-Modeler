@@ -67,6 +67,7 @@ export class LuaLibrary {
     // The root class doesn't define itself using 'derive(type: string)'.
     // Add it manually.
     this.classes['ISBaseObject'] = new LuaClass(null, 'ISBaseObject');
+    this.classes['ISBaseObject'].file = new LuaFile(this, '', '');
 
     for (const file of this.files) {
       const id = file

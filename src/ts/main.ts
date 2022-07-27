@@ -7,24 +7,21 @@ var luaLibrary;
 // Entry Point from HTML.
 export let start = function () {
 
-  const fileTemplate = [
-    {
-      label: 'Open',
-      onclick: function() {modelUIManager.open()}
-    }
-  ];
-
-  const fileMenu = electron.remote.Menu.buildFromTemplate(fileTemplate);
-  
-
-  const template = [
-    {
-      label: 'File',
-      menu: fileMenu,
-    },
-  ];
-  const menu = electron.remote.Menu.buildFromTemplate(template);
-  electron.remote.Menu.setApplicationMenu(menu);
+  // const fileTemplate = [
+  //   {
+  //     label: 'Open',
+  //     onclick: function() {modelUIManager.open()}
+  //   }
+  // ];
+  // const fileMenu = electron.remote.Menu.buildFromTemplate(fileTemplate);
+  // const template = [
+  //   {
+  //     label: 'File',
+  //     menu: fileMenu,
+  //   },
+  // ];
+  // const menu = electron.remote.Menu.buildFromTemplate(template);
+  // electron.remote.Menu.setApplicationMenu(menu);
 
   setTimeout(() => {
 
@@ -33,7 +30,14 @@ export let start = function () {
     luaLibrary.parse();
 
     modelUIManager = new ModelUIManager(luaLibrary);
-    modelUIManager.setClass('ISUIElement');
+
+    (window as any).setClass = (className: string) => {
+      modelUIManager.setClass(className);
+    };
+
+    (window as any).setTable = (tableName: string) => {
+      modelUIManager.setTable(tableName);
+    };
 
   }, 100);
 };
