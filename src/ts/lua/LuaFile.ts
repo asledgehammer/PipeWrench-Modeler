@@ -345,7 +345,6 @@ export class LuaFile {
   }
 
   generate() {
-    console.log(`Generating: ${this.fileLocal.replace('.lua', '.d.ts')}..`);
     const { folder, fileLocal, classes, tables, globalFields, globalFunctions } = this;
     let code = '';
 

@@ -75,6 +75,43 @@ const cleardirsync = function (path: string) {
   }
 };
 
+type Directory = {
+  path: string;
+  name: string;
+  dirs: {[id: string]: Directory};
+  files: {[id: string]: File};
+};
+
+type File = {
+  path: string;
+  name: string;
+  extension: string;
+};
+
+const scandirs = function (path: string): Directory {
+  const name = path.split('/').pop();
+  const dirs: {[id: string]: Directory} = {};
+  const files: {[id: string]: File} = {};
+
+  let _files = [];
+  if (fs.existsSync(path)) {
+    _files = fs.readdirSync(path);
+    _files.forEach((file) => {
+      var curPath = `${path}/${file}`;
+      const stats = fs.lstatSync(curPath);
+      if(stats.isFile()) {
+        const split = file.split('.');
+        const extension = split.pop();
+        const name = split.join('.');
+        files[file] = {path: curPath, name, extension};
+      } else if(stats.isDirectory()) {
+        dirs[file] = scandirs(curPath);
+      }
+    });
+  }
+  return {path, name, dirs, files};
+};
+
 export class Generator {
   readonly library: LuaLibrary;
 
@@ -88,7 +125,7 @@ export class Generator {
 
   run() {
 
-    const distDir = './dist/';
+    const distDir = './dist';
 
     if (!fs.existsSync(distDir)) fs.mkdirSync(distDir);
     cleardirsync(distDir);
@@ -96,10 +133,35 @@ export class Generator {
     const { library } = this;
     const { luaFiles } = library;
 
+    // Generate all typings.
     for(const fileName of Object.keys(luaFiles)) {
       const file = luaFiles[fileName];
+      // console.log(`Generating: ${file.id.replace('.lua', '.d.ts')}..`);
       file.generate();
     }
+
+    const luaDir = scandirs(`${distDir}`);
+
+    // Generate the index.
+    const recurse = (dir: Directory) => {
+      let code = '';
+      const subdirNames = Object.keys(dir.dirs);
+      if(subdirNames.length) {
+        for(const subdir of subdirNames) {
+          code += `/// <reference path="${subdir}/index.d.ts" />\n`
+        }
+      }
+      const fileNames = Object.keys(dir.files);
+      if(fileNames.length) {
+        for(const fileName of fileNames) {
+          code += `/// <reference path="${fileName}" />\n`
+        }
+      }
+      fs.writeFileSync(`${dir.path}/index.d.ts`, code);
+      for(const subdirName of subdirNames) recurse(dir.dirs[subdirName]);
+    };
+
+    recurse(luaDir); 
   }
 
   runOld() {
