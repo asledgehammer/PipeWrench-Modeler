@@ -61,7 +61,7 @@ export class LuaClass extends LuaContainer {
 
     // Render empty classes on one line.
     if (!Object.keys(this.fields).length && !Object.keys(this.methods).length && !this._constructor_) {
-      let s = `${doc}\n${prefix}declare class ${this.name}`;
+      let s = `${prefix}${doc}\n${prefix}export class ${this.name}`;
       if (this.superClass) s += ` extends ${this.superClass.name}`;
       return `${s} { [id: string]: unknown; }`;
     }
@@ -73,14 +73,14 @@ export class LuaClass extends LuaContainer {
     // Class Declaration line.
     let s = '';
 
-    if (doc && doc.length) s += `${doc}\n`;
+    if (doc && doc.length) s += `${prefix}${doc}\n`;
 
-    s += `${prefix}declare class ${this.name}`;
+    s += `${prefix}export class ${this.name}`;
     if (this.superClass) s += ` extends ${this.superClass.name}`;
     s += ' {\n\n';
 
     // Wildcard.
-    s += '[id: string]: unknown;\n\n';
+    s += `${newPrefix}[id: string]: unknown;\n\n`;
 
     // Render static field(s). (If any)
     if (staticFields.length) {
@@ -106,13 +106,7 @@ export class LuaClass extends LuaContainer {
     }
 
     // End of Class Declaration line.
-    s += `${prefix}}`;
-    return prettier.format(s, {
-      singleQuote: true, 
-      bracketSpacing: true, 
-      parser: 'typescript',
-      printWidth: 120
-    });
+    return `${s}${prefix}}`;
   }
 
   generateDoc(prefix: string, model: ClassModel): string {

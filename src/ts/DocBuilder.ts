@@ -5,6 +5,11 @@
  */
 export class DocBuilder {
   private readonly lines: string[] = [];
+  private readonly isComment: boolean;
+
+  constructor(isComment: boolean = false) {
+    this.isComment = isComment;
+  }
 
   /**
    * @param prefix The prepend for each line.
@@ -12,9 +17,10 @@ export class DocBuilder {
    */
   build(prefix: string = ''): string {
     const { lines: la } = this;
-    if (!la) return `${prefix}/** */`;
-    else if (la.length === 1) return `${prefix}/** ${la[0]} */`;
-    let s = `${prefix}/**\n`;
+    const start = this.isComment ? '/*' : '/**';
+    if (!la) return `${prefix}${start} */`;
+    else if (la.length === 1) return `${prefix}${start} ${la[0]} */`;
+    let s = `${prefix}${start}\n`;
     for (const l of la) s += !l || !l.length ? `${prefix} *\n` : `${prefix} * ${l}\n`;
     return `${s}${prefix} */`;
   }

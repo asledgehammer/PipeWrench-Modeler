@@ -29,11 +29,13 @@
     "@types/highlight.js": "^9.12.3",
     "@types/luaparse": "^0.2.8",
     "@types/prettier": "^2.6.4",
+    "del": "^7.0.0",
     "highlight.js": "^11.6.0",
     "jquery": "^3.5.1",
     "jquery-smooth-scroll": "^2.2.0",
     "luaparse": "^0.3.1",
-    "prettier": "^2.7.1"
+    "prettier": "^2.7.1",
+    "rimraf": "^3.0.2"
   },
   "staticFiles": {
     "staticPath": "public",

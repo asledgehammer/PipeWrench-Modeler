@@ -30,7 +30,7 @@ export class LuaField extends NamedElement {
   }
 
   onCompile(prefix: string): string {
-    const types: string[] = [];
+    const types: string[] = ['unknown'];
     let sDoc = '';
 
     const processField = (model: FieldModel) => {
@@ -38,14 +38,13 @@ export class LuaField extends NamedElement {
 
       // Process field types.
       if (fTypes && fTypes.length) {
+        types.length = 0;
         for (const fType of fTypes) {
           // Prevent duplicate type entries.
           if (types.indexOf(fType) !== -1) continue;
           types.push(fType);
         }
-      } else {
-        types.push('unknown');
-      }
+      } 
 
       if (fieldDoc) {
         const doc = new DocBuilder();

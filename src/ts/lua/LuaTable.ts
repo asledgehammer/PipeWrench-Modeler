@@ -1,8 +1,5 @@
-import * as prettier from 'prettier';
 import { LuaContainer } from './LuaContainer';
 import { LuaFile } from './LuaFile';
-import { FieldModel } from './model/FieldModel';
-import { MethodModel } from './model/MethodModel';
 import { TableModel } from './model/TableModel';
 
 /**
@@ -40,11 +37,11 @@ export class LuaTable extends LuaContainer {
 
     const model = library.getTableModel(this as any);
     let doc = this.generateDoc(prefix, model);
-    let s = doc.length ? `${doc}\n` : '';
+    let s = doc.length ? `${prefix}${doc}\n` : '';
     
     // Render empty tables on one line.
     if (!Object.keys(this.fields).length && !Object.keys(this.methods).length) {
-      return `${s}\n${prefix}declare class ${this.name} { [id: string]: unknown; }`;
+      return `${s}\n${prefix}export class ${this.name} { [id: string]: unknown; }`;
     }
     
     const { staticFields, nonStaticFields } = this.sortFields();
@@ -54,10 +51,10 @@ export class LuaTable extends LuaContainer {
     // Make sure that no one can try to use Lua tables as a class, even though we're using
     // the class type for tables. This is to keep things clean. We *could* go with an interface,
     // however values cannot be assigned to them in TypeScript like tables can in Lua.
-    s += `${prefix}declare class ${this.name} {\n\n${newPrefix}private constructor();\n\n`;
+    s += `${prefix}export class ${this.name} {\n\n${newPrefix}private constructor();\n\n`;
 
     // Wildcard.
-    s += '[id: string]: unknown;\n\n';
+    s += `${newPrefix}[id: string]: unknown;\n\n`;
 
     // Render static field(s). (If any)
     if (staticFields.length) {
@@ -80,14 +77,7 @@ export class LuaTable extends LuaContainer {
     }
 
     // End of Table Declaration line.
-    s += `${prefix}}`;
-
-    return prettier.format(s, {
-      singleQuote: true, 
-      bracketSpacing: true, 
-      parser: 'typescript',
-      printWidth: 120
-    });
+    return `${s}${prefix}}`;
   }
 
   generateDoc(prefix: string, model: TableModel): string {

@@ -3,6 +3,7 @@
 staged/
 assets/js/
 assets/css/
+dist/
 
 package-lock.json
 node_modules/

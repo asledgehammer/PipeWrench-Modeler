@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as hljs from 'highlight.js';
 import * as electron from 'electron';
+import * as prettier from 'prettier';
+import { Generator } from '../Generator';
 import { LuaClass } from '../lua/LuaClass';
 import { LuaLibrary } from '../lua/LuaLibrary';
 import { ClassModel } from '../lua/model/ClassModel';
@@ -32,8 +34,12 @@ export class ModelUIManager {
   selectedClass: LuaClass;
   selectedTable: LuaTable;
 
+  readonly generator: Generator;
+
   constructor(luaLibrary: LuaLibrary) {
     this.luaLibrary = luaLibrary;
+
+    this.generator = new Generator(this.luaLibrary);
 
     this.modelFile = new ModelFile(luaLibrary.models, 'untitled', '');
 
@@ -69,6 +75,7 @@ export class ModelUIManager {
       if (event.ctrlKey) {
         if (event.originalEvent.code === 'KeyO') this.open();
         if (event.originalEvent.code === 'KeyS') this.save(!this.path || event.shiftKey);
+        if (event.originalEvent.code === 'KeyG') this.generator.run();
       }
     });
 
@@ -157,26 +164,35 @@ export class ModelUIManager {
 
       const { models } = this.luaLibrary;
 
-      if(this.modelFile) {
+      if (this.modelFile) {
         delete models.modelFiles[this.modelFile.id];
       }
 
       this.modelFile = models.loadFile(_path);
       this.modelFile.populate();
 
-      const { classes, tables } = this.modelFile;
+      const { classes, tables, globalFields, globalFunctions } = this.modelFile;
 
+      for (const clazzName of Object.keys(classes)) {
+        const clazz = this.luaLibrary.classes[clazzName];
+        if(clazz) clazz.model = classes[clazzName];
+      } 
+      for (const tableName of Object.keys(tables)) {
+        const table = this.luaLibrary.tables[tableName];
+        if(table) table.model = tables[tableName];
+      } 
+      
       const classNames = Object.keys(classes);
       const tableNames = Object.keys(tables);
 
       const allNames = ([] as string[]).concat(classNames, tableNames);
       allNames.sort((o1, o2) => o1.localeCompare(o2));
 
-      for(const name of allNames) {
+      for (const name of allNames) {
         let dom = '';
-        if(classNames.indexOf(name) !== -1) {
+        if (classNames.indexOf(name) !== -1) {
           dom = `<div class="item selected" element="${name}" onclick="setClass('${name}')"><label>${name}</label></div>`;
-        } else if(tableNames.indexOf(name) !== -1) {
+        } else if (tableNames.indexOf(name) !== -1) {
           dom = `<div class="item selected" element="${name}" onclick="setTable('${name}')"><label>${name}</label></div>`;
         }
         $('#class-list').append(dom);
@@ -256,9 +272,9 @@ export class ModelUIManager {
 
   setClass(className: string) {
     console.log(`setClass(${className})`);
-    
+
     this.selectedTable = null;
-    if(!className) {
+    if (!className) {
       this.selectedClass = null;
       this.$modelPane.empty();
       $('#class-list .item').each(function () {
@@ -492,6 +508,12 @@ export class ModelUIManager {
     const updateCode = () => {
       let code = '';
       if (this.selectedClass) code = this.selectedClass.compile();
+      code = prettier.format(code, {
+        singleQuote: true,
+        bracketSpacing: true,
+        parser: 'typescript',
+        printWidth: 120,
+      });
       const html = hljs.default.highlight(code, { language: 'typescript' }).value;
       let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>';
 
@@ -529,9 +551,9 @@ export class ModelUIManager {
 
   setTable(tableName: string) {
     console.log(`setTable(${tableName})`);
-    
+
     this.selectedClass = null;
-    if(!tableName) {
+    if (!tableName) {
       this.selectedTable = null;
       this.$modelPane.empty();
       $('#class-list .item').each(function () {
@@ -539,7 +561,7 @@ export class ModelUIManager {
       });
       return;
     }
-    
+
     // Make sure not to reload an already selected table.
     if (this.selectedTable && this.selectedTable.name === tableName) return;
 
@@ -720,6 +742,13 @@ export class ModelUIManager {
     const updateCode = () => {
       let code = '';
       if (this.selectedTable) code = this.selectedTable.compile();
+      code = prettier.format(code, {
+        singleQuote: true,
+        bracketSpacing: true,
+        parser: 'typescript',
+        printWidth: 120,
+      });
+
       const html = hljs.default.highlight(code, { language: 'typescript' }).value;
       let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>';
 
