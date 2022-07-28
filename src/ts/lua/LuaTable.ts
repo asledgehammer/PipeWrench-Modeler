@@ -56,7 +56,7 @@ export class LuaTable extends LuaContainer {
     
     // Render empty tables on one line.
     if (!Object.keys(this.fields).length && !Object.keys(this.methods).length) {
-      return `${s}\n${prefix}declare class ${this.name} {}`;
+      return `${s}\n${prefix}declare class ${this.name} { [id: string]: unknown; }`;
     }
     
     const { staticFields, nonStaticFields } = this.sortFields();
@@ -67,6 +67,9 @@ export class LuaTable extends LuaContainer {
     // the class type for tables. This is to keep things clean. We *could* go with an interface,
     // however values cannot be assigned to them in TypeScript like tables can in Lua.
     s += `${prefix}declare class ${this.name} {\n\n${newPrefix}private constructor();\n\n`;
+
+    // Wildcard.
+    s += '[id: string]: unknown;\n\n';
 
     // Render static field(s). (If any)
     if (staticFields.length) {

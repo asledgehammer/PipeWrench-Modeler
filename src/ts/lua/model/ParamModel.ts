@@ -38,7 +38,10 @@ export class ParamModel extends Model<ParamModelJson> {
     if (json.id) this.id = json.id;
     else throw new Error('Param without ID.');
     if (json.rename) this.rename = json.rename;
-    if (json.types) for (const type of json.types) this.types.push(type);
+    if (json.types) {
+      this.types.length = 0;
+      for (const type of json.types) this.types.push(type);
+    }
   }
 
   save(): ParamModelJson {

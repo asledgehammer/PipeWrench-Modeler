@@ -13,6 +13,8 @@ import { TableModel } from '../lua/model/TableModel';
 import { ModelFile } from '../lua/model/ModelFile';
 import { LuaTable } from '../lua/LuaTable';
 
+const { dialog } = require('electron').remote;
+
 export class ModelUIManager {
   readonly leftPanel: HTMLDivElement;
   readonly centerPanel: HTMLDivElement;
@@ -24,7 +26,7 @@ export class ModelUIManager {
   readonly $searchBar: JQuery;
   readonly $searchBarInput: JQuery;
   readonly $searchBarSuggestions: JQuery;
-  readonly modelFile: ModelFile;
+  modelFile: ModelFile;
   private path: string = null;
 
   selectedClass: LuaClass;
@@ -64,20 +66,18 @@ export class ModelUIManager {
     ParameterModel.HTML_TEMPLATE = getModelTemplate('parameter');
 
     $(window).on('keypress', (event) => {
-      // console.log('keypress', event);
-
-      if(event.ctrlKey) {
-        if(event.originalEvent.code === "KeyO" /* o */) this.open();
-        if(event.originalEvent.code === "KeyS" /* s */) this.save(!this.path || event.shiftKey);
-      } 
+      if (event.ctrlKey) {
+        if (event.originalEvent.code === 'KeyO') this.open();
+        if (event.originalEvent.code === 'KeyS') this.save(!this.path || event.shiftKey);
+      }
     });
 
     const _this = this;
-    this.$searchBarInput.on('input', function() {
+    this.$searchBarInput.on('input', function () {
       const input = this as HTMLInputElement;
       const { value } = input;
 
-      if(value.length) {
+      if (value.length) {
         _this.$searchBarSuggestions.show();
       } else {
         _this.$searchBarSuggestions.hide();
@@ -85,17 +85,17 @@ export class ModelUIManager {
 
       _this.$searchBarSuggestions.empty();
 
-      if(!value.length) return;
+      if (!value.length) return;
 
       const matches: string[] = [];
 
       let allTypes: string[];
       let valueLower = value.toLowerCase();
-      if(valueLower.indexOf('class:') === 0) {
+      if (valueLower.indexOf('class:') === 0) {
         valueLower = valueLower.substring(6);
         const classNames = Object.keys(luaLibrary.classes);
         allTypes = [].concat(classNames);
-      } else if(valueLower.indexOf('table:') === 0) {
+      } else if (valueLower.indexOf('table:') === 0) {
         valueLower = valueLower.substring(6);
         const tableNames = Object.keys(luaLibrary.tables);
         allTypes = [].concat(tableNames);
@@ -107,7 +107,7 @@ export class ModelUIManager {
 
       allTypes.sort((o1, o2) => o1.localeCompare(o2));
 
-      for(const entry of allTypes) {
+      for (const entry of allTypes) {
         if (
           entry
             .substring(entry.indexOf('class:'))
@@ -118,12 +118,12 @@ export class ModelUIManager {
           matches.push(entry);
       }
 
-      if(matches.length) {
-        for(const match of matches) {
+      if (matches.length) {
+        for (const match of matches) {
           const name = match.replace('class:', '').replace('table:', '');
-          if(match.indexOf('class:') === 0) {
+          if (match.indexOf('class:') === 0) {
             _this.$searchBarSuggestions.append(`<label class="lua-class suggestion">${name}</label>`);
-          } else if(match.indexOf('table:') === 0) {
+          } else if (match.indexOf('table:') === 0) {
             _this.$searchBarSuggestions.append(`<label class="lua-table suggestion">${name}</label>`);
           }
         }
@@ -134,67 +134,81 @@ export class ModelUIManager {
           _this.$searchBarSuggestions.hide();
         };
 
-        $('label.suggestion.lua-class').on('click', function() {
+        $('label.suggestion.lua-class').on('click', function () {
           const className = this.innerHTML;
           _this.setClass(className);
           clear();
         });
 
-        $('label.suggestion.lua-table').on('click', function() {
+        $('label.suggestion.lua-table').on('click', function () {
           const tableName = this.innerHTML;
           _this.setTable(tableName);
           clear();
         });
-
       } else {
         _this.$searchBarSuggestions.hide();
       }
-      
     });
   }
 
   open = (path: string = null) => {
-    const open = (_paths: string[]) => {
-      if (_paths == null || _paths.length === 0) {
-        return;
+    const open = (_path: string) => {
+      if (_path == null) return;
+
+      const { models } = this.luaLibrary;
+
+      if(this.modelFile) {
+        delete models.modelFiles[this.modelFile.id];
       }
-      for (let index = 0; index < _paths.length; index++) {
-        console.log(_paths);
+
+      this.modelFile = models.loadFile(_path);
+
+      const { classes, tables } = this.modelFile;
+
+      const classNames = Object.keys(classes);
+      const tableNames = Object.keys(tables);
+
+      const allNames = ([] as string[]).concat(classNames, tableNames);
+      allNames.sort((o1, o2) => o1.localeCompare(o2));
+
+      for(const name of allNames) {
+        let dom = '';
+        if(classNames.indexOf(name) !== -1) {
+          dom = `<div class="item selected" element="${name}" onclick="setClass('${name}')"><label>${name}</label></div>`;
+        } else if(tableNames.indexOf(name) !== -1) {
+          dom = `<div class="item selected" element="${name}" onclick="setTable('${name}')"><label>${name}</label></div>`;
+        }
+        $('#class-list').append(dom);
       }
     };
-  
+
     if (path == null) {
-      const {dialog} = require('electron').remote;
-  
       interface DialogResult {
         canceled: boolean;
         filePaths: string[];
         bookmark: string;
       }
-  
+
       const promise: Promise<electron.OpenDialogReturnValue> = dialog.showOpenDialog(null, {
-          title: 'Open Model',
-          buttonLabel: 'Open',
-          filters: [
-            {name: 'PipeWrench Model', extensions: ['json']}
-          ]
-        }
-      );
-  
+        title: 'Open Model',
+        buttonLabel: 'Open',
+        filters: [{ name: 'PipeWrench Model', extensions: ['json'] }],
+      });
+
       promise.then((result: DialogResult) => {
         if (result.canceled || result.filePaths == null || result.filePaths.length === 0) {
           return;
         }
-        open(result.filePaths);
+        open(result.filePaths[0]);
       });
     } else {
-      open([path]);
+      open(path);
     }
-  }
+  };
 
   save = (as: boolean) => {
     if (as) {
-      const {dialog} = require('electron').remote;
+      const { dialog } = require('electron').remote;
 
       interface DialogResult {
         canceled: boolean;
@@ -203,13 +217,10 @@ export class ModelUIManager {
       }
 
       const promise: Promise<electron.SaveDialogReturnValue> = dialog.showSaveDialog(null, {
-          title: 'Save Model',
-          buttonLabel: 'Save',
-          filters: [
-            {name: 'PipeWrench Model', extensions: ['json']}
-          ]
-        }
-      );
+        title: 'Save Model',
+        buttonLabel: 'Save',
+        filters: [{ name: 'PipeWrench Model', extensions: ['json'] }],
+      });
 
       promise.then((result: DialogResult) => {
         if (result.canceled || result.filePath == null) {
@@ -227,25 +238,53 @@ export class ModelUIManager {
     }
   };
 
+  clear() {
+    this.clearList();
+    this.clearModels();
+    this.selectedClass = null;
+    this.selectedTable = null;
+  }
+
+  clearList() {
+    $('#class-list').empty();
+  }
+
+  clearModels() {
+    this.$modelPane.empty();
+  }
+
   setClass(className: string) {
     console.log(`setClass(${className})`);
-    // Make sure not to reload an already selected class.
-    if(this.selectedClass && this.selectedClass.name === className) return;
     
-    const clazz = this.luaLibrary.classes[className];
-    if (!clazz) return;
+    this.selectedTable = null;
+    if(!className) {
+      this.selectedClass = null;
+      this.$modelPane.empty();
+      $('#class-list .item').each(function () {
+        $(this).removeClass('selected');
+      });
+      return;
+    }
 
-    $('#class-list .item').each(function() {
+    // Make sure not to reload an already selected class.
+    if (this.selectedClass && this.selectedClass.name === className) return;
+
+    $('#class-list .item').each(function () {
       $(this).removeClass('selected');
     });
 
-    this.selectedTable = null;
+    const clazz = this.luaLibrary.classes[className];
+    if (!clazz) return;
+
     this.selectedClass = clazz;
+
     let clazzModel = this.modelFile.classes[className];
-    if(!clazzModel) {
+    if (!clazzModel) {
       clazzModel = clazz.generateModel();
       $('#class-list').append(
-        `<div class="item selected" element="${className}" onclick="setClass('${className}')">` + `<label>${className}</label>` + `</div>`
+        `<div class="item selected" element="${className}" onclick="setClass('${className}')">` +
+          `<label>${className}</label>` +
+          `</div>`
       );
     } else {
       $(`#class-list .item[element=${className}`).addClass('selected');
@@ -257,7 +296,7 @@ export class ModelUIManager {
     this.$modelPane.empty();
 
     this.$modelPane.append(clazzModel.generateDom());
-    if(clazzModel._constructor_) {
+    if (clazzModel._constructor_) {
       this.$modelPane.append(clazzModel._constructor_.generateDom());
     }
 
@@ -291,7 +330,7 @@ export class ModelUIManager {
       if (model.hasClass('collapsed')) {
         model.removeClass('collapsed');
 
-        model.find('.textarea').each(function() {
+        model.find('.textarea').each(function () {
           $(this).trigger('input');
         });
       } else {
@@ -335,7 +374,7 @@ export class ModelUIManager {
         const paramModel = clazzModel._constructor_.getParamModel(paramName);
         if (field === 'rename') {
           paramModel.rename = input.value.trim();
-        } else if(field === 'lines') {
+        } else if (field === 'lines') {
           const textarea = element as HTMLTextAreaElement;
           const raw = textarea.value.split('\n');
           paramModel.doc.lines.length = 0;
@@ -343,7 +382,7 @@ export class ModelUIManager {
             line = line.trim();
             if (line.length) paramModel.doc.lines.push(line);
           }
-        } else if(field === 'types') {
+        } else if (field === 'types') {
           const textarea = element as HTMLTextAreaElement;
           const raw = textarea.value.split('\n');
           paramModel.types.length = 0;
@@ -359,18 +398,18 @@ export class ModelUIManager {
       const fieldName = target[1];
 
       const field = clazz.fields[fieldName];
-      if(!field) {
-        console.warn(`Could not locate the field in class: ${clazz.name}.${field.name}`)
+      if (!field) {
+        console.warn(`Could not locate the field in class: ${clazz.name}.${field.name}`);
         return;
       }
 
       const fieldModel = clazzModel.getField(field);
-      if(!fieldModel) {
-        console.warn(`Could not locate the FieldModel for field: ${clazz.name}.${field.name}`)
+      if (!fieldModel) {
+        console.warn(`Could not locate the FieldModel for field: ${clazz.name}.${field.name}`);
         return;
       }
 
-      if(target[2] === 'lines') {
+      if (target[2] === 'lines') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
         fieldModel.doc.lines.length = 0;
@@ -389,24 +428,24 @@ export class ModelUIManager {
     const handleMethodTarget = (element: HTMLElement, target: string[]) => {
       const methodName = target[1];
 
-      if(methodName === 'constructor') {
+      if (methodName === 'constructor') {
         handleConstructorTarget(element, target);
         return;
       }
 
       const method = clazz.methods[methodName];
-      if(!method) {
-        console.warn(`Could not locate the method in class: ${clazz.name}.${method.name}`)
+      if (!method) {
+        console.warn(`Could not locate the method in class: ${clazz.name}.${method.name}`);
         return;
       }
 
       const methodModel = clazzModel.getMethod(method);
-      if(!methodModel) {
-        console.warn(`Could not locate the MethodModel for field: ${clazz.name}.${method.name}`)
+      if (!methodModel) {
+        console.warn(`Could not locate the MethodModel for field: ${clazz.name}.${method.name}`);
         return;
       }
 
-      if(target[2] === 'lines') {
+      if (target[2] === 'lines') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
         methodModel.doc.lines.length = 0;
@@ -426,7 +465,7 @@ export class ModelUIManager {
         const paramModel = methodModel.getParamModel(paramName);
         if (field === 'rename') {
           paramModel.rename = input.value.trim();
-        } else if(field === 'lines') {
+        } else if (field === 'lines') {
           const textarea = element as HTMLTextAreaElement;
           const raw = textarea.value.split('\n');
           paramModel.doc.lines.length = 0;
@@ -434,7 +473,7 @@ export class ModelUIManager {
             line = line.trim();
             if (line.length) paramModel.doc.lines.push(line);
           }
-        } else if(field === 'types') {
+        } else if (field === 'types') {
           const textarea = element as HTMLTextAreaElement;
           const raw = textarea.value.split('\n');
           paramModel.types.length = 0;
@@ -442,8 +481,8 @@ export class ModelUIManager {
             line = line.trim();
             if (line.length) paramModel.types.push(line);
           }
-        } 
-      } else if(target[2] === 'wrapunknowntype') {
+        }
+      } else if (target[2] === 'wrapunknowntype') {
         const checkbox = element as HTMLInputElement;
         methodModel.returns.applyUnknownType = checkbox.checked;
       }
@@ -489,24 +528,36 @@ export class ModelUIManager {
 
   setTable(tableName: string) {
     console.log(`setTable(${tableName})`);
+    
+    this.selectedClass = null;
+    if(!tableName) {
+      this.selectedTable = null;
+      this.$modelPane.empty();
+      $('#class-list .item').each(function () {
+        $(this).removeClass('selected');
+      });
+      return;
+    }
+    
     // Make sure not to reload an already selected table.
-    if(this.selectedTable && this.selectedTable.name === tableName) return;
+    if (this.selectedTable && this.selectedTable.name === tableName) return;
 
     const table = this.luaLibrary.tables[tableName];
     if (!table) return;
 
-
-    $('#class-list .item').each(function() {
+    $('#class-list .item').each(function () {
       $(this).removeClass('selected');
     });
 
     this.selectedClass = null;
     this.selectedTable = table;
     let tableModel = this.modelFile.tables[tableName];
-    if(!tableModel) {
+    if (!tableModel) {
       tableModel = table.generateModel();
       $('#class-list').append(
-        `<div class="item selected" element="${tableName}" onclick="setTable('${tableName}')">` + `<label>${tableName}</label>` + `</div>`
+        `<div class="item selected" element="${tableName}" onclick="setTable('${tableName}')">` +
+          `<label>${tableName}</label>` +
+          `</div>`
       );
     } else {
       $(`#class-list .item[element=${tableName}`).addClass('selected');
@@ -548,7 +599,7 @@ export class ModelUIManager {
       if (model.hasClass('collapsed')) {
         model.removeClass('collapsed');
 
-        model.find('.textarea').each(function() {
+        model.find('.textarea').each(function () {
           $(this).trigger('input');
         });
       } else {
@@ -580,18 +631,18 @@ export class ModelUIManager {
       const fieldName = target[1];
 
       const field = table.fields[fieldName];
-      if(!field) {
-        console.warn(`Could not locate the field in class: ${table.name}.${field.name}`)
+      if (!field) {
+        console.warn(`Could not locate the field in class: ${table.name}.${field.name}`);
         return;
       }
 
       const fieldModel = tableModel.getField(field);
-      if(!fieldModel) {
-        console.warn(`Could not locate the FieldModel for field: ${table.name}.${field.name}`)
+      if (!fieldModel) {
+        console.warn(`Could not locate the FieldModel for field: ${table.name}.${field.name}`);
         return;
       }
 
-      if(target[2] === 'lines') {
+      if (target[2] === 'lines') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
         fieldModel.doc.lines.length = 0;
@@ -611,18 +662,18 @@ export class ModelUIManager {
       const methodName = target[1];
 
       const method = table.methods[methodName];
-      if(!method) {
-        console.warn(`Could not locate the method in table: ${table.name}.${method.name}`)
+      if (!method) {
+        console.warn(`Could not locate the method in table: ${table.name}.${method.name}`);
         return;
       }
 
       const methodModel = tableModel.getMethod(method);
-      if(!methodModel) {
-        console.warn(`Could not locate the MethodModel for field: ${table.name}.${method.name}`)
+      if (!methodModel) {
+        console.warn(`Could not locate the MethodModel for field: ${table.name}.${method.name}`);
         return;
       }
 
-      if(target[2] === 'lines') {
+      if (target[2] === 'lines') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
         methodModel.doc.lines.length = 0;
@@ -642,7 +693,7 @@ export class ModelUIManager {
         const paramModel = methodModel.getParamModel(paramName);
         if (field === 'rename') {
           paramModel.rename = input.value.trim();
-        } else if(field === 'lines') {
+        } else if (field === 'lines') {
           const textarea = element as HTMLTextAreaElement;
           const raw = textarea.value.split('\n');
           paramModel.doc.lines.length = 0;
@@ -650,7 +701,7 @@ export class ModelUIManager {
             line = line.trim();
             if (line.length) paramModel.doc.lines.push(line);
           }
-        } else if(field === 'types') {
+        } else if (field === 'types') {
           const textarea = element as HTMLTextAreaElement;
           const raw = textarea.value.split('\n');
           paramModel.types.length = 0;
@@ -658,8 +709,8 @@ export class ModelUIManager {
             line = line.trim();
             if (line.length) paramModel.types.push(line);
           }
-        } 
-      } else if(target[2] === 'wrapunknowntype') {
+        }
+      } else if (target[2] === 'wrapunknowntype') {
         const checkbox = element as HTMLInputElement;
         methodModel.returns.applyUnknownType = checkbox.checked;
       }

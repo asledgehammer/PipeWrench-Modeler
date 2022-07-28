@@ -29,6 +29,7 @@ export class ClassModel extends Model<ClassModelJson> {
 
   constructor(clazz: LuaClass, name: string, src?: ClassModelJson) {
     super();
+    console.log(`ClassModel: ${name}`);
     this.clazz = clazz;
     this.name = name;
     this.doc = new ClassDoc();

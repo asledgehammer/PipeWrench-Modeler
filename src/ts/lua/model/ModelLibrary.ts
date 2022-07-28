@@ -55,19 +55,51 @@ export class ModelLibrary {
   parse() {
     this.clear();
     for (const file of this.files) {
-      let id: string;
-      const path = file.replace('\\', '/').replace('.json', '').replace('.json', '').replace('.json', '');
-      if (path.indexOf('/') !== -1) {
-        const split = path.split('/');
-        id = split[split.length - 1];
-      } else {
-        id = path;
-      }
+      let id = ModelLibrary.getFileId(file);
       const modelFile = new ModelFile(this, id, file);
-      modelFile.parse();
-      modelFile.scan();
+
+      try {
+        modelFile.parse();
+        modelFile.scan();
+      } catch (e) {
+        console.error(`Failed to load Model File: ${file}`);
+        console.error(e);
+        continue;
+      }
+
       this.modelFiles[id] = modelFile;
     }
+  }
+
+  /**
+   * Clears all classes, tables, global fields, and global functions in the library.
+   */
+  clear() {
+    for (const id of Object.keys(this.classes)) delete this.classes[id];
+    for (const id of Object.keys(this.tables)) delete this.tables[id];
+    for (const id of Object.keys(this.globalFields)) delete this.globalFields[id];
+    for (const id of Object.keys(this.globalFunctions)) delete this.globalFunctions[id];
+  }
+
+  /**
+   *
+   * @param path The path to the file.
+   * @returns The model file instance. Returns null if not valid JSON.
+   */
+  loadFile(path: string): ModelFile {
+    const modelFile = new ModelFile(this, ModelLibrary.getFileId(path), path);
+
+    try {
+      modelFile.parse();
+      modelFile.scan();
+    } catch (e) {
+      console.error(`Failed to load Model File: ${path}`);
+      console.error(e);
+      return null;
+    }
+
+    this.modelFiles[modelFile.id] = modelFile;
+    return modelFile;
   }
 
   getClassModel(clazz: LuaClass): ClassModel {
@@ -88,16 +120,6 @@ export class ModelLibrary {
   getGlobalFunctionModel(func: LuaFunction): FunctionModel {
     const model = this.globalFunctions[func.name];
     return model && model.testSignature(func) ? model : null;
-  }
-
-  /**
-   * Clears all classes, tables, global fields, and global functions in the library.
-   */
-  clear() {
-    for (const id of Object.keys(this.classes)) delete this.classes[id];
-    for (const id of Object.keys(this.tables)) delete this.tables[id];
-    for (const id of Object.keys(this.globalFields)) delete this.globalFields[id];
-    for (const id of Object.keys(this.globalFunctions)) delete this.globalFunctions[id];
   }
 
   private scanDir(dir: string) {
@@ -123,5 +145,11 @@ export class ModelLibrary {
         this.scanDir(dir);
       }
     }
+  }
+
+  static getFileId(path: string): string {
+    const s = path.replace('\\', '/').replace('.json', '').replace('.json', '').replace('.json', '');
+    if (s.indexOf('/') !== -1) return s.split('/').pop();
+    return s;
   }
 }

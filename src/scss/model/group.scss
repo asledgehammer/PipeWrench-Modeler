@@ -58,7 +58,8 @@
           padding-right: 8px;
 
           textarea {
-            width: calc(100% - 2px);
+            left: 1px;
+            width: calc(100% - 10px);
           }
 
           label {

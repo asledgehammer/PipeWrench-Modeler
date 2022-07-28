@@ -21,6 +21,7 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
 
   constructor(clazz: ClassModel, json?: ConstructorModelJson) {
     super();
+    if(!clazz.clazz) throw new Error(`LuaClass is null: ${clazz.name}`);
     this.clazz = clazz;
     this.doc = new ConstructorDoc();
     if (clazz) this.create();
@@ -28,10 +29,12 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
   }
 
   create() {
-    const { _constructor_ } = this.clazz.clazz;
-    if (_constructor_) {
-      for (const param of _constructor_.params) {
-        this.params.push(new ParamModel('constructor', param));
+    if (this.clazz.clazz) {
+      const { _constructor_ } = this.clazz.clazz;
+      if(_constructor_) {
+        for (const param of _constructor_.params) {
+          this.params.push(new ParamModel('constructor', param));
+        }
       }
     }
   }
@@ -40,7 +43,7 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
     this.clear();
     if (json.doc) this.doc.load(json.doc);
 
-    if (json.params && this.clazz._constructor_) {
+    if (json.params && this.clazz._constructor_ && this.clazz.clazz) {
       const { _constructor_ } = this.clazz.clazz;
 
       if (json.params.length === _constructor_.params.length) {

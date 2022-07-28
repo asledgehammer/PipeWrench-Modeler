@@ -99,36 +99,36 @@ export class ModelFile {
   }
 
   save(path: string) {
-    let classes: ClassModelJson[] = undefined;
+    let classes: {[id: string]: ClassModelJson} = undefined;
     let classNames = Object.keys(this.classes);
     if (classNames.length) {
-      classes = [];
+      classes = {};
       classNames.sort((o1, o2) => o1.localeCompare(o2));
-      for (const className of classNames) classes.push(this.classes[className].save());
+      for (const className of classNames) classes[className] = this.classes[className].save();
     }
 
-    let tables: TableModelJson[] = undefined;
+    let tables: {[id: string]: TableModelJson} = undefined;
     let tableNames = Object.keys(this.tables);
     if (tableNames.length) {
-      tables = [];
+      tables = {};
       tableNames.sort((o1, o2) => o1.localeCompare(o2));
-      for (const tableName of tableNames) tables.push(this.tables[tableName].save());
+      for (const tableName of tableNames) tables[tableName] = this.tables[tableName].save();
     }
 
-    let globalFields: FieldModelJson[] = undefined;
+    let globalFields: {[id: string]: FieldModelJson} = undefined;
     let globalFieldNames = Object.keys(this.globalFields);
     if (globalFieldNames.length) {
-      globalFields = [];
+      globalFields = {};
       globalFieldNames.sort((o1, o2) => o1.localeCompare(o2));
-      for (const fieldName of globalFieldNames) globalFields.push(this.globalFields[fieldName].save());
+      for (const fieldName of globalFieldNames) globalFields[fieldName] = this.globalFields[fieldName].save();
     }
 
-    let globalFunctions: FunctionModelJson[] = undefined;
+    let globalFunctions: {[id: string]: FunctionModelJson} = undefined;
     let globalfunctionsNames = Object.keys(this.globalFunctions);
     if (globalfunctionsNames.length) {
-      globalFunctions = [];
+      globalFunctions = {};
       globalfunctionsNames.sort((o1, o2) => o1.localeCompare(o2));
-      for (const funcName of globalFieldNames) globalFunctions.push(this.globalFunctions[funcName].save());
+      for (const funcName of globalFieldNames) globalFunctions[funcName] = this.globalFunctions[funcName].save();
     }
 
     const json = { version: 1, classes, tables, globalFields, globalFunctions };
