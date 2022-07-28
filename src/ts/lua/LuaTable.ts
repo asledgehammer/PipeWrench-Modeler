@@ -41,7 +41,7 @@ export class LuaTable extends LuaContainer {
     
     // Render empty tables on one line.
     if (!Object.keys(this.fields).length && !Object.keys(this.methods).length) {
-      return `${s}\n${prefix}export class ${this.name} { [id: string]: unknown; }`;
+      return `${s}\n${prefix}export class ${this.name} { static [id: string]: unknown; }`;
     }
     
     const { staticFields, nonStaticFields } = this.sortFields();
@@ -54,7 +54,7 @@ export class LuaTable extends LuaContainer {
     s += `${prefix}export class ${this.name} {\n\n${newPrefix}private constructor();\n\n`;
 
     // Wildcard.
-    s += `${newPrefix}[id: string]: unknown;\n\n`;
+    s += `${newPrefix}static [id: string]: unknown;\n\n`;
 
     // Render static field(s). (If any)
     if (staticFields.length) {

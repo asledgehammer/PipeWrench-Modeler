@@ -24,7 +24,8 @@ export class LuaLibrary {
   luaFiles: { [id: string]: LuaFile } = {};
   classes: { [id: string]: LuaClass } = {};
   tables: { [id: string]: LuaTable } = {};
-  properties: { [id: string]: NamedElement } = {};
+  globalFields: { [id: string]: LuaField } = {};
+  globalFunctions: { [id: string]: LuaFunction } = {};
 
   scan() {
     this.files = [];
@@ -62,7 +63,8 @@ export class LuaLibrary {
   parse() {
     this.classes = {};
     this.tables = {};
-    this.properties = {};
+    this.globalFields = {};
+    this.globalFunctions = {};
 
     // The root class doesn't define itself using 'derive(type: string)'.
     // Add it manually.
@@ -109,14 +111,6 @@ export class LuaLibrary {
     return s;
   }
 
-  compileProperties(prefix: string = ''): string {
-    const propNames = Object.keys(this.properties);
-    propNames.sort((o1, o2) => o1.localeCompare(o2));
-    let s = '';
-    for (const propName of propNames) s += `${this.properties[propName].compile(prefix)}\n`;
-    return s;
-  }
-
   getClassModel(clazz: LuaClass): ClassModel {
     return this.models ? this.models.getClassModel(clazz) : null;
   }
@@ -145,6 +139,9 @@ export class LuaLibrary {
   private linkClasses() {
     for (const name of Object.keys(this.classes)) {
       const clazz = this.classes[name];
+      // Ignore the root class.
+      if(clazz.name === 'ISBaseObject') continue;
+      
       let superClazz = this.classes[clazz.superClassName];
       if (!superClazz) superClazz = this.resolveProxyClass(clazz.superClassName);
       if (!superClazz) {
@@ -163,9 +160,5 @@ export class LuaLibrary {
 
   setClass(clazz: LuaClass) {
     this.classes[clazz.name] = clazz;
-  }
-
-  setProperty(element: NamedElement) {
-    this.properties[element.name] = element;
   }
 }

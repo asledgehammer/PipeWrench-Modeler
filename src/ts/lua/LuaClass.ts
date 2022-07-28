@@ -63,7 +63,7 @@ export class LuaClass extends LuaContainer {
     if (!Object.keys(this.fields).length && !Object.keys(this.methods).length && !this._constructor_) {
       let s = `${prefix}${doc}\n${prefix}export class ${this.name}`;
       if (this.superClass) s += ` extends ${this.superClass.name}`;
-      return `${s} { [id: string]: unknown; }`;
+      return `${s} { [id: string]: unknown; static [id: string]: unknown; }`;
     }
 
     const { staticFields, nonStaticFields } = this.sortFields();
@@ -80,7 +80,7 @@ export class LuaClass extends LuaContainer {
     s += ' {\n\n';
 
     // Wildcard.
-    s += `${newPrefix}[id: string]: unknown;\n\n`;
+    s += `${newPrefix}[id: string]: unknown;\n${newPrefix}static [id: string]: unknown;\n\n`;
 
     // Render static field(s). (If any)
     if (staticFields.length) {

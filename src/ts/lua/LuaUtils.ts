@@ -138,16 +138,22 @@ export const getTableConstructor = (statement: ast.AssignmentStatement): TableCo
 };
 
 export const getFunctionDeclaration = (declaration: ast.FunctionDeclaration): FunctionInfo | null => {
-  // This is how we know that this is a function declared without assignment.
-  if (declaration.identifier.type !== 'Identifier') {
-    return null;
-  }
   // The name of the function is assigned in the identifier.
-  const name = declaration.identifier.name;
+  let name;
+  if(declaration.identifier.type === 'MemberExpression') {
+    name = declaration.identifier.identifier.name;
+    // Check if the function is assigned to anything other than global.
+    if(declaration.identifier.base.type === 'Identifier') {
+      if(declaration.identifier.base.name) return null;
+    }
+  } else {
+    name = declaration.identifier.name;
+  }  
 
   // Whether the function is accessible outside of its scope.
   // (Useful info for upstream processing)
   const isLocal = declaration.isLocal;
+
 
   // Compile parameter names in order. (If present)
   const params: string[] = [];

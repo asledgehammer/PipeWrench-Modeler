@@ -35,7 +35,7 @@ export class LuaFunction extends NamedElement {
     const library = this.file.library;
 
     let funcModel: FunctionModel = library.getGlobalFunctionModel(this);
-    let sDocs = funcModel ? funcModel.generateDoc(prefix, this) : '';
+    let sDocs = funcModel ? funcModel.generateDoc(prefix, this) : '/** @noSelf */';
 
     const compileTypes = (types: string[]): string => {
       let returnS = '';
@@ -98,7 +98,7 @@ export class LuaFunction extends NamedElement {
     let s = '';
     if(sDocs.length) s += `${sDocs}\n`;
 
-    let comp = `${s}${prefix}declare const ${this.name}: `;
+    let comp = `${s}${prefix}export const ${this.name}: `;
     if(applyUnknownType) comp += '(';
     comp += `(${paramS}) => ${returnS}`;
     if(applyUnknownType) comp += ') | unknown';

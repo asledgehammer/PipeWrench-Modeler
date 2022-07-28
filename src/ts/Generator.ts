@@ -26,13 +26,13 @@ const LICENSE = [
   'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE',
   'SOFTWARE.',
   '',
-  'File generated at: $TIME_GENERATED$'
- ];
+  'File generated at: $TIME_GENERATED$',
+];
 
- const generateTSLicense = (): string => {
+const generateTSLicense = (): string => {
   const date = new Date();
   const doc = new DocBuilder(true);
-  for(const line of LICENSE) {
+  for (const line of LICENSE) {
     doc.appendLine(
       line.replace('$YEAR$', date.getFullYear().toString()).replace('$TIME_GENERATED$', date.toISOString())
     );
@@ -82,7 +82,27 @@ export class Generator {
     this.library = library;
   }
 
+  wrapModule(code: string, atlas: string): string {
+    return `/** @noResolution @noSelfInFile */\n${atlas}\n\ndeclare module 'ZomboidLua' {\n${code}}\n`;
+  }
+
   run() {
+
+    const distDir = './dist/';
+
+    if (!fs.existsSync(distDir)) fs.mkdirSync(distDir);
+    cleardirsync(distDir);
+
+    const { library } = this;
+    const { luaFiles } = library;
+
+    for(const fileName of Object.keys(luaFiles)) {
+      const file = luaFiles[fileName];
+      file.generate();
+    }
+  }
+
+  runOld() {
     const distDir = './dist/';
     const classDir = `${distDir}classes/`;
     const tableDir = `${distDir}tables/`;
@@ -98,21 +118,21 @@ export class Generator {
     cleardirsync(tableDir);
     cleardirsync(globalDir);
 
-    const { classes, tables } = this.library;
+    const { classes, tables, globalFields, globalFunctions } = this.library;
 
-    const atlasName = 'ZomboidLua_Atlas.d.ts';
+    const atlasName = 'ZomboidLua.d.ts';
     const atlasPath = `${distDir}${atlasName}`;
     const atlas = `/// <reference path="../${atlasName}" />`;
     const references: string[] = [];
 
+    // Compile classes.
+    console.log('Compiling Classes..');
     for (const className of Object.keys(classes)) {
       const path = `${classDir}${className}.d.ts`;
       references.push(`classes/${className}.d.ts`);
-      console.log(`Compiling Class: ${className}..`);
+      // console.log(`Compiling Class: ${className}..`);
       const clazz = this.library.classes[className];
-      let tsCode = `/** @noResolution @noSelfInFile */\n${atlas}\n\ndeclare module 'ZomboidLua' {\n${clazz.compile(
-        '  '
-      )}}\n`;
+      let tsCode = this.wrapModule(clazz.compile('  '), atlas);
       tsCode = prettier.format(tsCode, {
         singleQuote: true,
         bracketSpacing: true,
@@ -122,14 +142,14 @@ export class Generator {
       this.writeTSFile(path, tsCode);
     }
 
+    // Compile table(s).
+    console.log('Compiling Table(s)..');
     for (const tableName of Object.keys(tables)) {
       const path = `${tableDir}${tableName}.d.ts`;
       references.push(`tables/${tableName}.d.ts`);
-      console.log(`Compiling Table: ${tableName}..`);
+      // console.log(`Compiling Table: ${tableName}..`);
       const table = this.library.tables[tableName];
-      let tsCode = `/** @noResolution @noSelfInFile */\n${atlas}\n\ndeclare module 'ZomboidLua' {\n${table.compile(
-        '  '
-      )}}\n`;
+      let tsCode = this.wrapModule(table.compile('  '), atlas);
       tsCode = prettier.format(tsCode, {
         singleQuote: true,
         bracketSpacing: true,
@@ -139,8 +159,34 @@ export class Generator {
       this.writeTSFile(path, tsCode);
     }
 
-    references.sort((o1, o2) => o1.localeCompare(o2));
+    // Compile global field(s).
+    console.log('Compiling Global Field(s)..');
+    const gFieldsPath = `${globalDir}fields.d.ts`;
+    let gFieldsCode = '';
+    let fieldNames = Object.keys(globalFields);
+    fieldNames.sort((o1, o2) => o1.localeCompare(o2));
+    for (const fieldName of fieldNames) gFieldsCode += `${globalFields[fieldName].compile('  ')}\n\n`;
+    gFieldsCode = this.wrapModule(gFieldsCode, atlas);
+    references.push(`global/fields.d.ts`);
+    this.writeTSFile(gFieldsPath, gFieldsCode);
 
+    // Compile global functions(s).
+    console.log('Compiling Global Function(s)..');
+    const gFuncPath = `${globalDir}functions.d.ts`;
+    let gFuncCode = '';
+    let funcNames = Object.keys(globalFunctions);
+    funcNames.sort((o1, o2) => o1.localeCompare(o2));
+    for (const funcName of funcNames) {
+      if (funcName === 'toString' || funcName === 'new') continue;
+      gFuncCode += `${globalFunctions[funcName].compile('  ')}\n\n`;
+    }
+    gFuncCode = this.wrapModule(gFuncCode, atlas);
+    references.push(`global/functions.d.ts`);
+    this.writeTSFile(gFuncPath, gFuncCode);
+
+    // Compile atlas.
+    console.log('Compiling Atlas..');
+    references.sort((o1, o2) => o1.localeCompare(o2));
     let atlasCode = `import * as Zomboid from 'Zomboid';\n`;
     for (const ref of references) atlasCode += `/// <reference path="${ref}" />\n`;
     this.writeTSFile(atlasPath, atlasCode);

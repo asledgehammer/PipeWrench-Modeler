@@ -1,10 +1,10 @@
 import * as fs from 'fs';
 import * as parser from 'luaparse';
+import * as prettier from 'prettier';
 import * as ast from '../luaparser/ast';
 import { LuaClass } from './LuaClass';
 import { LuaConstructor } from './LuaConstructor';
 import { LuaLibrary } from './LuaLibrary';
-import { NamedElement } from './NamedElement';
 import { LuaFunction } from './LuaFunction';
 import { LuaTable } from './LuaTable';
 import { LuaMethod } from './LuaMethod';
@@ -19,12 +19,61 @@ import {
   getProxyInfo,
   getRequireInfo,
   getTableConstructor,
-  isFunctionLocal,
   printFunctionInfo,
   printMethodInfo,
   printProxyInfo,
   printRequireInfo,
 } from './LuaUtils';
+import { LuaField } from './LuaField';
+import { DocBuilder } from '../DocBuilder';
+
+const LICENSE = [
+  'MIT License',
+  '',
+  'Copyright (c) $YEAR$ JabDoesThings',
+  '',
+  'Permission is hereby granted, free of charge, to any person obtaining a copy',
+  'of this software and associated documentation files (the "Software"), to deal',
+  'in the Software without restriction, including without limitation the rights',
+  'to use, copy, modify, merge, publish, distribute, sublicense, and/or sell',
+  'copies of the Software, and to permit persons to whom the Software is',
+  'furnished to do so, subject to the following conditions:',
+  '',
+  'The above copyright notice and this permission notice shall be included in all',
+  'copies or substantial portions of the Software.',
+  '',
+  'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR',
+  'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,',
+  'FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE',
+  'AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER',
+  'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,',
+  'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE',
+  'SOFTWARE.',
+  '',
+  'File generated at: $TIME_GENERATED$',
+];
+
+const generateTSLicense = (): string => {
+  const date = new Date();
+  const doc = new DocBuilder(true);
+  for (const line of LICENSE) {
+    doc.appendLine(
+      line.replace('$YEAR$', date.getFullYear().toString()).replace('$TIME_GENERATED$', date.toISOString())
+    );
+  }
+  return doc.build();
+};
+
+const generateLuaLicense = (): string => {
+  const date = new Date();
+  const dateS = date.toISOString();
+  let lines = '';
+  const year = date.getFullYear().toString();
+  for (const line of LICENSE) {
+    lines += '-- ' + line.replace('$YEAR$', year).replace('$TIME_GENERATED$', dateS) + '\n';
+  }
+  return lines;
+};
 
 /**
  * **LuaFile** loads, parses, and processes Lua code stored in files.
@@ -38,11 +87,11 @@ export class LuaFile {
   /** All pseudo-classes discovered in the file. */
   readonly classes: { [id: string]: LuaClass } = {};
 
-  /** All properties discovered in the file. (Fields) */
-  readonly properties: { [id: string]: NamedElement } = {};
-
   /** All tables discovered in the file. */
   readonly tables: { [id: string]: LuaTable } = {};
+
+  globalFields: { [id: string]: LuaField } = {};
+  globalFunctions: { [id: string]: LuaFunction } = {};
 
   /** All requires in the file. (Used for dependency chains) */
   readonly requires: string[] = [];
@@ -56,6 +105,10 @@ export class LuaFile {
   /** The path to the file on the disk. */
   readonly file: string;
 
+  /** Used to export on generation. */
+  readonly fileLocal: string;
+  readonly folder: string;
+
   /** The parsed chunk provided by LuaParse. */
   parsed: ast.Chunk;
 
@@ -68,6 +121,10 @@ export class LuaFile {
     this.library = library;
     this.id = id;
     this.file = file;
+    this.fileLocal = file.replace('./assets/media/lua/', '');
+    const split = this.fileLocal.split('/');
+    split.pop();
+    this.folder = split.join('/');
   }
 
   /**
@@ -77,9 +134,6 @@ export class LuaFile {
     let raw = fs.readFileSync(this.file).toString();
     raw = correctKahluaCode(raw);
     this.parsed = parser.parse(raw, { luaVersion: '5.1' });
-    if (this.id.endsWith('ISUIElement')) {
-      console.log(this.parsed);
-    }
   }
 
   /**
@@ -112,15 +166,22 @@ export class LuaFile {
   scanGlobals() {
     const { parsed } = this;
 
+    const localVars: string[] = [];
+
     const processTable = (statement: ast.AssignmentStatement): boolean => {
       const info = getTableConstructor(statement);
       if (!info) return false;
 
-      // Make sure that the root class isn't rendered as a table.
-      if (info.name === 'ISBaseObject') return false;
+      // Double-check if reused local tables are being reassigned. Ignore these.
+      if(localVars.indexOf(info.name) !== -1) return false;
 
+      // Make sure that the root class isn't rendered as a table.
+      if (info.name === 'ISBaseObject') {
+        this.classes['ISBaseObject'] = this.library.classes['ISBaseObject'];
+        return false;
+      }
       const table = new LuaTable(this, info.name);
-      this.library.tables[info.name] = table;
+      this.tables[info.name] = this.library.tables[info.name] = table;
       // console.log(`Adding table: ${table.name}`);
       return true;
     };
@@ -135,7 +196,7 @@ export class LuaFile {
       }
 
       const clazz = new LuaClass(this, info.subClass, info.superClass);
-      this.library.classes[info.subClass] = clazz;
+      this.classes[info.subClass] = this.library.classes[info.subClass] = clazz;
       // console.log(`Adding class: ${clazz.name}`);
       return true;
     };
@@ -155,13 +216,19 @@ export class LuaFile {
       if (!info) return false;
       if (DEBUG) printFunctionInfo(info);
       const func = new LuaFunction(this, declaration, info.name, info.params, info.isLocal);
-      this.properties[info.name] = func;
+      this.globalFunctions[info.name] = func;
       if (!info.isLocal) {
-        this.library.properties[func.name] = func;
-        // console.log(`Adding function: ${func.name}`);
+        this.globalFunctions[func.name] = this.library.globalFunctions[func.name] = func;
       }
       return true;
     };
+
+    // Scan for local vars.
+    for (const statement of parsed.body) {
+      if (statement.type === 'LocalStatement') {
+       localVars.push((statement.variables[0] as ast.Identifier).name);
+      }
+    }
 
     // Scan for explicit class declaractions.
     for (const statement of parsed.body) {
@@ -233,7 +300,7 @@ export class LuaFile {
 
       const clazz = this.library.classes[info.className];
       if (clazz) {
-        if (!info.isStatic && info.name === 'new') {
+        if (!info.isStatic && (info.name === 'new')) {
           const func = new LuaConstructor(this.library, clazz, statement, info.params);
           clazz._constructor_ = func;
         } else {
@@ -258,19 +325,79 @@ export class LuaFile {
     for (const statement of parsed.body) {
       if (statement.type === 'FunctionDeclaration') {
         if (processMethod(statement)) continue;
-        else {
-          if (!isFunctionLocal(statement)) {
-            console.warn(`\tApplying function as global property.`);
-            // TODO: Add as property.
-          }
-        }
+
+        const info = getFunctionDeclaration(statement);
+        if (!info || info.isLocal || info.name === 'new' || info.name === 'toString') continue;
+        // console.log(`Global function: ${info.name}`);
+        const func = new LuaFunction(this, statement, info.name, info.params, info.isLocal);
+        this.library.globalFunctions[func.name] = func;
       } else if (statement.type === 'AssignmentStatement') {
-        if (statement.init.length === 1 && statement.init[0].type === 'FunctionDeclaration') {
-          // These assignments can only be static.
-          if (processMethodFromAssignment(statement)) continue;
+        if (statement.init.length === 1) {
+          const init = statement.init[0];
+          if (init.type === 'FunctionDeclaration') {
+            // These assignments can only be static.
+            if (processMethodFromAssignment(statement)) continue;
+          }
         }
       }
     }
     if (DEBUG) console.log('\n');
+  }
+
+  generate() {
+    console.log(`Generating: ${this.fileLocal.replace('.lua', '.d.ts')}..`);
+    const { folder, fileLocal, classes, tables, globalFields, globalFunctions } = this;
+    let code = '';
+
+    // Compile classes.
+    for (const className of Object.keys(classes)) code += `${classes[className].compile('  ')}\n\n`;
+    // Compile table(s).
+    for (const tableName of Object.keys(tables)) code += `${tables[tableName].compile('  ')}\n\n`;
+    // Compile function(s).
+    for (const funcName of Object.keys(globalFunctions)) {
+      // Not sure why these two would exist in the global scope.
+      if(funcName === 'new' || funcName === 'toString') continue;
+      const func = globalFunctions[funcName];
+      if(func.isLocal) continue;
+      code += `${func.compile('  ')}\n\n`;
+    }
+
+    code = prettier.format(this.wrapModule(code), {
+      singleQuote: true,
+      bracketSpacing: true,
+      parser: 'typescript',
+      printWidth: 120,
+    });
+
+    const mkdirsSync = (path: string) => {
+      const split = path.split('/');
+      let built = '';
+      for (const next of split) {
+        built += built.length ? `/${next}` : next;
+        if (next === '.') continue;
+        if (!fs.existsSync(built)) fs.mkdirSync(built);
+      }
+    };
+
+    mkdirsSync(`./dist/lua/${folder}`);
+    this.writeTSFile(`./dist/lua/${fileLocal.replace('.lua', '.d.ts')}`, code);
+
+    // // Compile atlas.
+    // const atlasName = 'index.d.ts';
+    // const atlasPath = `${folder}${atlasName}`;
+    // console.log('Compiling Atlas..');
+    // references.sort((o1, o2) => o1.localeCompare(o2));
+    // let atlasCode = `import * as Zomboid from 'Zomboid';\n`;
+    // for (const ref of references) atlasCode += `/// <reference path="${ref}" />\n`;
+    // this.writeTSFile(atlasPath, atlasCode);
+  }
+
+  writeTSFile(path: string, code: string) {
+    code = `${generateTSLicense()}\n\n${code}`;
+    fs.writeFileSync(path, code);
+  }
+
+  wrapModule(code: string): string {
+    return `/** @noResolution @noSelfInFile */\n\ndeclare module 'ZomboidLua' {\n${code}}\n`;
   }
 }
