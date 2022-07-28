@@ -125,6 +125,8 @@ export class Generator {
 
   run() {
 
+    const moduleName = 'ZomboidLua';
+
     const distDir = './dist';
 
     if (!fs.existsSync(distDir)) fs.mkdirSync(distDir);
@@ -136,8 +138,8 @@ export class Generator {
     // Generate all typings.
     for(const fileName of Object.keys(luaFiles)) {
       const file = luaFiles[fileName];
-      // console.log(`Generating: ${file.id.replace('.lua', '.d.ts')}..`);
-      file.generate();
+      console.log(`Generating: ${file.id.replace('.lua', '.d.ts')}..`);
+      file.generate(moduleName);
     }
 
     const luaDir = scandirs(`${distDir}`);
@@ -154,6 +156,7 @@ export class Generator {
       const fileNames = Object.keys(dir.files);
       if(fileNames.length) {
         for(const fileName of fileNames) {
+          if(fileName === 'index.d.ts') continue;
           code += `/// <reference path="${fileName}" />\n`
         }
       }

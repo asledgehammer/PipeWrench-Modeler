@@ -173,7 +173,7 @@ export class LuaFile {
       if (!info) return false;
 
       // Double-check if reused local tables are being reassigned. Ignore these.
-      if(localVars.indexOf(info.name) !== -1) return false;
+      if (localVars.indexOf(info.name) !== -1) return false;
 
       // Make sure that the root class isn't rendered as a table.
       if (info.name === 'ISBaseObject') {
@@ -226,7 +226,7 @@ export class LuaFile {
     // Scan for local vars.
     for (const statement of parsed.body) {
       if (statement.type === 'LocalStatement') {
-       localVars.push((statement.variables[0] as ast.Identifier).name);
+        localVars.push((statement.variables[0] as ast.Identifier).name);
       }
     }
 
@@ -300,7 +300,7 @@ export class LuaFile {
 
       const clazz = this.library.classes[info.className];
       if (clazz) {
-        if (!info.isStatic && (info.name === 'new')) {
+        if (!info.isStatic && info.name === 'new') {
           const func = new LuaConstructor(this.library, clazz, statement, info.params);
           clazz._constructor_ = func;
         } else {
@@ -344,24 +344,35 @@ export class LuaFile {
     if (DEBUG) console.log('\n');
   }
 
-  generate() {
-    const { folder, fileLocal, classes, tables, globalFields, globalFunctions } = this;
+  generate(moduleName: string) {
+    const { folder, fileLocal, classes, tables, globalFields: fields, globalFunctions: funcs } = this;
+
     let code = '';
 
+    const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
+    const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
+    const fieldNames = Object.keys(fields).sort((o1, o2) => o1.localeCompare(o2));
+    const funcNames = Object.keys(funcs).sort((o1, o2) => o1.localeCompare(o2));
+
     // Compile classes.
-    for (const className of Object.keys(classes)) code += `${classes[className].compile('  ')}\n\n`;
+    for (const className of classNames) code += `${classes[className].compile('  ')}\n\n`;
     // Compile table(s).
-    for (const tableName of Object.keys(tables)) code += `${tables[tableName].compile('  ')}\n\n`;
+    for (const tableName of tableNames) code += `${tables[tableName].compile('  ')}\n\n`;
+    // Compile field(s).
+    for (const fieldName of fieldNames) {
+      const field = fields[fieldName];
+      code += `${field.compile('  ')}\n\n`;
+    }
     // Compile function(s).
-    for (const funcName of Object.keys(globalFunctions)) {
+    for (const funcName of funcNames) {
       // Not sure why these two would exist in the global scope.
-      if(funcName === 'new' || funcName === 'toString') continue;
-      const func = globalFunctions[funcName];
-      if(func.isLocal) continue;
+      if (funcName === 'new' || funcName === 'toString') continue;
+      const func = funcs[funcName];
+      if (func.isLocal) continue;
       code += `${func.compile('  ')}\n\n`;
     }
 
-    code = prettier.format(this.wrapModule(code), {
+    code = prettier.format(this.wrapModule(moduleName, code), {
       singleQuote: true,
       bracketSpacing: true,
       parser: 'typescript',
@@ -380,15 +391,6 @@ export class LuaFile {
 
     mkdirsSync(`./dist/lua/${folder}`);
     this.writeTSFile(`./dist/lua/${fileLocal.replace('.lua', '.d.ts')}`, code);
-
-    // // Compile atlas.
-    // const atlasName = 'index.d.ts';
-    // const atlasPath = `${folder}${atlasName}`;
-    // console.log('Compiling Atlas..');
-    // references.sort((o1, o2) => o1.localeCompare(o2));
-    // let atlasCode = `import * as Zomboid from 'Zomboid';\n`;
-    // for (const ref of references) atlasCode += `/// <reference path="${ref}" />\n`;
-    // this.writeTSFile(atlasPath, atlasCode);
   }
 
   writeTSFile(path: string, code: string) {
@@ -396,7 +398,10 @@ export class LuaFile {
     fs.writeFileSync(path, code);
   }
 
-  wrapModule(code: string): string {
-    return `/** @noResolution @noSelfInFile */\n\ndeclare module 'ZomboidLua' {\n${code}}\n`;
+  wrapModule(moduleName: string, code: string): string {
+    let s = `/** @noResolution @noSelfInFile */\n`;
+    s += '/// <reference path="';
+    for (let i = 0; i < this.fileLocal.split('/').length; i++) s += '../';
+    return `${s}index.d.ts" />\n\ndeclare module '${moduleName}' {\n${code}}\n`;
   }
 }

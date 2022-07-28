@@ -39,5 +39,7 @@ export let start = function () {
       modelUIManager.setTable(tableName);
     };
 
+    console.log("### Ready ###");
+
   }, 100);
 };
