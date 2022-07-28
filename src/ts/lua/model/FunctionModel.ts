@@ -25,6 +25,8 @@ export class FunctionModel extends Model<FunctionModelJson> {
     if (json) this.load(json);
   }
 
+  populate() {}
+
   load(json: FunctionModelJson) {
     this.clear();
     if (json.doc) this.doc.load(json.doc);

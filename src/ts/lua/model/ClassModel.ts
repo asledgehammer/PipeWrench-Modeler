@@ -29,7 +29,6 @@ export class ClassModel extends Model<ClassModelJson> {
 
   constructor(clazz: LuaClass, name: string, src?: ClassModelJson) {
     super();
-    console.log(`ClassModel: ${name}`);
     this.clazz = clazz;
     this.name = name;
     this.doc = new ClassDoc();
@@ -38,6 +37,32 @@ export class ClassModel extends Model<ClassModelJson> {
     this.create(clazz);
     if (src) this.load(src);
     this.dom = this.generateDom();
+  }
+
+  /**
+   * Populates any fields, methods, and a constructor if they are not present.
+   */
+  populate() {
+    const { fields, methods, _constructor_} = this.clazz;
+    const fieldNames = Object.keys(fields);
+    fieldNames.sort((o1, o2) => o1.localeCompare(o2));
+    for(const fieldName of fieldNames) {
+      if(!this.fields[fieldName]) {
+        this.fields[fieldName] = new FieldModel(fieldName, fields[fieldName]);
+      }
+    }
+
+    const methodNames = Object.keys(methods);
+    methodNames.sort((o1, o2) => o1.localeCompare(o2));
+    for(const methodName of methodNames) {
+      if(!this.methods[methodName]) {
+        this.methods[methodName] = new MethodModel(methodName, methods[methodName]);
+      }
+    }
+
+    if(this._constructor_.isDefault() && _constructor_) {
+      this._constructor_.create();
+    }
   }
 
   create(clazz: LuaClass) {

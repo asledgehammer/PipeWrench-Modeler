@@ -162,6 +162,7 @@ export class ModelUIManager {
       }
 
       this.modelFile = models.loadFile(_path);
+      this.modelFile.populate();
 
       const { classes, tables } = this.modelFile;
 

@@ -28,6 +28,8 @@ export class FieldModel extends Model<FieldModelJson> {
     }
   }
 
+  populate() {}
+
   generateDom(): string {
     let dom = FieldModel.HTML_TEMPLATE;
 

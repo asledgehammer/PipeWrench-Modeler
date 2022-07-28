@@ -21,11 +21,32 @@ export class TableModel extends Model<TableModelJson> {
   readonly fields: { [id: string]: FieldModel } = {};
   readonly methods: { [id: string]: MethodModel } = {};
   readonly name: string;
+  readonly table: LuaTable;
 
-  constructor(name: string, json?: TableModelJson) {
+  constructor(table: LuaTable, name: string, json?: TableModelJson) {
     super();
+    this.table = table;
     this.name = name;
     if (json) this.load(json);
+  }
+
+  populate() {
+    const { fields, methods} = this.table;
+    const fieldNames = Object.keys(fields);
+    fieldNames.sort((o1, o2) => o1.localeCompare(o2));
+    for(const fieldName of fieldNames) {
+      if(!this.fields[fieldName]) {
+        this.fields[fieldName] = new FieldModel(fieldName, fields[fieldName]);
+      }
+    }
+
+    const methodNames = Object.keys(methods);
+    methodNames.sort((o1, o2) => o1.localeCompare(o2));
+    for(const methodName of methodNames) {
+      if(!this.methods[methodName]) {
+        this.methods[methodName] = new MethodModel(methodName, methods[methodName]);
+      }
+    }
   }
 
   load(json: TableModelJson) {

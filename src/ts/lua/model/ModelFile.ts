@@ -78,7 +78,8 @@ export class ModelFile {
     // Load table models.
     if (tables) {
       for (const name of Object.keys(tables)) {
-        this.library.tables[name] = this.tables[name] = new TableModel(name, tables[name]);
+        const luaTable = this.library.luaLibrary.tables[name];
+        this.library.tables[name] = this.tables[name] = new TableModel(luaTable, name, tables[name]);
       }
     }
     // Load global field models.
@@ -96,6 +97,13 @@ export class ModelFile {
         );
       }
     }
+  }
+
+  populate() {
+    for(const clazz of Object.values(this.classes)) clazz.populate();
+    for(const table of Object.values(this.tables)) table.populate();
+    for(const field of Object.values(this.globalFields)) field.populate();
+    for(const func of Object.values(this.globalFunctions)) func.populate();
   }
 
   save(path: string) {
