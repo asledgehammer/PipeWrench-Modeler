@@ -1,9 +1,11 @@
+import { WILDCARD_TYPE } from '../Generator';
 import * as ast from '../luaparser/ast';
 import { LuaClass } from './LuaClass';
 import { LuaField } from './LuaField';
 import { LuaLibrary } from './LuaLibrary';
 import { LuaMethod } from './LuaMethod';
 import { fixParameters, scanBodyForFields } from './LuaUtils';
+import { sanitizeName } from './model/ModelUtils';
 
 /**
  * **LuaConstructor**
@@ -31,10 +33,10 @@ export class LuaConstructor extends LuaMethod {
       if (types && types.length) {
         for (const type of types) {
           if (returnS.length) returnS += ' | ';
-          returnS += type;
+          returnS += sanitizeName(type);
         }
       } else {
-        returnS = 'unknown';
+        returnS = WILDCARD_TYPE;
       }
       return returnS;
     };
@@ -46,11 +48,11 @@ export class LuaConstructor extends LuaMethod {
     // If the model is present, set param names from it as some params may be renamed.
     if (constructorModel && constructorModel.testSignature(this)) {
       for (const param of constructorModel.params) {
-        const types = param.types && param.types.length ? compileTypes(param.types) : 'unknown';
+        const types = param.types && param.types.length ? compileTypes(param.types) : WILDCARD_TYPE;
         params.push(`${param.name}: ${types}`);
       }
     } else {
-      params = fixParameters(this.params).map((param) => `${param}: unknown`);
+      params = fixParameters(this.params).map((param) => `${param}: ${WILDCARD_TYPE}`);
     }
     if (params.length) {
       for (const param of params) paramS += `${param}, `;

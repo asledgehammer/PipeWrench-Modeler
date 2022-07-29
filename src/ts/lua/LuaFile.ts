@@ -9,6 +9,8 @@ import { LuaFunction } from './LuaFunction';
 import { LuaTable } from './LuaTable';
 import { LuaMethod } from './LuaMethod';
 
+import { wrapModule, mkdirsSync, writeTSFile } from '../Utils';
+
 import {
   correctKahluaCode,
   DEBUG,
@@ -25,55 +27,7 @@ import {
   printRequireInfo,
 } from './LuaUtils';
 import { LuaField } from './LuaField';
-import { DocBuilder } from '../DocBuilder';
-
-const LICENSE = [
-  'MIT License',
-  '',
-  'Copyright (c) $YEAR$ JabDoesThings',
-  '',
-  'Permission is hereby granted, free of charge, to any person obtaining a copy',
-  'of this software and associated documentation files (the "Software"), to deal',
-  'in the Software without restriction, including without limitation the rights',
-  'to use, copy, modify, merge, publish, distribute, sublicense, and/or sell',
-  'copies of the Software, and to permit persons to whom the Software is',
-  'furnished to do so, subject to the following conditions:',
-  '',
-  'The above copyright notice and this permission notice shall be included in all',
-  'copies or substantial portions of the Software.',
-  '',
-  'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR',
-  'IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,',
-  'FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE',
-  'AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER',
-  'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,',
-  'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE',
-  'SOFTWARE.',
-  '',
-  'File generated at: $TIME_GENERATED$',
-];
-
-const generateTSLicense = (): string => {
-  const date = new Date();
-  const doc = new DocBuilder(true);
-  for (const line of LICENSE) {
-    doc.appendLine(
-      line.replace('$YEAR$', date.getFullYear().toString()).replace('$TIME_GENERATED$', date.toISOString())
-    );
-  }
-  return doc.build();
-};
-
-const generateLuaLicense = (): string => {
-  const date = new Date();
-  const dateS = date.toISOString();
-  let lines = '';
-  const year = date.getFullYear().toString();
-  for (const line of LICENSE) {
-    lines += '-- ' + line.replace('$YEAR$', year).replace('$TIME_GENERATED$', dateS) + '\n';
-  }
-  return lines;
-};
+import { Generator } from '../Generator';
 
 /**
  * **LuaFile** loads, parses, and processes Lua code stored in files.
@@ -108,6 +62,8 @@ export class LuaFile {
   /** Used to export on generation. */
   readonly fileLocal: string;
   readonly folder: string;
+  readonly classTableNamespace: string;
+  readonly fieldFuncNamespace: string;
 
   /** The parsed chunk provided by LuaParse. */
   parsed: ast.Chunk;
@@ -122,9 +78,13 @@ export class LuaFile {
     this.id = id;
     this.file = file;
     this.fileLocal = file.replace('./assets/media/lua/', '');
-    const split = this.fileLocal.split('/');
+    let split = this.fileLocal.split('/');
     split.pop();
     this.folder = split.join('/');
+    split = this.fileLocal.split('.');
+    split.pop();
+    this.classTableNamespace = `lua.${this.folder.split('/').join('.')}`;
+    this.fieldFuncNamespace = `lua.${split.join('.').split('/').join('.')}`;
   }
 
   /**
@@ -346,24 +306,16 @@ export class LuaFile {
 
   generate(moduleName: string) {
     const { folder, fileLocal, classes, tables, globalFields: fields, globalFunctions: funcs } = this;
-
-    let code = '';
-
     const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
     const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
     const fieldNames = Object.keys(fields).sort((o1, o2) => o1.localeCompare(o2));
     const funcNames = Object.keys(funcs).sort((o1, o2) => o1.localeCompare(o2));
-
-    // Compile classes.
-    for (const className of classNames) code += `${classes[className].compile('  ')}\n\n`;
-    // Compile table(s).
-    for (const tableName of tableNames) code += `${tables[tableName].compile('  ')}\n\n`;
-    // Compile field(s).
-    for (const fieldName of fieldNames) {
-      const field = fields[fieldName];
-      code += `${field.compile('  ')}\n\n`;
-    }
-    // Compile function(s).
+    let code = `  export namespace ${this.classTableNamespace} {\n`;
+    for (const className of classNames) code += `${classes[className].compile('    ')}\n\n`;
+    for (const tableName of tableNames) code += `${tables[tableName].compile('    ')}\n\n`;
+    code += '  }\n';
+    code += `  export namespace ${this.fieldFuncNamespace} {\n`;
+    for (const fieldName of fieldNames) code += `${fields[fieldName].compile('  ')}\n\n`;
     for (const funcName of funcNames) {
       // Not sure why these two would exist in the global scope.
       if (funcName === 'new' || funcName === 'toString') continue;
@@ -371,37 +323,64 @@ export class LuaFile {
       if (func.isLocal) continue;
       code += `${func.compile('  ')}\n\n`;
     }
-
-    code = prettier.format(this.wrapModule(moduleName, code), {
+    code += '}\n';
+    code = prettier.format(wrapModule(moduleName, this.fileLocal, this.classTableNamespace, code), {
       singleQuote: true,
       bracketSpacing: true,
       parser: 'typescript',
       printWidth: 120,
     });
-
-    const mkdirsSync = (path: string) => {
-      const split = path.split('/');
-      let built = '';
-      for (const next of split) {
-        built += built.length ? `/${next}` : next;
-        if (next === '.') continue;
-        if (!fs.existsSync(built)) fs.mkdirSync(built);
-      }
-    };
-
     mkdirsSync(`./dist/lua/${folder}`);
-    this.writeTSFile(`./dist/lua/${fileLocal.replace('.lua', '.d.ts')}`, code);
+    writeTSFile(`./dist/lua/${fileLocal.replace('.lua', '.d.ts')}`, code);
   }
 
-  writeTSFile(path: string, code: string) {
-    code = `${generateTSLicense()}\n\n${code}`;
-    fs.writeFileSync(path, code);
+  generateLua() {
+    const { classes, tables, globalFields: fields, globalFunctions: funcs } = this;
+    const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
+    const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
+    const fieldNames = Object.keys(fields).sort((o1, o2) => o1.localeCompare(o2));
+    const funcNames = Object.keys(funcs).sort((o1, o2) => o1.localeCompare(o2));
+    if (!classNames.length && !tableNames.length && !fieldNames.length && !funcNames.length) return '';
+    let code = `-- [${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
+    if (classNames.length) for (const name of classNames) code += classes[name].generateLua();
+    if (tableNames.length) for (const name of tableNames) code += tables[name].generateLua();
+    if (fieldNames.length) for (const name of fieldNames) code += fields[name].generateLua();
+    if (funcNames.length) for (const name of funcNames) funcs[name].generateLua();
+    return code;
   }
 
-  wrapModule(moduleName: string, code: string): string {
-    let s = `/** @noResolution @noSelfInFile */\n`;
-    s += '/// <reference path="';
-    for (let i = 0; i < this.fileLocal.split('/').length; i++) s += '../';
-    return `${s}index.d.ts" />\n\ndeclare module '${moduleName}' {\n${code}}\n`;
+  generateAPI(partial: string, moduleName: string): string {
+    const { classes, tables, globalFields: fields, globalFunctions: funcs } = this;
+    const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
+    const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
+    const fieldNames = Object.keys(fields).sort((o1, o2) => o1.localeCompare(o2));
+    const funcNames = Object.keys(funcs).sort((o1, o2) => o1.localeCompare(o2));
+    if(!classNames.length && !tableNames.length && !fieldNames.length && !funcNames.length) return '';
+    let code = `// [${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
+    for (const className of classNames) code += `${classes[className].generateAPI(partial)}\n`;
+    for (const tableName of tableNames) code += `${tables[tableName].generateAPI(partial)}\n`;
+    for (const fieldName of fieldNames) code += `${fields[fieldName].generateAPI(partial, this)}\n`;
+    for (const funcName of funcNames) {
+      const func = funcs[funcName];
+      
+      // Only render global functions for the API.
+      if (func.isLocal) continue;
+      
+      // Not sure why these two would exist in the global scope.
+      if (funcName === 'new' || funcName === 'toString') continue;
+      
+      // Avoid duplicate global functions.
+      if (Generator.funcCache.indexOf(funcName) !== -1) continue;
+      Generator.funcCache.push(funcName);
+
+      code += `${func.generateAPI(partial)}\n`;
+    }
+    code = prettier.format(code, {
+      singleQuote: true,
+      bracketSpacing: true,
+      parser: 'typescript',
+      printWidth: 120,
+    });
+    return code;
   }
 }

@@ -6,7 +6,7 @@ import { LuaField } from '../LuaField';
 import { LuaMethod } from '../LuaMethod';
 import { DocBuilder } from '../../DocBuilder';
 import { Model } from './Model';
-import { unsanitizeMethodName } from './ModelUtils';
+import { unsanitizeName } from './ModelUtils';
 
 /**
  * **TableModel**
@@ -97,7 +97,7 @@ export class TableModel extends Model<TableModelJson> {
       methods = {};
       for (const name of Object.keys(this.methods)) {
         const methodModel = this.methods[name];
-        if (!methodModel.isDefault()) methods[unsanitizeMethodName(name)] = methodModel.save();
+        if (!methodModel.isDefault()) methods[unsanitizeName(name)] = methodModel.save();
       }
     }
 

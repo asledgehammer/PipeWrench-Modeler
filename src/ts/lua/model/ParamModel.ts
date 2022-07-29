@@ -1,3 +1,4 @@
+import { WILDCARD_TYPE } from '../../Generator';
 import { ParamDoc, ParamDocJson } from './doc/ParamDoc';
 import { Model } from './Model';
 
@@ -11,7 +12,7 @@ export class ParamModel extends Model<ParamModelJson> {
   static HTML_TEMPLATE: string = '';
 
   readonly doc = new ParamDoc();
-  readonly types: string[] = ['unknown'];
+  readonly types: string[] = [WILDCARD_TYPE];
   readonly methodName: string;
   id = '';
   rename = '';
@@ -62,7 +63,7 @@ export class ParamModel extends Model<ParamModelJson> {
   clear() {
     this.doc.clear();
     this.types.length = 0;
-    this.types.push('unknown');
+    this.types.push(WILDCARD_TYPE);
     this.rename = '';
   }
 
@@ -88,7 +89,7 @@ export class ParamModel extends Model<ParamModelJson> {
     if (this.rename.length) return false;
     if (this.doc && !this.doc.isDefault()) return false;
 
-    if(this.types.length === 1 && this.types[0] === 'unknown') return true;
+    if(this.types.length === 1 && this.types[0] === WILDCARD_TYPE) return true;
     else if (this.types.length) return false;
     
     return true;

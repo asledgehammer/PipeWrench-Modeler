@@ -1,10 +1,9 @@
-import * as prettier from 'prettier';
 import { LuaFile } from './LuaFile';
 import { LuaConstructor } from './LuaConstructor';
 import { LuaContainer } from './LuaContainer';
 import { ClassModel } from './model/ClassModel';
-import { FieldModel } from './model/FieldModel';
-import { MethodModel } from './model/MethodModel';
+import { WILDCARD_TYPE } from '../Generator';
+import { sanitizeName } from './model/ModelUtils';
 
 /**
  * **LuaClass** represents tables that are declared using `ISBaseObject:derive(..)`. This is the
@@ -52,18 +51,17 @@ export class LuaClass extends LuaContainer {
 
   protected onCompile(prefix: string): string {
     const { library } = this.file;
-
+    const { name, model } = this;
     let doc: string;
 
-    const model = this.model;
     if(!model) library.getClassModel(this as any);
     doc = this.generateDoc(prefix, model);
 
     // Render empty classes on one line.
     if (!Object.keys(this.fields).length && !Object.keys(this.methods).length && !this._constructor_) {
-      let s = `${prefix}${doc}\n${prefix}export class ${this.name}`;
-      if (this.superClass) s += ` extends ${this.superClass.name}`;
-      return `${s} { [id: string]: unknown; static [id: string]: unknown; }`;
+      let s = `${prefix}${doc}\n${prefix}export class ${sanitizeName(name)}`;
+      if (this.superClass) s += ` extends ${this.superClass.fullPath}`;
+      return `${s} { [id: string]: ${WILDCARD_TYPE}; static [id: string]: ${WILDCARD_TYPE}; }`;
     }
 
     const { staticFields, nonStaticFields } = this.sortFields();
@@ -75,21 +73,27 @@ export class LuaClass extends LuaContainer {
 
     if (doc && doc.length) s += `${prefix}${doc}\n`;
 
-    s += `${prefix}export class ${this.name}`;
-    if (this.superClass) s += ` extends ${this.superClass.name}`;
+    s += `${prefix}export class ${sanitizeName(name)}`;
+    if (this.superClass) s += ` extends ${this.superClass.fullPath}`;
     s += ' {\n\n';
 
     // Wildcard.
-    s += `${newPrefix}[id: string]: unknown;\n${newPrefix}static [id: string]: unknown;\n\n`;
+    s += `${newPrefix}[id: string]: ${WILDCARD_TYPE};\n${newPrefix}static [id: string]: ${WILDCARD_TYPE};\n\n`;
 
     // Render static field(s). (If any)
     if (staticFields.length) {
-      for (const field of staticFields) s += `${field.compile(newPrefix)}\n\n`;
+      for (const field of staticFields) {
+        if(this.superHasField(field.name)) continue;
+        s += `${field.compile(newPrefix)}\n\n`;
+      }
     }
 
     // Render static field(s). (If any)
     if (nonStaticFields.length) {
-      for (const field of nonStaticFields) s += `${field.compile(newPrefix)}\n\n`;
+      for (const field of nonStaticFields) {
+        if(this.superHasField(field.name)) continue;
+        s += `${field.compile(newPrefix)}\n\n`;
+      }
     }
 
     // Render the constructor. (If defined)
@@ -97,20 +101,50 @@ export class LuaClass extends LuaContainer {
 
     // Render static method(s). (If any)
     if (nonStaticMethods.length) {
-      for (const method of nonStaticMethods) s += `${method.compile(newPrefix)}\n\n`;
+      for (const method of nonStaticMethods) {
+        if(this.superHasMethod(method.name)) continue;
+        s += `${method.compile(newPrefix)}\n\n`;
+      }
     }
 
     // Render static method(s). (If any)
     if (staticMethods.length) {
-      for (const method of staticMethods) s += `${method.compile(newPrefix)}\n\n`;
+      for (const method of staticMethods) {
+        if (this.superHasMethod(method.name)) continue;
+        s += `${method.compile(newPrefix)}\n\n`;
+      }
     }
 
     // End of Class Declaration line.
     return `${s}${prefix}}`;
   }
 
+  superHasField(fieldName: string): boolean {
+    if(!this.superClass) return false;
+    return this.superClass.fields[fieldName] != null;
+  }
+
+  superHasMethod(methodName: string): boolean {
+    if(!this.superClass) return false;
+    return this.superClass.methods[methodName] != null;
+  }
+
   generateDoc(prefix: string, model: ClassModel): string {
     return model ? model.generateDoc(prefix, this) : `/** @customConstructor ${this.name}:new */`;
+  }
+
+  generateAPI(prefix: string): string {
+    const { library } = this.file;
+    let { name, model, superClass } = this;
+
+    // Render the class documentation. (If present)
+    if(!model) model = library.getClassModel(this as any);
+    const doc = this.generateDoc(prefix, model);
+
+    // Render empty classes on one line.
+    let s = `${prefix}${doc ? `${doc}\n` : ''}${prefix}export class ${sanitizeName(name)}`;
+    if (superClass) s += ` extends ${superClass.fullPath}`;
+    return `${s} {}`;
   }
 
   scanMethods() {
@@ -123,5 +157,19 @@ export class LuaClass extends LuaContainer {
    */
   hasSuperClass(): boolean {
     return this.superClass != null;
+  }
+
+  generateLua(prefix: string = ''): string {
+    const { name } = this;
+    return `${prefix}Exports.${sanitizeName(name)} = loadstring("return _G['${name}']")()\n`;
+  }
+
+  get namespace() {
+    return this.name === 'ISBaseObject' ? 'lua.shared.ISBaseObject' : this.file.classTableNamespace;
+  }
+
+  get fullPath() {
+    const { name } = this;
+    return `${this.namespace}.${sanitizeName(name)}`;
   }
 }

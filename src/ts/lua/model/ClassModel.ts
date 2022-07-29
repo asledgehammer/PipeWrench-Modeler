@@ -8,7 +8,7 @@ import { LuaField } from '../LuaField';
 import { LuaMethod } from '../LuaMethod';
 import { DocBuilder } from '../../DocBuilder';
 
-import { sanitizeMethodName, unsanitizeMethodName } from './ModelUtils';
+import { sanitizeName, unsanitizeName } from './ModelUtils';
 
 /**
  * **ClassModel**
@@ -80,7 +80,7 @@ export class ClassModel extends Model<ClassModelJson> {
 
     if (json.methods) {
       for (const name of Object.keys(json.methods)) {
-        this.methods[sanitizeMethodName(name)] = new MethodModel(name, json.methods[name]);
+        this.methods[sanitizeName(name)] = new MethodModel(name, json.methods[name]);
       }
     }
 
@@ -120,7 +120,7 @@ export class ClassModel extends Model<ClassModelJson> {
       methods = {};
       for (const name of Object.keys(this.methods)) {
         const methodModel = this.methods[name];
-        if (!methodModel.isDefault()) methods[unsanitizeMethodName(name)] = methodModel.save();
+        if (!methodModel.isDefault()) methods[unsanitizeName(name)] = methodModel.save();
       }
     }
 
@@ -238,7 +238,7 @@ export class ClassModel extends Model<ClassModelJson> {
   }
 
   getMethod(method: LuaMethod): MethodModel {
-    const name = sanitizeMethodName(method.name);
+    const name = sanitizeName(method.name);
     const model = this.methods[name];
     if (model && model.testSignature(method)) return model;
     return null;

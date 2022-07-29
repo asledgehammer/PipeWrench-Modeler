@@ -9,7 +9,7 @@ import { LuaTable } from '../LuaTable';
 import { LuaFunction } from '../LuaFunction';
 import { LuaField } from '../LuaField';
 import { LuaLibrary } from '../LuaLibrary';
-import { sanitizeMethodName } from './ModelUtils';
+import { sanitizeName } from './ModelUtils';
 
 /**
  * **ModelLibrary**
@@ -119,7 +119,7 @@ export class ModelLibrary {
   }
 
   getGlobalFunctionModel(func: LuaFunction): FunctionModel {
-    const model = this.globalFunctions[sanitizeMethodName(func.name)];
+    const model = this.globalFunctions[sanitizeName(func.name)];
     if(model) console.log(model);
     return model && model.testSignature(func) ? model : null;
   }

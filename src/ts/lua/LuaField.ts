@@ -4,6 +4,9 @@ import { LuaContainer } from './LuaContainer';
 import { NamedElement } from './NamedElement';
 import { LuaTable } from './LuaTable';
 import { FieldModel } from './model/FieldModel';
+import { WILDCARD_TYPE } from '../Generator';
+import { LuaFile } from './LuaFile';
+import { sanitizeName } from './model/ModelUtils';
 
 /**
  * **LuaField** stores calls to constants or variables.
@@ -29,13 +32,12 @@ export class LuaField extends NamedElement {
     this.isStatic = isStatic;
   }
 
-  onCompile(prefix: string): string {
-    const types: string[] = ['unknown'];
+  generateDoc(prefix: string): string {
+    const types: string[] = [WILDCARD_TYPE];
     let sDoc = '';
 
     const processField = (model: FieldModel) => {
       const { types: fTypes, doc: fieldDoc } = model;
-
       // Process field types.
       if (fTypes && fTypes.length) {
         types.length = 0;
@@ -44,31 +46,26 @@ export class LuaField extends NamedElement {
           if (types.indexOf(fType) !== -1) continue;
           types.push(fType);
         }
-      } 
-
+      }
       if (fieldDoc) {
         const doc = new DocBuilder();
         const { lines } = fieldDoc;
-
         // Process lines. (If defined)
         if (lines && lines.length) {
           for (const line of lines) doc.appendLine(line);
         }
-
         if (!doc.isEmpty()) sDoc = doc.build(prefix);
       }
     };
 
-    
     const { container } = this;
     if (container) {
       let fieldModel: FieldModel;
-      if(container instanceof LuaClass) {
+      if (container instanceof LuaClass) {
         let clazzModel = container.model;
         fieldModel = clazzModel ? clazzModel.getField(this) : null;
       }
-
-      if(fieldModel) {
+      if (fieldModel) {
         if (container instanceof LuaClass) {
           processField(fieldModel);
         } else if (container instanceof LuaTable) {
@@ -90,8 +87,72 @@ export class LuaField extends NamedElement {
           }
         }
       }
+    }
 
-        
+    return sDoc;
+  }
+
+  onCompile(prefix: string): string {
+    const { name } = this;
+    const types: string[] = [WILDCARD_TYPE];
+    let sDoc = '';
+
+    const processField = (model: FieldModel) => {
+      const { types: fTypes, doc: fieldDoc } = model;
+
+      // Process field types.
+      if (fTypes && fTypes.length) {
+        types.length = 0;
+        for (const fType of fTypes) {
+          // Prevent duplicate type entries.
+          if (types.indexOf(fType) !== -1) continue;
+          types.push(fType);
+        }
+      }
+
+      if (fieldDoc) {
+        const doc = new DocBuilder();
+        const { lines } = fieldDoc;
+
+        // Process lines. (If defined)
+        if (lines && lines.length) {
+          for (const line of lines) doc.appendLine(line);
+        }
+
+        if (!doc.isEmpty()) sDoc = doc.build(prefix);
+      }
+    };
+
+    const { container } = this;
+    if (container) {
+      let fieldModel: FieldModel;
+      if (container instanceof LuaClass) {
+        let clazzModel = container.model;
+        fieldModel = clazzModel ? clazzModel.getField(this) : null;
+      }
+
+      if (fieldModel) {
+        if (container instanceof LuaClass) {
+          processField(fieldModel);
+        } else if (container instanceof LuaTable) {
+          processField(fieldModel);
+        }
+      } else {
+        const { library } = this.container.file;
+        if (container instanceof LuaClass) {
+          const classModel = library.getClassModel(container);
+          if (classModel) {
+            fieldModel = classModel.getField(this);
+            if (fieldModel) processField(fieldModel);
+          }
+        } else if (container instanceof LuaTable) {
+          const tableModel = library.getTableModel(container);
+          if (tableModel) {
+            fieldModel = tableModel.getField(this);
+            if (fieldModel) processField(fieldModel);
+          }
+        }
+      }
     }
 
     // Compile the gathered types as TypeScript syntax.
@@ -102,7 +163,27 @@ export class LuaField extends NamedElement {
     }
 
     const sStatic = this.isStatic ? 'static ' : '';
-    if (sDoc.length) return `${sDoc}\n${prefix}${sStatic}${this.name}: ${compiledTypes};`;
-    return `${prefix}${sStatic}${this.name}: ${compiledTypes};`;
+    if (sDoc.length) return `${sDoc}\n${prefix}${sStatic}${sanitizeName(name)}: ${compiledTypes};`;
+    return `${prefix}${sStatic}${sanitizeName(name)}: ${compiledTypes};`;
+  }
+
+  generateAPI(prefix: string, file: LuaFile): string {
+    const { name } = this;
+    const doc = this.generateDoc(prefix);
+    return `${prefix}${doc ? `${doc}\n` : ''}${prefix}export const ${sanitizeName(name)} = ${this.getFullPath(file)};`;
+  }
+
+  generateLua(prefix: string = ''): string {
+    const { name } = this;
+    return `${prefix}Exports.${sanitizeName(name)} = loadstring("return _G['${name}']")()\n`;
+  }
+
+  getNamespace(file: LuaFile) {
+    return file.fieldFuncNamespace;
+  }
+
+  getFullPath(file: LuaFile) {
+    const { name } = this;
+    return `${this.getNamespace(file)}.${sanitizeName(name)}`;
   }
 }

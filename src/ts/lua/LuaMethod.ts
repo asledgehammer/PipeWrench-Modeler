@@ -7,6 +7,8 @@ import { fixParameters, scanBodyForFields } from './LuaUtils';
 import { LuaClass } from './LuaClass';
 import { LuaTable } from './LuaTable';
 import { MethodModel } from './model/MethodModel';
+import { WILDCARD_TYPE } from '../Generator';
+import { sanitizeName } from './model/ModelUtils';
 
 /**
  * **LuaMethod**
@@ -56,7 +58,7 @@ export class LuaMethod extends NamedElement {
       if (types && types.length) {
         for (const type of types) {
           if (returnS.length) returnS += ' | ';
-          returnS += type;
+          returnS += sanitizeName(type);
         }
       }
       return returnS;
@@ -69,11 +71,11 @@ export class LuaMethod extends NamedElement {
     // If the model is present, set param names from it as some params may be renamed.
     if (methodModel) {
       for (const param of methodModel.params) {
-        const types = param.types && param.types.length ? compileTypes(param.types) : 'unknown';
+        const types = param.types && param.types.length ? compileTypes(param.types) : WILDCARD_TYPE;
         params.push(`${param.name}: ${types}`);
       }
     } else {
-      params = fixParameters(this.params).map((param) => `${param}: unknown`);
+      params = fixParameters(this.params).map((param) => `${param}: ${WILDCARD_TYPE}`);
     }
     if (params.length) {
       for (const param of params) paramS += `${param}, `;
@@ -92,7 +94,7 @@ export class LuaMethod extends NamedElement {
         if (returns.types && returns.types.length) {
           for (const type of returns.types) {
             // Prevent duplicate return types.
-            if (returnTypes.indexOf(type) === -1) returnTypes.push(type);
+            if (returnTypes.indexOf(type) === -1) returnTypes.push(sanitizeName(type));
           }
         }
       }
@@ -106,7 +108,7 @@ export class LuaMethod extends NamedElement {
       }
     } else {
       // Default return type.
-      returnS = 'unknown';
+      returnS = WILDCARD_TYPE;
     }
 
     let s = '';
@@ -115,12 +117,10 @@ export class LuaMethod extends NamedElement {
     let comp = `${s}${prefix}${this.isStatic ? 'static ' : ''}${this.name}: `;
     if (applyUnknownType) comp += '(';
     comp += `(${paramS}) => ${returnS}`;
-    if (applyUnknownType) comp += ') | unknown';
+    if (applyUnknownType) comp += `) | ${WILDCARD_TYPE}`;
     comp += ';';
 
     return comp;
-
-    // return `${s}${prefix}${this.isStatic ? 'static ' : ''}${this.name}: ((${paramS})=>unknown) | unknown;`;
   }
 
   scanFields() {
