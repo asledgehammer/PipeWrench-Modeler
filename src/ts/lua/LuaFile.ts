@@ -9,7 +9,7 @@ import { LuaFunction } from './LuaFunction';
 import { LuaTable } from './LuaTable';
 import { LuaMethod } from './LuaMethod';
 
-import { wrapModule, mkdirsSync, writeTSFile } from '../Utils';
+import { wrapModule, mkdirsSync, writeTSFile, prettify } from '../Utils';
 
 import {
   correctKahluaCode,
@@ -304,7 +304,7 @@ export class LuaFile {
     if (DEBUG) console.log('\n');
   }
 
-  generate(moduleName: string) {
+  generate(moduleName: string): string {
     const { folder, fileLocal, classes, tables, globalFields: fields, globalFunctions: funcs } = this;
     const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
     const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
@@ -324,14 +324,8 @@ export class LuaFile {
       code += `${func.compile('  ')}\n\n`;
     }
     code += '}\n';
-    code = prettier.format(wrapModule(moduleName, this.fileLocal, this.classTableNamespace, code), {
-      singleQuote: true,
-      bracketSpacing: true,
-      parser: 'typescript',
-      printWidth: 120,
-    });
-    mkdirsSync(`./dist/lua/${folder}`);
-    writeTSFile(`./dist/lua/${fileLocal.replace('.lua', '.d.ts')}`, code);
+    code = wrapModule(moduleName, this.fileLocal, this.classTableNamespace, code);
+    return code;
   }
 
   generateLua() {
@@ -375,12 +369,6 @@ export class LuaFile {
 
       code += `${func.generateAPI(partial)}\n`;
     }
-    code = prettier.format(code, {
-      singleQuote: true,
-      bracketSpacing: true,
-      parser: 'typescript',
-      printWidth: 120,
-    });
     return code;
   }
 }

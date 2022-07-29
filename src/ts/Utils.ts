@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as prettier from 'prettier';
 import { DocBuilder } from './DocBuilder';
 
 export const MIT_LICENSE = [
@@ -147,4 +148,13 @@ export const writeTSFile = (path: string, code: string) => {
 export const writeLuaFile = (path: string, code: string) => {
   code = `${generateLuaLicense()}\n\n${code}`;
   fs.writeFileSync(path, code);
+};
+
+export const prettify = (code: string): string => {
+  return prettier.format(code, {
+    singleQuote: true,
+    bracketSpacing: true,
+    parser: 'typescript',
+    printWidth: 120,
+  });
 };

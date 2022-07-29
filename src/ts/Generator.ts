@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import { LuaLibrary } from './lua/LuaLibrary';
 
-import { cleardirsSync, Directory, scandirs, writeLuaFile, writeTSFile } from './Utils';
+import { cleardirsSync, Directory, mkdirsSync, prettify, scandirs, writeLuaFile, writeTSFile } from './Utils';
 
 export const WILDCARD_TYPE = 'any';
 
@@ -36,10 +36,13 @@ export class Generator {
   generateDefinitions() {
     const { library, moduleName } = this;
     const { luaFiles } = library;
-    for (const fileName of Object.keys(luaFiles)) {
+    const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
+    for (const fileName of luaFileNames) {
       const file = luaFiles[fileName];
       console.log(`Generating: ${file.id.replace('.lua', '.d.ts')}..`);
-      file.generate(moduleName);
+      const code = file.generate(moduleName);
+      mkdirsSync(`./dist/lua/${file.folder}`);
+      writeTSFile(`./dist/lua/${file.fileLocal.replace('.lua', '.d.ts')}`, prettify(code));
     }
   }
 
@@ -58,7 +61,7 @@ export class Generator {
     let s = '/** @noResolution @noSelfInFile */\n';
     s += `/// <reference path="reference.d.ts" />\n\n`;
     s += `declare module '${moduleName}' {\n${code}}\n`;
-    writeTSFile(`${partialsDir}/Lua.api.partial.d.ts`, s);
+    writeTSFile(`${partialsDir}/Lua.api.partial.d.ts`, prettify(s));
   }
 
   generateReferencePartial() {
@@ -88,7 +91,7 @@ export class Generator {
     let code = '// [PARTIAL:START]\n';
     for (const reference of references) code += `${reference}\n`;
     code += '// [PARTIAL:STOP]\n';
-    writeTSFile(`${partialsDir}/Lua.reference.partial.d.ts`, code);
+    writeTSFile(`${partialsDir}/Lua.reference.partial.d.ts`, prettify(code));
   }
 
   generateLuaInterfacePartial() {

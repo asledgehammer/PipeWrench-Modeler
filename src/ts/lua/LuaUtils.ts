@@ -166,6 +166,14 @@ export const getFunctionDeclaration = (declaration: ast.FunctionDeclaration): Fu
     }
   }
 
+  // NOTE: This is a multi-pathed-table function assignment so we'll need to
+  // ignore these for now.
+  if(declaration.parameters && declaration.parameters.length) {
+    return null;
+  }
+
+  if(name === 'Default') console.log(declaration);
+
   return { isLocal, name, params };
 };
 
