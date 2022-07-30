@@ -159,10 +159,12 @@ export class MethodModel extends Model<MethodModelJson> {
       }
     }
 
+    replaceAll('RETURN_TYPES', this.returns.types.join('\n'));
     replaceAll('HAS_PARAMS', this.params.length ? 'inline-block' : 'none');
     replaceAll('METHOD_NAME', this.name);
     replaceAll('LINES', linesS);
     replaceAll('PARAMS', paramsS);
+    replaceAll('CHECKED', this.returns.applyUnknownType ? 'checked': '');
 
     return dom;
   }
