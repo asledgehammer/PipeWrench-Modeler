@@ -124,7 +124,7 @@ export class TableModel extends Model<TableModelJson> {
         let s = '[';
         for (const author of authors) s += `${author}, `;
         s = `${s.substring(0, s.length - 2)}]`;
-        doc.appendAnnotation('author', s);
+        doc.appendAnnotation('docAuthors', s);
       }
       
       // Process lines. (If defined)

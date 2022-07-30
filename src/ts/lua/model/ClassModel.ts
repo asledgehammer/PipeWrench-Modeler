@@ -160,7 +160,7 @@ export class ClassModel extends Model<ClassModelJson> {
         }
         if (s.length) {
           s = `${s.substring(0, s.length - 2)}]`;
-          doc.appendAnnotation('author', s);
+          doc.appendAnnotation('docAuthors', s);
         }
       }
 
