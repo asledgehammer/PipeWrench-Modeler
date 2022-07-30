@@ -135,16 +135,14 @@ export class LuaClass extends LuaContainer {
 
   generateAPI(prefix: string): string {
     const { library } = this.file;
-    let { name, model, superClass } = this;
+    let { name, model } = this;
 
     // Render the class documentation. (If present)
-    if(!model) model = library.getClassModel(this as any);
+    if (!model) model = library.getClassModel(this as any);
     const doc = this.generateDoc(prefix, model);
 
     // Render empty classes on one line.
-    let s = `${prefix}${doc ? `${doc}\n` : ''}${prefix}export class ${sanitizeName(name)}`;
-    if (superClass) s += ` extends ${superClass.fullPath}`;
-    return `${s} {}`;
+    return `${prefix}${doc ? `${doc}\n` : ''}${prefix}export class ${sanitizeName(name)} extends ${this.fullPath} {}`;
   }
 
   scanMethods() {

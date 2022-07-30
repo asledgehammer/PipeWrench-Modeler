@@ -123,10 +123,14 @@ export const generateLuaLicense = (): string => {
 };
 
 export const wrapModule = (moduleName: string, fileLocal: string, namespace: string, code: string): string => {
+  let backup = '';
+  for (let i = 0; i < fileLocal.split('/').length; i++) backup += '../';
+  
   let s = '/** @noResolution @noSelfInFile */\n';
-  s += '/// <reference path="';
-  for (let i = 0; i < fileLocal.split('/').length; i++) s += '../';
-  s += `PipeWrench.d.ts" />\n\ndeclare module '${moduleName}' {\n`;
+  s += `/// <reference path="${backup}reference.d.ts" />\n`;
+  s += `/// <reference path="${backup}PipeWrench.d.ts" />\n`;
+  s += 'import * as PipeWrench from \'PipeWrench\';\n\n';
+  s += `declare module '${moduleName}' {\n`;
   return `${s}${code}}\n`;
 };
 

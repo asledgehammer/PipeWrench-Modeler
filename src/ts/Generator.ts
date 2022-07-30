@@ -1,7 +1,15 @@
 import * as fs from 'fs';
 import { LuaLibrary } from './lua/LuaLibrary';
 
-import { cleardirsSync, Directory, mkdirsSync, prettify, scandirs, writeLuaFile, writeTSFile } from './Utils';
+import {
+  cleardirsSync,
+  Directory,
+  mkdirsSync,
+  prettify,
+  scandirs,
+  writeLuaFile,
+  writeTSFile,
+} from './Utils';
 
 export const WILDCARD_TYPE = 'any';
 
@@ -54,13 +62,17 @@ export class Generator {
     for (const fileName of luaFileNames) {
       const file = luaFiles[fileName];
       const fileCode = file.generateAPI('  ', moduleName);
-      if(fileCode.length) code += `${fileCode}\n`;
+      if (fileCode.length) code += `${fileCode}\n`;
     }
 
     // Wrap and save the code.
     let s = '/** @noResolution @noSelfInFile */\n';
     s += `/// <reference path="reference.d.ts" />\n\n`;
-    s += `declare module '${moduleName}' {\n${code}}\n`;
+    s += `declare module '${moduleName}' {\n`;
+    s += '// [PARTIAL:START]\n';
+    s += code;
+    s += '// [PARTIAL:STOP]\n';
+    s += '}\n';
     writeTSFile(`${partialsDir}/Lua.api.partial.d.ts`, prettify(s));
   }
 
@@ -98,15 +110,25 @@ export class Generator {
     const { library, partialsDir } = this;
     const { luaFiles } = library;
     const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
-    let luaCode = 'local Exports = {}\n\n';
+    let luaCode = '';
+    let prefix = '  ';
+    luaCode += 'local Exports = {}\n';
     luaCode += '-- [PARTIAL:START]\n';
+    luaCode += '_G.PIPEWRENCH_READY = false\n';
+    luaCode += `triggerEvent('OnPipeWrenchBoot', false)\n`;
+    luaCode += 'Events.OnGameBoot.Add(function()\n\n';
     for (const fileName of luaFileNames) {
       const file = luaFiles[fileName];
-      const fileCode = file.generateLua();
+      const fileCode = file.generateLua(prefix);
       if (fileCode.length) luaCode += `${fileCode}\n`;
     }
-    luaCode += '-- [PARTIAL:STOP]\n';
-    luaCode += 'return Exports';
+    luaCode += `${prefix}_G.PIPEWRENCH_READY = true\n`;
+    luaCode += `${prefix}-- Trigger reimport blocks for all compiled PipeWrench TypeScript file(s).\n`;
+    luaCode += `${prefix}triggerEvent('OnPipeWrenchBoot', true)\n`;
+    luaCode += 'end)\n';
+    luaCode += '-- [PARTIAL:STOP]\n\n';
+    luaCode += 'return Exports\n';
+
     writeLuaFile(`${partialsDir}/Lua.interface.partial.lua`, luaCode);
   }
 }

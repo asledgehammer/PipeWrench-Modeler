@@ -328,18 +328,18 @@ export class LuaFile {
     return code;
   }
 
-  generateLua() {
+  generateLua(prefix: string = '') {
     const { classes, tables, globalFields: fields, globalFunctions: funcs } = this;
     const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
     const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
     const fieldNames = Object.keys(fields).sort((o1, o2) => o1.localeCompare(o2));
     const funcNames = Object.keys(funcs).sort((o1, o2) => o1.localeCompare(o2));
     if (!classNames.length && !tableNames.length && !fieldNames.length && !funcNames.length) return '';
-    let code = `-- [${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
-    if (classNames.length) for (const name of classNames) code += classes[name].generateLua();
-    if (tableNames.length) for (const name of tableNames) code += tables[name].generateLua();
-    if (fieldNames.length) for (const name of fieldNames) code += fields[name].generateLua();
-    if (funcNames.length) for (const name of funcNames) funcs[name].generateLua();
+    let code = `--[${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
+    if (classNames.length) for (const name of classNames) code += classes[name].generateLua(prefix);
+    if (tableNames.length) for (const name of tableNames) code += tables[name].generateLua(prefix);
+    if (fieldNames.length) for (const name of fieldNames) code += fields[name].generateLua(prefix);
+    if (funcNames.length) for (const name of funcNames) funcs[name].generateLua(prefix);
     return code;
   }
 

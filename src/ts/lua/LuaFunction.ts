@@ -132,7 +132,7 @@ export class LuaFunction extends NamedElement {
     }
     paramsS += ')';
     // Functions are assigned differently.
-    return `function Exports.${sanitizeName(name)}${paramsS} return ${name}${paramsS} end\n`;
+    return `${prefix} function Exports.${sanitizeName(name)}${paramsS} return ${name}${paramsS} end\n`;
   }
 
   get namespace() {
