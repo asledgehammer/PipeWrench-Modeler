@@ -39,8 +39,7 @@ export class FieldModel extends Model<FieldModelJson> {
     };
 
     let linesS = '';
-
-    const { doc } = this;
+    const { doc, types } = this;
     if (doc) {
       const { lines } = doc;
       if (lines) {
@@ -50,6 +49,13 @@ export class FieldModel extends Model<FieldModelJson> {
       }
     }
 
+    let typesS = '';
+    if(types.length) {
+      for (const type of types) typesS += `${type}\n`;
+      typesS = typesS.substring(0, typesS.length - 1);
+    }
+
+    replaceAll('RETURN_TYPES', typesS);
     replaceAll('FIELD_NAME', this.name);
     replaceAll('LINES', linesS);
 
