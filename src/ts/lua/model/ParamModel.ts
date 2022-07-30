@@ -12,7 +12,7 @@ export class ParamModel extends Model<ParamModelJson> {
   static HTML_TEMPLATE: string = '';
 
   readonly doc = new ParamDoc();
-  readonly types: string[] = [WILDCARD_TYPE];
+  readonly types: string[] = [];
   readonly methodName: string;
   id = '';
   rename = '';
@@ -63,7 +63,6 @@ export class ParamModel extends Model<ParamModelJson> {
   clear() {
     this.doc.clear();
     this.types.length = 0;
-    this.types.push(WILDCARD_TYPE);
     this.rename = '';
   }
 
@@ -88,13 +87,9 @@ export class ParamModel extends Model<ParamModelJson> {
   }
 
   isDefault(): boolean {
-    
     if (this.rename.length) return false;
     if (this.doc && !this.doc.isDefault()) return false;
-
-    if(this.types.length === 1 && this.types[0] === WILDCARD_TYPE) return true;
-    else if (this.types.length) return false;
-    
+    if (this.types.length) return false;
     return true;
   }
 
