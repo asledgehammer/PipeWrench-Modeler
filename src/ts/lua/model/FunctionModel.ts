@@ -116,7 +116,40 @@ export class FunctionModel extends Model<FunctionModelJson> {
   }
 
   generateDom(): string {
-    return '';
+    let dom = FunctionModel.HTML_TEMPLATE;
+
+    const replaceAll = (from: string, to: string) => {
+      const fromS = '${' + from + '}';
+      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
+    };
+
+    let linesS = '';
+
+    const { doc } = this;
+    if (doc) {
+      const { lines } = doc;
+      if (lines) {
+        linesS = '';
+        for (const line of lines) linesS += `${line}\n`;
+        linesS = linesS.substring(0, linesS.length - 1);
+      }
+    }
+
+    let paramsS = '';
+    if (this.params.length) {
+      for (const param of this.params) {
+        paramsS += param.generateDom();
+      }
+    }
+
+    replaceAll('RETURN_TYPES', this.returns.types.join('\n'));
+    replaceAll('HAS_PARAMS', this.params.length ? 'inline-block' : 'none');
+    replaceAll('METHOD_NAME', this.name);
+    replaceAll('LINES', linesS);
+    replaceAll('PARAMS', paramsS);
+    replaceAll('CHECKED', this.returns.applyUnknownType ? 'checked': '');
+
+    return dom;
   }
 
   testSignature(func: LuaFunction): boolean {

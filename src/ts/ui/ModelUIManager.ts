@@ -67,8 +67,7 @@ export class ModelUIManager {
     TableModel.HTML_TEMPLATE = getModelTemplate('table');
     ConstructorModel.HTML_TEMPLATE = getModelTemplate('constructor');
     FieldModel.HTML_TEMPLATE = getModelTemplate('field');
-    MethodModel.HTML_TEMPLATE = getModelTemplate('method');
-    FunctionModel.HTML_TEMPLATE = getModelTemplate('function');
+    FunctionModel.HTML_TEMPLATE = MethodModel.HTML_TEMPLATE = getModelTemplate('method');
     ParameterModel.HTML_TEMPLATE = getModelTemplate('parameter');
 
     $(window).on('keypress', (event) => {
