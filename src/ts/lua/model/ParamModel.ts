@@ -75,6 +75,9 @@ export class ParamModel extends Model<ParamModelJson> {
       while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
     };
 
+    replaceAll('RENAME', this.rename);
+    replaceAll('TYPES', this.types.join('\n'));
+    replaceAll('LINES', this.doc.lines.join('\n'));
     replaceAll('METHOD_NAME', this.methodName);
     replaceAll('PARAM_NAME', this.id);
     return dom;
