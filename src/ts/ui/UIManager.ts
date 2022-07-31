@@ -415,7 +415,13 @@ export class ModelUIManager {
     }
   };
 
-  setCode(code: string): void {
+  setCode(code: string | null): void {
+
+    if(!code || !code.length) {
+      this.$code.empty();
+      return;
+    }
+
     code = prettier.format(code, {
       singleQuote: true,
       bracketSpacing: true,

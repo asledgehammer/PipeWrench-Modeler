@@ -9,7 +9,7 @@
   <div class="model-content">
 
     <!-- Description -->
-    <div class="model-field field-multi-line description">
+    <div class="model-field">
       <label>Description</label>
       <textarea target="method:${METHOD_NAME}:description">${DESCRIPTION}</textarea>
     </div>
@@ -20,22 +20,30 @@
       ${PARAMETERS}
     </div>
 
-    <!-- Return Types -->
-    <div class="model-field field-multi-line lines">
-      <label>Return Types</label>
-      <textarea target="method:${METHOD_NAME}:return:types">${RETURN_TYPES}</textarea>
+    <!-- Return -->
+    <div class="model-groups params">
+      <label class="label-separator"></label>
+      <div class="model-group collapsed">
+        <div class="group-header">
+          <label>Return</label>
+          <div class="collapse-button"></div>
+        </div>
+        <div class="group-content">
+          <div class="group-field">
+            <label>Types</label>
+            <textarea target="field:${FIELD_NAME}:return:types" type="text">${RETURN_TYPES}</textarea>
+          </div>
+          <div class="group-field">
+            <label>Description</label>
+            <textarea target="field:${FIELD_NAME}:return:description" type="text">${RETURN_DESCRIPTION}</textarea>
+          </div>
+          <div class="group-field">
+            <input target="method:${METHOD_NAME}:return:wrap_wildcard_type" type="checkbox" ${WRAP_WILDCARD_TYPE}></textarea>
+            <label>Wrap Wildcard Type</label>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Return Description -->
-    <div class="model-field field-multi-line lines">
-      <label>Return Description</label>
-      <textarea target="method:${METHOD_NAME}:return:description" type="text">${RETURN_DESCRIPTION}</textarea>
-    </div>
-
-    <!-- Wrap Wildcard Type -->
-    <div class="model-field field-multi-line lines">
-      <input target="method:${METHOD_NAME}:return:wrap_wildcard_type" type="checkbox" ${WRAP_WILDCARD_TYPE}></textarea>
-      <label>Wrap Wildcard Type</label>
-    </div>
   </div>
 </div>

@@ -266,3 +266,11 @@ code {
 code.hljs {
   background-color: transparent;
 }
+
+.label-separator {
+  width: calc(100% - 5px);
+  top: 2px !important;
+  margin-bottom: 9px !important;
+  border: 1px solid black;
+  left: 1px;
+}

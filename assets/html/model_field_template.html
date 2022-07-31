@@ -14,16 +14,24 @@
       <textarea target="field:${FIELD_NAME}:description" type="text">${DESCRIPTION}</textarea>
     </div>
 
-    <!-- Return Types -->
-    <div class="model-field field-multi-line lines">
-      <label>Return Types</label>
-      <textarea target="field:${FIELD_NAME}:return:types" type="text">${RETURN_TYPES}</textarea>
-    </div>
-
-    <!-- Return Description -->
-    <div class="model-field field-multi-line lines">
-      <label>Return Description</label>
-      <textarea target="field:${FIELD_NAME}:return:description" type="text">${RETURN_DESCRIPTION}</textarea>
+    <!-- Return -->
+    <div class="model-groups params">
+      <div class="model-group collapsed">
+        <div class="group-header">
+          <label>Return</label>
+          <div class="collapse-button"></div>
+        </div>
+        <div class="group-content">
+          <div class="group-field">
+            <label>Types</label>
+            <textarea target="field:${FIELD_NAME}:return:types" type="text">${RETURN_TYPES}</textarea>
+          </div>
+          <div class="group-field">
+            <label>Description</label>
+            <textarea target="field:${FIELD_NAME}:return:description" type="text">${RETURN_DESCRIPTION}</textarea>
+          </div>
+        </div>
+      </div>
     </div>
     
   </div>
