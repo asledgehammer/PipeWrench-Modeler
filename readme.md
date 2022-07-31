@@ -13,10 +13,15 @@ Models are instructions provided by humans that are digested by the generator. T
 - Run `npm i`
 
 ## Commands
-- Run `grunt` for watching `.ts` and `.scss` files to compile.
-- Use `CTRL + O` to open model files. (`.json`)
-- Use `CTRL + S` to save model files.
-- Use `CTRL + G` to generate typings in `./dist`
+
+- Development
+  - Run `grunt` for watching `.ts` and `.scss` files to compile.
+
+- Application
+  - Run `npx electron main.js` to start the Electron application.
+  - Use `CTRL + O` to open model files. (`.json`)
+  - Use `CTRL + S` to save model files.
+  - Use `CTRL + G` to generate typings in `./dist`
 
 ## Notes
 - The modeler is in BETA. The following is still in development:
