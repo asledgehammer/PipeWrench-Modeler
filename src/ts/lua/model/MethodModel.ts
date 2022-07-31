@@ -7,6 +7,7 @@ import { ModelDocumentation, ModelDocumentationJson } from './doc/ModelDocumenta
 import { ParameterModel, ParameterModelJson } from './ParamModel';
 import { ReturnModel, ReturnModelJson } from './ReturnModel';
 import { replaceAll } from '../../Utils';
+import { generateParameterDocumentation } from './ModelUtils';
 
 /** @author JabDoesThings */
 export class MethodModel extends Model<MethodModelJson> {
@@ -71,43 +72,19 @@ export class MethodModel extends Model<MethodModelJson> {
 
   generateDocumentation(prefix: string, method: LuaMethod): string {
     if (!this.testSignature(method)) return '';
-    const { documentation: methodDocumentation, parameters, _return_ } = this;
-    const { description: methodDescription } = methodDocumentation;
+    const { documentation, parameters, _return_ } = this;
+    const { description } = documentation;
     
     const documentationBuilder = new DocumentationBuilder();
      
     if(method.isStatic) documentationBuilder.appendAnnotation('noSelf');
-
-      // Process lines. (If defined)
-      if (methodDescription.length) {
-        if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
-        for (const line of methodDescription) documentationBuilder.appendLine(line);
-      }
-      // Process parameter(s). (If defined)
-      if (parameters.length) {
-        let first = true;
-        for (const parameter of parameters) {
-          const { name: parameterName, documentation: parameterDocumentation } = parameter;
-          const { description: parameterDescription } = parameterDocumentation;
-
-          if (!parameterDescription.length) continue;
-          
-          // Check for spacing. (If needed)
-          if(first) {
-            if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
-            first = false;
-          }
-
-          documentationBuilder.appendParam(parameterName, parameterDescription[0]);
-          // Check if multi-line.
-          if (parameterDescription.length === 1) continue;
-          for (let index = 1; index < parameterDescription.length; index++) {
-            documentationBuilder.appendLine(parameterDescription[index]);
-          }
-        }
-      }
-
-      _return_.generateDocumentation(documentationBuilder);
+    if (description.length) {
+      if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
+      for (const line of description) documentationBuilder.appendLine(line);
+    }
+    
+    generateParameterDocumentation(documentationBuilder, parameters);
+    _return_.generateDocumentation(documentationBuilder);
     return documentationBuilder.isEmpty() ? '' : documentationBuilder.build(prefix);
   }
 

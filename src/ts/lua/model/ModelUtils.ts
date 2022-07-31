@@ -1,5 +1,8 @@
 /** @author JabDoesThings */
 
+import { DocumentationBuilder } from "../../DocumentationBuilder";
+import { ParameterModel } from "./ParamModel";
+
 /** All names that aren't allowed to be used for parameters & fields in TypeScript. */
 export const ILLEGAL_NAMES = [
   'tostring',
@@ -39,4 +42,29 @@ export const unsanitizeName = (name: string): string => {
     }
   }
   return name;
+};
+
+export const generateParameterDocumentation = (documentationBuilder: DocumentationBuilder, parameters: ParameterModel[]): void => {
+  if (parameters.length) {
+    let first = true;
+    for (const parameter of parameters) {
+      const { name: parameterName, documentation: parameterDocumentation } = parameter;
+      const { description: parameterDescription } = parameterDocumentation;
+
+      if (!parameterDescription.length) continue;
+      
+      // Check for spacing. (If needed)
+      if(first) {
+        if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
+        first = false;
+      }
+
+      documentationBuilder.appendParam(parameterName, parameterDescription[0]);
+      // Check if multi-line.
+      if (parameterDescription.length === 1) continue;
+      for (let index = 1; index < parameterDescription.length; index++) {
+        documentationBuilder.appendLine(parameterDescription[index]);
+      }
+    }
+  }
 };

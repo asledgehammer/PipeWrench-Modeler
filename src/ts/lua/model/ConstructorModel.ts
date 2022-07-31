@@ -8,6 +8,7 @@ import { ModelDocumentation, ModelDocumentationJson } from './doc/ModelDocumenta
 import { ClassModel } from './ClassModel';
 import { ParameterModel, ParameterModelJson } from './ParamModel';
 import { replaceAll } from '../../Utils';
+import { generateParameterDocumentation } from './ModelUtils';
 
 /** @author JabDoesThings */
 export class ConstructorModel extends Model<ConstructorModelJson> {
@@ -82,43 +83,18 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
   }
 
   generateDoc(prefix: string, _constructor_: LuaConstructor): string {
-    if (!_constructor_ || !this.testSignature(_constructor_)) return '';
-
+    if (!this.testSignature(_constructor_)) return '';
+    const { documentation, parameters } = this;
+    const { description } = documentation;
+    
     const documentationBuilder = new DocumentationBuilder();
-    const { documentation: constructorDocumentation, parameters } = this;
-    if (constructorDocumentation) {
-      const { description: constructorDescription } = constructorDocumentation;
 
-      // Process lines. (If defined)
-      if (constructorDescription && constructorDescription.length) {
-        if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
-        for (const line of constructorDescription) documentationBuilder.appendLine(line);
-      }
-
-      // Process parameter(s). (If defined)
-      if (parameters.length) {
-        let first = true;
-        for (const parameter of parameters) {
-          const { name: parameterName, documentation: parameterDocumentation } = parameter;
-          const { description: parameterDescription } = parameterDocumentation;
-
-          if (!parameterDescription.length) continue;
-
-          // Check for spacing. (If needed)
-          if (first) {
-            if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
-            first = false;
-          }
-
-          documentationBuilder.appendParam(parameterName, parameterDescription[0]);
-          // Check if multi-line.
-          if (parameterDescription.length === 1) continue;
-          for (let index = 1; index < parameterDescription.length; index++) {
-            documentationBuilder.appendLine(parameterDescription[index]);
-          }
-        }
-      }
+    if (description.length) {
+      if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
+      for (const line of description) documentationBuilder.appendLine(line);
     }
+    
+    generateParameterDocumentation(documentationBuilder, parameters);
     return documentationBuilder.isEmpty() ? '' : documentationBuilder.build(prefix);
   }
 
