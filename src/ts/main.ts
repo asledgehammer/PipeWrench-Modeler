@@ -1,12 +1,11 @@
 import * as electron from 'electron';
 import { LuaLibrary } from './lua/LuaLibrary';
-import { ModelUIManager } from './ui/ModelUIManager';
+import { ModelUIManager } from './ui/UIManager';
 var modelUIManager: ModelUIManager;
 var luaLibrary;
 
 // Entry Point from HTML.
 export let start = function () {
-
   // const fileTemplate = [
   //   {
   //     label: 'Open',
@@ -24,7 +23,6 @@ export let start = function () {
   // electron.remote.Menu.setApplicationMenu(menu);
 
   setTimeout(() => {
-
     luaLibrary = new LuaLibrary();
     luaLibrary.scan();
     luaLibrary.parse();
@@ -39,7 +37,6 @@ export let start = function () {
       modelUIManager.setTable(tableName);
     };
 
-    console.log("### Ready ###");
-
+    console.log('### Ready ###');
   }, 100);
 };

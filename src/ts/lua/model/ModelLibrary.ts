@@ -11,11 +11,7 @@ import { LuaField } from '../LuaField';
 import { LuaLibrary } from '../LuaLibrary';
 import { sanitizeName } from './ModelUtils';
 
-/**
- * **ModelLibrary**
- *
- * @author JabDoesThings
- */
+/** @author JabDoesThings */
 export class ModelLibrary {
   /** All model files discovered from scanning directories. */
   private readonly files: string[] = [];
@@ -103,9 +99,9 @@ export class ModelLibrary {
     return modelFile;
   }
 
-  getClassModel(clazz: LuaClass): ClassModel {
-    const model = this.classes[clazz.name];
-    return model && model.testSignature(clazz) ? model : null;
+  getClassModel(_class_: LuaClass): ClassModel {
+    const model = this.classes[_class_.name];
+    return model && model.testSignature(_class_) ? model : null;
   }
 
   getTableModel(table: LuaTable): TableModel {
@@ -120,37 +116,47 @@ export class ModelLibrary {
 
   getGlobalFunctionModel(func: LuaFunction): FunctionModel {
     const model = this.globalFunctions[sanitizeName(func.name)];
-    if(model) console.log(model);
+    if (model) console.log(model);
     return model && model.testSignature(func) ? model : null;
   }
 
-  private scanDir(dir: string) {
+  private scanDir(directory: string) {
     this.files.length = 0;
-    const entries = fs.readdirSync(dir);
-    const dirs: string[] = [];
+    const entries = fs.readdirSync(directory);
+    const directories: string[] = [];
     for (const entry of entries) {
-      const path = dir + '/' + entry;
+      const path = directory + '/' + entry;
       if (path === '.' || path === '..' || path === '...') {
         continue;
       }
       const stats = fs.lstatSync(path);
-      if (stats.isDirectory() && dirs.indexOf(path) === -1) {
-        dirs.push(path);
+      if (stats.isDirectory() && directories.indexOf(path) === -1) {
+        directories.push(path);
         continue;
       }
       if (path.toLowerCase().endsWith('.json') && this.files.indexOf(path) === -1) {
         this.files.push(path);
       }
     }
-    if (dirs.length !== 0) {
-      for (const dir of dirs) {
-        this.scanDir(dir);
+    if (directories.length !== 0) {
+      for (const nextDirectory of directories) {
+        this.scanDir(nextDirectory);
       }
     }
   }
 
+  createFile(id: string) {
+    const model = new ModelFile(this, id);
+    this.modelFiles[id] = model;
+    return model;
+  }
+
   static getFileId(path: string): string {
-    const s = path.replace('\\', '/').replace('.json', '').replace('.json', '').replace('.json', '');
+    const s = path
+      .replace('\\', '/')
+      .replace('.json', '')
+      .replace('.json', '')
+      .replace('.json', '');
     if (s.indexOf('/') !== -1) return s.split('/').pop();
     return s;
   }

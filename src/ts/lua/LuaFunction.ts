@@ -1,89 +1,86 @@
 import * as ast from '../luaparser/ast';
-import { NamedElement } from './NamedElement';
-import { LuaFile } from './LuaFile';
+
+import { WILDCARD_TYPE } from '../ZomboidGenerator';
 import { fixParameters } from './LuaUtils';
-import { FunctionModel } from './model/FunctionModel';
-import { WILDCARD_TYPE } from '../Generator';
 import { sanitizeName } from './model/ModelUtils';
 
-/**
- * **LuaFunction**
- *
- * @author JabDoesThings
- */
-export class LuaFunction extends NamedElement {
+import { LuaFile } from './LuaFile';
+import { LuaNamedObject } from './LuaNamedObject';
+
+import { FunctionModel } from './model/FunctionModel';
+
+/** @author JabDoesThings */
+export class LuaFunction extends LuaNamedObject {
   readonly file: LuaFile;
   readonly name: string;
-  readonly params: string[];
+  readonly parameters: string[];
   readonly isLocal: boolean;
   readonly parsed: ast.FunctionDeclaration | ast.AssignmentStatement;
-  model: FunctionModel;
 
   constructor(
     file: LuaFile,
     parsed: ast.FunctionDeclaration | ast.AssignmentStatement,
     name: string,
-    params: string[],
+    parameters: string[],
     isLocal: boolean
   ) {
     super(name);
     this.parsed = parsed;
     this.file = file;
-    this.params = fixParameters(params);
+    this.parameters = fixParameters(parameters);
     this.isLocal = isLocal;
   }
 
-  generateDoc(prefix: string): string {
+  generateDocumentation(prefix: string): string {
     const library = this.file.library;
-    let { model } = this;
-    if (!model) model = library.getGlobalFunctionModel(this);
-    return model ? model.generateDoc(prefix, this) : `${prefix}/** @noSelf */`;
+    const model = library.getGlobalFunctionModel(this);
+    return model ? model.generateDocumentation(prefix, this) : `${prefix}/** @noSelf */`;
   }
 
   protected onCompile(prefix: string): string {
     const library = this.file.library;
-    let { name, model } = this;
-    if (!model) model = library.getGlobalFunctionModel(this);
-    let sDocs = this.generateDoc(prefix);
+    let { name } = this;
+    const model = library.getGlobalFunctionModel(this);
+    let documentationString = this.generateDocumentation(prefix);
 
     const compileTypes = (types: string[]): string => {
-      let returnS = '';
+      let returnString = '';
       if (types && types.length) {
         for (const type of types) {
-          if (returnS.length) returnS += ' | ';
-          returnS += sanitizeName(type);
+          if (returnString.length) returnString += ' | ';
+          returnString += sanitizeName(type);
         }
       }
-      return returnS;
+      return returnString;
     };
 
     // Compile parameter(s). (If any)
-    let paramS = '';
-    let params: string[] = [];
+    let parametersString = '';
+    let parameters: string[] = [];
 
-    // If the model is present, set param names from it as some params may be renamed.
+    // If the model is present, set parameter names from it as some parameters may be renamed.
     if (model) {
-      for (const param of model.params) {
-        const types = param.types && param.types.length ? compileTypes(param.types) : WILDCARD_TYPE;
-        params.push(`${param.name}: ${types}`);
+      for (const parameter of model.parameters) {
+        const types = parameter.types && parameter.types.length ? compileTypes(parameter.types) : WILDCARD_TYPE;
+        parameters.push(`${parameter.name}: ${types}`);
       }
     } else {
-      params = fixParameters(this.params).map((param) => `${param}: ${WILDCARD_TYPE}`);
+      parameters = fixParameters(this.parameters).map((param) => `${param}: ${WILDCARD_TYPE}`);
     }
-    if (params.length) {
-      for (const param of params) paramS += `${param}, `;
-      paramS = paramS.substring(0, paramS.length - 2);
+    if (parameters.length) {
+      for (const parameter of parameters) parametersString += `${parameter}, `;
+      parametersString = parametersString.substring(0, parametersString.length - 2);
     }
 
     // Compile return type(s). (If any)
-    let returnS = '';
+    let returnString = '';
     let returnTypes: string[] = [];
-    let applyUnknownType = true;
+    let wrapWildcardType = true;
 
     if (model) {
-      const { returns } = model;
+      const { _return_: returns } = model;
       if (returns) {
-        applyUnknownType = returns.applyUnknownType;
+        wrapWildcardType = returns.wrapWildcardType;
         if (returns.types && returns.types.length) {
           for (const type of returns.types) {
             // Prevent duplicate return types.
@@ -94,49 +91,53 @@ export class LuaFunction extends NamedElement {
     }
 
     if (returnTypes.length) {
-      returnS = '';
+      returnString = '';
       for (const type of returnTypes) {
-        if (returnS.length) returnS += ' | ';
-        returnS += sanitizeName(type);
+        if (returnString.length) returnString += ' | ';
+        returnString += sanitizeName(type);
       }
     } else {
       // Default return type.
-      returnS = WILDCARD_TYPE;
+      returnString = WILDCARD_TYPE;
     }
 
     let s = '';
-    if (sDocs.length) s += `${sDocs}\n`;
+    if (documentationString.length) s += `${documentationString}\n`;
 
-    let comp = `${s}${prefix}export const ${sanitizeName(name)}: `;
-    if (applyUnknownType) comp += '(';
-    comp += `(${paramS}) => ${returnS}`;
-    if (applyUnknownType) comp += `) | ${WILDCARD_TYPE}`;
-    comp += ';';
+    let compiled = `${s}${prefix}export const ${sanitizeName(name)}: `;
+    if (wrapWildcardType) compiled += '(';
+    compiled += `(${parametersString}) => ${returnString}`;
+    if (wrapWildcardType) compiled += `) | ${WILDCARD_TYPE}`;
+    compiled += ';';
 
-    return comp;
+    return compiled;
   }
 
   generateAPI(prefix: string): string {
     const { name, fullPath } = this;
-    const doc = this.generateDoc(prefix);
-    return `${prefix}${doc ? `${doc}\n` : ''}${prefix}export const ${sanitizeName(name)} = ${fullPath};`;
+    const documentation = this.generateDocumentation(prefix);
+    return `${prefix}${
+      documentation ? `${documentation}\n` : ''
+    }${prefix}export const ${sanitizeName(name)} = ${fullPath};`;
   }
 
-  generateLua(prefix: string = ''): string {
-    // Compile params.
-    let paramsS = '(';
-    const { name, params } = this;
-    if(params.length) {
-      for (let index = 0; index < params.length; index++) paramsS += `arg${index},`;
-      paramsS = paramsS.substring(0, paramsS.length - 1);
+  generateLuaInterface(prefix: string = ''): string {
+    // Compile parameter(s)..
+    let parametersString = '(';
+    const { name, parameters } = this;
+    if (parameters.length) {
+      for (let index = 0; index < parameters.length; index++) parametersString += `arg${index},`;
+      parametersString = parametersString.substring(0, parametersString.length - 1);
     }
-    paramsS += ')';
+    parametersString += ')';
     // Functions are assigned differently.
-    return `${prefix} function Exports.${sanitizeName(name)}${paramsS} return ${name}${paramsS} end\n`;
+    return `${prefix} function Exports.${sanitizeName(
+      name
+    )}${parametersString} return ${name}${parametersString} end\n`;
   }
 
   get namespace() {
-    return this.file.fieldFuncNamespace;
+    return this.file.propertyNamespace;
   }
 
   get fullPath() {

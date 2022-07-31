@@ -1,6 +1,9 @@
+/** @author JabDoesThings */
+
+/** */
 export type RequireInfo = {
-    path: string;
-}
+  path: string;
+};
 
 export type DeriveInfo = {
   superClass: string;
@@ -13,19 +16,19 @@ export type ProxyInfo = {
 };
 
 export type TableConstructorInfo = {
-    name: string;
-}
+  name: string;
+};
 
 export type FunctionInfo = {
   name: string;
-  params: string[];
+  parameters: string[];
   isLocal: boolean;
 };
 
 export type MethodInfo = {
   className: string;
   name: string;
-  params: string[];
+  parameters: string[];
   isStatic: boolean;
 };
 

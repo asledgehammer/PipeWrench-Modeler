@@ -13,8 +13,8 @@ import {
 
 export const WILDCARD_TYPE = 'any';
 
-export class Generator {
-  static funcCache: string[] = [];
+export class ZomboidGenerator {
+  static FUNCTION_CACHE: string[] = [];
   readonly library: LuaLibrary;
   private readonly moduleName = 'PipeWrench';
   private readonly distDir = './dist';
@@ -25,7 +25,7 @@ export class Generator {
   }
 
   run() {
-    Generator.funcCache.length = 0;
+    ZomboidGenerator.FUNCTION_CACHE.length = 0;
     this.setupDirectories();
     this.generateDefinitions();
     this.generateReferencePartial();
@@ -48,7 +48,7 @@ export class Generator {
     for (const fileName of luaFileNames) {
       const file = luaFiles[fileName];
       console.log(`Generating: ${file.id.replace('.lua', '.d.ts')}..`);
-      const code = file.generate(moduleName);
+      const code = file.generateDefinitionFile(moduleName);
       mkdirsSync(`./dist/lua/${file.folder}`);
       writeTSFile(`./dist/lua/${file.fileLocal.replace('.lua', '.d.ts')}`, prettify(code));
     }
@@ -61,7 +61,7 @@ export class Generator {
     let code = '';
     for (const fileName of luaFileNames) {
       const file = luaFiles[fileName];
-      const fileCode = file.generateAPI('  ', moduleName);
+      const fileCode = file.generateAPI('  ');
       if (fileCode.length) code += `${fileCode}\n`;
     }
 
@@ -119,7 +119,7 @@ export class Generator {
     luaCode += 'Events.OnGameBoot.Add(function()\n\n';
     for (const fileName of luaFileNames) {
       const file = luaFiles[fileName];
-      const fileCode = file.generateLua(prefix);
+      const fileCode = file.generateLuaInterface(prefix);
       if (fileCode.length) luaCode += `${fileCode}\n`;
     }
     luaCode += `${prefix}_G.PIPEWRENCH_READY = true\n`;

@@ -1,13 +1,10 @@
 import { Model } from './Model';
 
-/**
- * **ReturnModel**
- *
- * @author JabDoesThings
- */
+/** @author JabDoesThings */
 export class ReturnModel extends Model<ReturnModelJson> {
   readonly types: string[] = [];
-  applyUnknownType: boolean = true;
+  readonly description: string[] = [];
+  wrapWildcardType: boolean = true;
 
   constructor(json?: ReturnModelJson) {
     super();
@@ -15,22 +12,28 @@ export class ReturnModel extends Model<ReturnModelJson> {
   }
 
   load(json: ReturnModelJson) {
-    if (json.applyUnknownType != null) this.applyUnknownType = json.applyUnknownType;
-    if (json.types) for (const type of json.types) this.types.push(type);
+    this.clear();
+    if (json.types != null) for (const type of json.types) this.types.push(type);
+    if (json.description) for (const line of json.description) this.description.push(line);
+    if (json.wrapWildcardType != null) this.wrapWildcardType = json.wrapWildcardType;
   }
 
   save(): ReturnModelJson {
-    let applyUnknownType = this.applyUnknownType ? undefined : false;
+    let wrapWildcardType = this.wrapWildcardType ? undefined : false;
+
+    let description: string[] = undefined;
+    if (this.description.length) description = ([] as string[]).concat(this.description);
 
     let types: string[] = undefined;
     if (this.types.length) types = ([] as string[]).concat(this.types);
 
-    return { types, applyUnknownType };
+    return { description, types, wrapWildcardType };
   }
 
   clear() {
+    this.description.length = 0;
     this.types.length = 0;
-    this.applyUnknownType = true;
+    this.wrapWildcardType = true;
   }
 
   generateDom(): string {
@@ -38,13 +41,14 @@ export class ReturnModel extends Model<ReturnModelJson> {
   }
 
   isDefault(): boolean {
-    if (!this.applyUnknownType) return false;
-    if (this.types.length) return false;
-    return true;
+    if (!this.wrapWildcardType) return false;
+    if (this.description.length) return false;
+    return !this.types.length;
   }
 }
 
 export type ReturnModelJson = {
-  applyUnknownType: boolean;
+  description: string[];
   types: string[];
+  wrapWildcardType: boolean;
 };

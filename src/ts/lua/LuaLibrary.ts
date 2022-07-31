@@ -1,21 +1,18 @@
 import * as fs from 'fs';
+
 import { LuaFile } from './LuaFile';
 import { LuaClass } from './LuaClass';
-import { NamedElement } from './NamedElement';
 import { LuaTable } from './LuaTable';
+import { LuaFunction } from './LuaFunction';
+import { LuaField } from './LuaField';
+
 import { ModelLibrary } from './model/ModelLibrary';
 import { ClassModel } from './model/ClassModel';
 import { TableModel } from './model/TableModel';
-import { LuaField } from './LuaField';
-import { FieldModel } from './model/FieldModel';
-import { LuaFunction } from './LuaFunction';
 import { FunctionModel } from './model/FunctionModel';
+import { FieldModel } from './model/FieldModel';
 
-/**
- * **LuaLibrary**
- *
- * @author JabDoesThings
- */
+/** @author JabDoesThings */
 export class LuaLibrary {
   readonly models: ModelLibrary = new ModelLibrary(this);
 
@@ -89,7 +86,7 @@ export class LuaLibrary {
 
     for (const file of Object.values(this.luaFiles)) file.scanGlobals();
     for (const file of Object.values(this.luaFiles)) file.scanMembers();
-    for (const clazz of Object.values(this.classes)) clazz.scanMethods();
+    for (const _class_ of Object.values(this.classes)) _class_.scanMethods();
     this.linkClasses();
     this.audit();
     this.models.parse();
@@ -111,8 +108,8 @@ export class LuaLibrary {
     return s;
   }
 
-  getClassModel(clazz: LuaClass): ClassModel {
-    return this.models ? this.models.getClassModel(clazz) : null;
+  getClassModel(_class_: LuaClass): ClassModel {
+    return this.models ? this.models.getClassModel(_class_) : null;
   }
 
   getTableModel(table: LuaTable): TableModel {
@@ -123,8 +120,8 @@ export class LuaLibrary {
     return this.models ? this.models.getGlobalFieldModel(field) : null;
   }
 
-  getGlobalFunctionModel(func: LuaFunction): FunctionModel {
-    return this.models ? this.models.getGlobalFunctionModel(func) : null;
+  getGlobalFunctionModel(_function_: LuaFunction): FunctionModel {
+    return this.models ? this.models.getGlobalFunctionModel(_function_) : null;
   }
 
   private audit() {
@@ -138,27 +135,29 @@ export class LuaLibrary {
 
   private linkClasses() {
     for (const name of Object.keys(this.classes)) {
-      const clazz = this.classes[name];
+      const _class_ = this.classes[name];
       // Ignore the root class.
-      if(clazz.name === 'ISBaseObject') continue;
-      
-      let superClazz = this.classes[clazz.superClassName];
-      if (!superClazz) superClazz = this.resolveProxyClass(clazz.superClassName);
-      if (!superClazz) {
-        console.warn(`[LuaLibrary] Lua Superclass not found: ${clazz.name} extends ${clazz.superClassName}`);
+      if (_class_.name === 'ISBaseObject') continue;
+
+      let superClass = this.classes[_class_.superClassName];
+      if (!superClass) superClass = this.resolveProxyClass(_class_.superClassName);
+      if (!superClass) {
+        console.warn(
+          `[LuaLibrary] Lua Superclass not found: ${_class_.name} extends ${_class_.superClassName}`
+        );
       }
-      clazz.superClass = superClazz;
+      _class_.superClass = superClass;
     }
   }
 
-  private resolveProxyClass(clazzName: string): LuaClass | null {
-    for (const clazz of Object.values(this.luaFiles)) {
-      if (clazz.proxies[clazzName]) return this.classes[clazz.proxies[clazzName]];
+  private resolveProxyClass(className: string): LuaClass | null {
+    for (const _class_ of Object.values(this.luaFiles)) {
+      if (_class_.proxies[className]) return this.classes[_class_.proxies[className]];
     }
     return null;
   }
 
-  setClass(clazz: LuaClass) {
-    this.classes[clazz.name] = clazz;
+  setClass(_class_: LuaClass) {
+    this.classes[_class_.name] = _class_;
   }
 }

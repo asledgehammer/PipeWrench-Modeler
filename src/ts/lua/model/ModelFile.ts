@@ -1,16 +1,12 @@
 import * as fs from 'fs';
-import { LuaClass } from '../LuaClass';
+
+import { ModelLibrary } from './ModelLibrary';
 import { ClassModel, ClassModelJson } from './ClassModel';
+import { TableModel, TableModelJson } from './TableModel';
 import { FieldModel, FieldModelJson } from './FieldModel';
 import { FunctionModel, FunctionModelJson } from './FunctionModel';
-import { ModelLibrary } from './ModelLibrary';
-import { TableModel, TableModelJson } from './TableModel';
 
-/**
- * **ModelFile**
- *
- * @author JabDoesThings
- */
+/** @author JabDoesThings */
 export class ModelFile {
   /** All classes discovered in the file. */
   readonly classes: { [id: string]: ClassModel } = {};
@@ -44,7 +40,7 @@ export class ModelFile {
    * @param id The name of the file.
    * @param file The path to the file on the disk.
    */
-  constructor(library: ModelLibrary, id: string, file: string) {
+  constructor(library: ModelLibrary, id: string, file: string = '') {
     this.library = library;
     this.id = id;
     this.file = file;
@@ -72,20 +68,31 @@ export class ModelFile {
     if (classes) {
       for (const name of Object.keys(classes)) {
         const luaClass = this.library.luaLibrary.classes[name];
-        this.library.classes[name] = this.classes[name] = new ClassModel(luaClass, name, classes[name]);
+        this.library.classes[name] = this.classes[name] = new ClassModel(
+          luaClass,
+          name,
+          classes[name]
+        );
       }
     }
     // Load table models.
     if (tables) {
       for (const name of Object.keys(tables)) {
         const luaTable = this.library.luaLibrary.tables[name];
-        this.library.tables[name] = this.tables[name] = new TableModel(luaTable, name, tables[name]);
+        this.library.tables[name] = this.tables[name] = new TableModel(
+          luaTable,
+          name,
+          tables[name]
+        );
       }
     }
     // Load global field models.
     if (globalFields) {
       for (const name of Object.keys(globalFields)) {
-        this.library.globalFields[name] = this.globalFields[name] = new FieldModel(name, globalFields[name]);
+        this.library.globalFields[name] = this.globalFields[name] = new FieldModel(
+          name,
+          globalFields[name]
+        );
       }
     }
     // Load global function models.
@@ -100,14 +107,14 @@ export class ModelFile {
   }
 
   populate() {
-    for(const clazz of Object.values(this.classes)) clazz.populate();
-    for(const table of Object.values(this.tables)) table.populate();
-    for(const field of Object.values(this.globalFields)) field.populate();
-    for(const func of Object.values(this.globalFunctions)) func.populate();
+    for (const _class_ of Object.values(this.classes)) _class_.populate();
+    for (const table of Object.values(this.tables)) table.populate();
+    // for (const field of Object.values(this.globalFields)) field.populate();
+    // for (const _function_ of Object.values(this.globalFunctions)) _function_.populate();
   }
 
   save(path: string) {
-    let classes: {[id: string]: ClassModelJson} = undefined;
+    let classes: { [id: string]: ClassModelJson } = undefined;
     let classNames = Object.keys(this.classes);
     if (classNames.length) {
       classes = {};
@@ -115,7 +122,7 @@ export class ModelFile {
       for (const className of classNames) classes[className] = this.classes[className].save();
     }
 
-    let tables: {[id: string]: TableModelJson} = undefined;
+    let tables: { [id: string]: TableModelJson } = undefined;
     let tableNames = Object.keys(this.tables);
     if (tableNames.length) {
       tables = {};
@@ -123,20 +130,22 @@ export class ModelFile {
       for (const tableName of tableNames) tables[tableName] = this.tables[tableName].save();
     }
 
-    let globalFields: {[id: string]: FieldModelJson} = undefined;
+    let globalFields: { [id: string]: FieldModelJson } = undefined;
     let globalFieldNames = Object.keys(this.globalFields);
     if (globalFieldNames.length) {
       globalFields = {};
       globalFieldNames.sort((o1, o2) => o1.localeCompare(o2));
-      for (const fieldName of globalFieldNames) globalFields[fieldName] = this.globalFields[fieldName].save();
+      for (const fieldName of globalFieldNames)
+        globalFields[fieldName] = this.globalFields[fieldName].save();
     }
 
-    let globalFunctions: {[id: string]: FunctionModelJson} = undefined;
+    let globalFunctions: { [id: string]: FunctionModelJson } = undefined;
     let globalfunctionsNames = Object.keys(this.globalFunctions);
     if (globalfunctionsNames.length) {
       globalFunctions = {};
       globalfunctionsNames.sort((o1, o2) => o1.localeCompare(o2));
-      for (const funcName of globalFieldNames) globalFunctions[funcName] = this.globalFunctions[funcName].save();
+      for (const functionName of globalFieldNames)
+        globalFunctions[functionName] = this.globalFunctions[functionName].save();
     }
 
     const json = { version: 1, classes, tables, globalFields, globalFunctions };
@@ -155,11 +164,6 @@ export class ModelFile {
   }
 }
 
-/**
- * **ModelFileJson**
- *
- * @author JabDoesThings
- */
 export type ModelFileJson = {
   version: number;
   classes: { [id: string]: ClassModelJson };

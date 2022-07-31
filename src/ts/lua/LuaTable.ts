@@ -1,7 +1,9 @@
-import { WILDCARD_TYPE } from '../Generator';
-import { LuaContainer } from './LuaContainer';
-import { LuaFile } from './LuaFile';
+import { WILDCARD_TYPE } from '../ZomboidGenerator';
 import { sanitizeName as sanitizeName } from './model/ModelUtils';
+
+import { LuaFile } from './LuaFile';
+import { LuaContainer } from './LuaContainer';
+
 import { TableModel } from './model/TableModel';
 
 /**
@@ -16,7 +18,6 @@ import { TableModel } from './model/TableModel';
  * @author JabDoesThings
  */
 export class LuaTable extends LuaContainer {
-  model: TableModel;
 
   /**
    * @param file The file containing the table declaration.
@@ -38,12 +39,14 @@ export class LuaTable extends LuaContainer {
     const { library } = this.file;
 
     const model = library.getTableModel(this as any);
-    let doc = this.generateDoc(prefix, model);
-    let s = doc.length ? `${prefix}${doc}\n` : '';
+    let documentation = this.generateDocumentation(prefix, model);
+    let s = documentation.length ? `${prefix}${documentation}\n` : '';
 
     // Render empty tables on one line.
-    if (!Object.keys(this.fields).length && !Object.keys(this.methods).length) {
-      return `${s}\n${prefix}export class ${sanitizeName(name)} { static [id: string]: ${WILDCARD_TYPE}; }`;
+    if (this.isEmpty()) {
+      return `${s}\n${prefix}export class ${sanitizeName(
+        name
+      )} { static [id: string]: ${WILDCARD_TYPE}; }`;
     }
 
     const { staticFields, nonStaticFields } = this.sortFields();
@@ -82,24 +85,27 @@ export class LuaTable extends LuaContainer {
     return `${s}${prefix}}`;
   }
 
-  generateDoc(prefix: string, model: TableModel): string {
-    return model ? model.generateDoc(prefix, this) : '';
+  generateDocumentation(prefix: string, model: TableModel): string {
+    return model ? model.generateDocumentation(prefix) : '';
   }
 
   generateAPI(prefix: string): string {
     const { library } = this.file;
-    let { model } = this;
 
     // Render the class documentation. (If present)
-    if (!model) model = library.getTableModel(this as any);
-    const doc = this.generateDoc(prefix, model);
+    const model = library.getTableModel(this as any);
+    const documentation = this.generateDocumentation(prefix, model);
 
     // Render empty classes on one line.
-    return `${prefix}${doc ? `${doc}\n` : ''}${prefix}export class ${sanitizeName(this.name)} {}`;
+    return `${prefix}${documentation ? `${documentation}\n` : ''}${prefix}export class ${sanitizeName(this.name)} {}`;
   }
 
-  generateLua(prefix: string = ''): string {
+  generateLuaInterface(prefix: string = ''): string {
     const { name } = this;
     return `${prefix}Exports.${sanitizeName(name)} = loadstring("return _G['${name}']")()\n`;
+  }
+
+  isEmpty(): boolean {
+    return !Object.keys(this.fields).length && !Object.keys(this.methods).length;
   }
 }

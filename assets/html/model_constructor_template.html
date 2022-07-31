@@ -8,16 +8,17 @@
   
   <div class="model-content">
 
-    <!-- Lines -->
-    <div class="model-field field-multi-line lines">
+    <!-- Description -->
+    <div class="model-field field-multi-line description">
       <label>Description</label>
-      <textarea target="constructor:lines" type="text">${LINES}</textarea>
+      <textarea target="constructor:${METHOD_NAME}:description">${DESCRIPTION}</textarea>
     </div>
 
     <!-- Parameters -->
-    <div class="model-groups" style="display: ${HAS_PARAMS};">
+    <div class="model-groups params" style="display: ${HAS_PARAMETERS};">
       <label style="margin-bottom: 9px">Parameters</label>
-      ${PARAMS}
+      ${PARAMETERS}
     </div>
+    
   </div>
 </div>

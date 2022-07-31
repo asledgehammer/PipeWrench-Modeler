@@ -1,16 +1,8 @@
 import * as fs from 'fs';
 import * as parser from 'luaparse';
-import * as prettier from 'prettier';
 import * as ast from '../luaparser/ast';
-import { LuaClass } from './LuaClass';
-import { LuaConstructor } from './LuaConstructor';
-import { LuaLibrary } from './LuaLibrary';
-import { LuaFunction } from './LuaFunction';
-import { LuaTable } from './LuaTable';
-import { LuaMethod } from './LuaMethod';
 
-import { wrapModule, mkdirsSync, writeTSFile, prettify } from '../Utils';
-
+import { wrapModule } from '../Utils';
 import {
   correctKahluaCode,
   DEBUG,
@@ -26,8 +18,16 @@ import {
   printProxyInfo,
   printRequireInfo,
 } from './LuaUtils';
+
+import { ZomboidGenerator } from '../ZomboidGenerator';
+
+import { LuaLibrary } from './LuaLibrary';
+import { LuaClass } from './LuaClass';
+import { LuaTable } from './LuaTable';
+import { LuaFunction } from './LuaFunction';
 import { LuaField } from './LuaField';
-import { Generator } from '../Generator';
+import { LuaMethod } from './LuaMethod';
+import { LuaConstructor } from './LuaConstructor';
 
 /**
  * **LuaFile** loads, parses, and processes Lua code stored in files.
@@ -62,8 +62,8 @@ export class LuaFile {
   /** Used to export on generation. */
   readonly fileLocal: string;
   readonly folder: string;
-  readonly classTableNamespace: string;
-  readonly fieldFuncNamespace: string;
+  readonly containerNamespace: string;
+  readonly propertyNamespace: string;
 
   /** The parsed chunk provided by LuaParse. */
   parsed: ast.Chunk;
@@ -83,8 +83,8 @@ export class LuaFile {
     this.folder = split.join('/');
     split = this.fileLocal.split('.');
     split.pop();
-    this.classTableNamespace = `lua.${this.folder.split('/').join('.')}`;
-    this.fieldFuncNamespace = `lua.${split.join('.').split('/').join('.')}`;
+    this.containerNamespace = `lua.${this.folder.split('/').join('.')}`;
+    this.propertyNamespace = `lua.${split.join('.').split('/').join('.')}`;
   }
 
   /**
@@ -155,9 +155,9 @@ export class LuaFile {
         return true;
       }
 
-      const clazz = new LuaClass(this, info.subClass, info.superClass);
-      this.classes[info.subClass] = this.library.classes[info.subClass] = clazz;
-      // console.log(`Adding class: ${clazz.name}`);
+      const _class_ = new LuaClass(this, info.subClass, info.superClass);
+      this.classes[info.subClass] = this.library.classes[info.subClass] = _class_;
+      // console.log(`Adding class: ${_class_.name}`);
       return true;
     };
 
@@ -175,10 +175,10 @@ export class LuaFile {
       const info = getFunctionDeclaration(declaration);
       if (!info) return false;
       if (DEBUG) printFunctionInfo(info);
-      const func = new LuaFunction(this, declaration, info.name, info.params, info.isLocal);
-      this.globalFunctions[info.name] = func;
+      const _function_ = new LuaFunction(this, declaration, info.name, info.parameters, info.isLocal);
+      this.globalFunctions[info.name] = _function_;
       if (!info.isLocal) {
-        this.globalFunctions[func.name] = this.library.globalFunctions[func.name] = func;
+        this.globalFunctions[_function_.name] = this.library.globalFunctions[_function_.name] = _function_;
       }
       return true;
     };
@@ -225,22 +225,36 @@ export class LuaFile {
         info.className = this.proxies[info.className];
       }
 
-      const clazz = this.library.classes[info.className];
-      if (clazz) {
+      const _class_ = this.library.classes[info.className];
+      if (_class_) {
         if (!info.isStatic && info.name === 'new') {
-          const func = new LuaConstructor(this.library, clazz, declaration, info.params);
-          clazz._constructor_ = func;
+          const _constructor_ = new LuaConstructor(this.library, _class_, declaration, info.parameters);
+          _class_._constructor_ = _constructor_;
         } else {
-          const func = new LuaMethod(this.library, clazz, declaration, info.name, info.params, info.isStatic);
-          clazz.methods[info.name] = func;
+          const method = new LuaMethod(
+            this.library,
+            _class_,
+            declaration,
+            info.name,
+            info.parameters,
+            info.isStatic
+          );
+          _class_.methods[info.name] = method;
         }
         return true;
       }
 
       const table = this.library.tables[info.className];
       if (table) {
-        const func = new LuaMethod(this.library, table, declaration, info.name, info.params, info.isStatic);
-        table.methods[info.name] = func;
+        const method = new LuaMethod(
+          this.library,
+          table,
+          declaration,
+          info.name,
+          info.parameters,
+          info.isStatic
+        );
+        table.methods[info.name] = method;
         return true;
       }
 
@@ -258,22 +272,36 @@ export class LuaFile {
         info.className = this.proxies[info.className];
       }
 
-      const clazz = this.library.classes[info.className];
-      if (clazz) {
+      const _class_ = this.library.classes[info.className];
+      if (_class_) {
         if (!info.isStatic && info.name === 'new') {
-          const func = new LuaConstructor(this.library, clazz, statement, info.params);
-          clazz._constructor_ = func;
+          const _constructor_ = new LuaConstructor(this.library, _class_, statement, info.parameters);
+          _class_._constructor_ = _constructor_;
         } else {
-          const func = new LuaMethod(this.library, clazz, statement, info.name, info.params, info.isStatic);
-          clazz.methods[info.name] = func;
+          const method = new LuaMethod(
+            this.library,
+            _class_,
+            statement,
+            info.name,
+            info.parameters,
+            info.isStatic
+          );
+          _class_.methods[info.name] = method;
         }
         return true;
       }
 
       const table = this.library.tables[info.className];
       if (table) {
-        const func = new LuaMethod(this.library, table, statement, info.name, info.params, info.isStatic);
-        table.methods[info.name] = func;
+        const method = new LuaMethod(
+          this.library,
+          table,
+          statement,
+          info.name,
+          info.parameters,
+          info.isStatic
+        );
+        table.methods[info.name] = method;
         return true;
       }
 
@@ -289,8 +317,8 @@ export class LuaFile {
         const info = getFunctionDeclaration(statement);
         if (!info || info.isLocal || info.name === 'new' || info.name === 'toString') continue;
         // console.log(`Global function: ${info.name}`);
-        const func = new LuaFunction(this, statement, info.name, info.params, info.isLocal);
-        this.library.globalFunctions[func.name] = func;
+        const _function_ = new LuaFunction(this, statement, info.name, info.parameters, info.isLocal);
+        this.library.globalFunctions[_function_.name] = _function_;
       } else if (statement.type === 'AssignmentStatement') {
         if (statement.init.length === 1) {
           const init = statement.init[0];
@@ -304,70 +332,82 @@ export class LuaFile {
     if (DEBUG) console.log('\n');
   }
 
-  generate(moduleName: string): string {
-    const { folder, fileLocal, classes, tables, globalFields: fields, globalFunctions: funcs } = this;
+  generateDefinitionFile(moduleName: string): string {
+    const { classes, tables, globalFields: fields, globalFunctions: functions } = this;
     const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
     const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
     const fieldNames = Object.keys(fields).sort((o1, o2) => o1.localeCompare(o2));
-    const funcNames = Object.keys(funcs).sort((o1, o2) => o1.localeCompare(o2));
-    let code = `  export namespace ${this.classTableNamespace} {\n`;
+    const funcNames = Object.keys(functions).sort((o1, o2) => o1.localeCompare(o2));
+    let code = `  export namespace ${this.containerNamespace} {\n`;
     for (const className of classNames) code += `${classes[className].compile('    ')}\n\n`;
     for (const tableName of tableNames) code += `${tables[tableName].compile('    ')}\n\n`;
     code += '  }\n';
-    code += `  export namespace ${this.fieldFuncNamespace} {\n`;
+    code += `  export namespace ${this.propertyNamespace} {\n`;
     for (const fieldName of fieldNames) code += `${fields[fieldName].compile('  ')}\n\n`;
-    for (const funcName of funcNames) {
+    for (const functionName of funcNames) {
       // Not sure why these two would exist in the global scope.
-      if (funcName === 'new' || funcName === 'toString') continue;
-      const func = funcs[funcName];
-      if (func.isLocal) continue;
-      code += `${func.compile('  ')}\n\n`;
+      if (functionName === 'new' || functionName === 'toString') continue;
+      const _function_ = functions[functionName];
+      if (_function_.isLocal) continue;
+      code += `${_function_.compile('  ')}\n\n`;
     }
     code += '}\n';
-    code = wrapModule(moduleName, this.fileLocal, this.classTableNamespace, code);
+    code = wrapModule(moduleName, this.fileLocal, this.containerNamespace, code);
     return code;
   }
 
-  generateLua(prefix: string = '') {
+  generateLuaInterface(prefix: string = '') {
     const { classes, tables, globalFields: fields, globalFunctions: funcs } = this;
     const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
     const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
     const fieldNames = Object.keys(fields).sort((o1, o2) => o1.localeCompare(o2));
-    const funcNames = Object.keys(funcs).sort((o1, o2) => o1.localeCompare(o2));
-    if (!classNames.length && !tableNames.length && !fieldNames.length && !funcNames.length) return '';
+    const funcionNames = Object.keys(funcs).sort((o1, o2) => o1.localeCompare(o2));
+    if (!classNames.length && !tableNames.length && !fieldNames.length && !funcionNames.length) {
+      return '';
+    }
     let code = `--[${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
-    if (classNames.length) for (const name of classNames) code += classes[name].generateLua(prefix);
-    if (tableNames.length) for (const name of tableNames) code += tables[name].generateLua(prefix);
-    if (fieldNames.length) for (const name of fieldNames) code += fields[name].generateLua(prefix);
-    if (funcNames.length) for (const name of funcNames) funcs[name].generateLua(prefix);
+    if (classNames.length) {
+      for (const className of classNames) code += classes[className].generateLuaInterface(prefix);
+    }
+    if (tableNames.length) {
+      for (const tableName of tableNames) code += tables[tableName].generateLuaInterface(prefix);
+    }
+    if (fieldNames.length) {
+      for (const fieldName of fieldNames) code += fields[fieldName].generateLua(prefix);
+    }
+    if (funcionNames.length) {
+      for (const functionName of funcionNames) funcs[functionName].generateLuaInterface(prefix);
+    }
     return code;
   }
 
-  generateAPI(partial: string, moduleName: string): string {
-    const { classes, tables, globalFields: fields, globalFunctions: funcs } = this;
+  generateAPI(partial: string): string {
+    const { classes, tables, globalFields: fields, globalFunctions: functions } = this;
     const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
     const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
     const fieldNames = Object.keys(fields).sort((o1, o2) => o1.localeCompare(o2));
-    const funcNames = Object.keys(funcs).sort((o1, o2) => o1.localeCompare(o2));
-    if(!classNames.length && !tableNames.length && !fieldNames.length && !funcNames.length) return '';
+    const functionNames = Object.keys(functions).sort((o1, o2) => o1.localeCompare(o2));
+    if (!classNames.length && !tableNames.length && !fieldNames.length && !functionNames.length) {
+      return '';
+    }
     let code = `// [${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
     for (const className of classNames) code += `${classes[className].generateAPI(partial)}\n`;
     for (const tableName of tableNames) code += `${tables[tableName].generateAPI(partial)}\n`;
     for (const fieldName of fieldNames) code += `${fields[fieldName].generateAPI(partial, this)}\n`;
-    for (const funcName of funcNames) {
-      const func = funcs[funcName];
-      
-      // Only render global functions for the API.
-      if (func.isLocal) continue;
-      
-      // Not sure why these two would exist in the global scope.
-      if (funcName === 'new' || funcName === 'toString') continue;
-      
-      // Avoid duplicate global functions.
-      if (Generator.funcCache.indexOf(funcName) !== -1) continue;
-      Generator.funcCache.push(funcName);
+    for (const functionName of functionNames) {
+      const _function_ = functions[functionName];
 
-      code += `${func.generateAPI(partial)}\n`;
+      // Only render global functions for the API.
+      if (_function_.isLocal) continue;
+
+      // Not sure why these two would exist in the global scope.
+      if (functionName === 'new' || functionName === 'toString') continue;
+
+      // Avoid duplicate global functions.
+      if (ZomboidGenerator.FUNCTION_CACHE.indexOf(functionName) !== -1) continue;
+      ZomboidGenerator.FUNCTION_CACHE.push(functionName);
+
+      code += `${_function_.generateAPI(partial)}\n`;
     }
     return code;
   }

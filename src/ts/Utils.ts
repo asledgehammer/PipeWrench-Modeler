@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as prettier from 'prettier';
-import { DocBuilder } from './DocBuilder';
+import { DocumentationBuilder } from './DocumentationBuilder';
 
 export const MIT_LICENSE = [
   'MIT License',
@@ -102,10 +102,12 @@ export const scandirs = function (path: string): Directory {
 
 export const generateTSLicense = (): string => {
   const date = new Date();
-  const doc = new DocBuilder(true);
+  const doc = new DocumentationBuilder(true);
   for (const line of MIT_LICENSE) {
     doc.appendLine(
-      line.replace('$YEAR$', date.getFullYear().toString()).replace('$TIME_GENERATED$', date.toISOString())
+      line
+        .replace('$YEAR$', date.getFullYear().toString())
+        .replace('$TIME_GENERATED$', date.toISOString())
     );
   }
   return doc.build();
@@ -122,14 +124,19 @@ export const generateLuaLicense = (): string => {
   return lines;
 };
 
-export const wrapModule = (moduleName: string, fileLocal: string, namespace: string, code: string): string => {
+export const wrapModule = (
+  moduleName: string,
+  fileLocal: string,
+  namespace: string,
+  code: string
+): string => {
   let backup = '';
   for (let i = 0; i < fileLocal.split('/').length; i++) backup += '../';
-  
+
   let s = '/** @noResolution @noSelfInFile */\n';
   s += `/// <reference path="${backup}reference.d.ts" />\n`;
   s += `/// <reference path="${backup}PipeWrench.d.ts" />\n`;
-  s += 'import * as PipeWrench from \'PipeWrench\';\n\n';
+  s += "import * as PipeWrench from 'PipeWrench';\n\n";
   s += `declare module '${moduleName}' {\n`;
   return `${s}${code}}\n`;
 };
@@ -161,4 +168,23 @@ export const prettify = (code: string): string => {
     parser: 'typescript',
     printWidth: 120,
   });
+};
+
+/**
+ * A temporary workaround for no `replaceAll` function by default.
+ *
+ * @param string The string to transform.
+ * @param target The target phrase to replace.
+ * @param to The phrase to replace the target.
+ * @returns The transformed string.
+ */
+ export const replaceAll = (string: string, target: string, to: string, position: number = 0): string => {
+  let index: number;
+  let lastIndex: number = position;
+  while ((index = string.indexOf(target, lastIndex)) !== -1) {
+    string = string.replace(target, to);
+    lastIndex = index + to.length;
+    if (index > string.length) break;
+  }
+  return string;
 };

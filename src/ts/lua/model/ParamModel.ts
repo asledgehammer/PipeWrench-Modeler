@@ -1,43 +1,38 @@
-import { WILDCARD_TYPE } from '../../Generator';
-import { ParamDoc, ParamDocJson } from './doc/ParamDoc';
 import { Model } from './Model';
+import {
+  ModelDocumentation as ModelDocumentation,
+  ModelDocumentationJson,
+} from './doc/ModelDocumentation';
+import { replaceAll } from '../../Utils';
 
-/**
- * **ParamModel**
- *
- * @author JabDoesThings
- */
-export class ParamModel extends Model<ParamModelJson> {
+/** @author JabDoesThings */
+export class ParameterModel extends Model<ParameterModelJson> {
   /** (Loaded via {@link ModelUIManager}) */
   static HTML_TEMPLATE: string = '';
 
-  readonly doc = new ParamDoc();
+  readonly documentation = new ModelDocumentation();
   readonly types: string[] = [];
   readonly methodName: string;
   id = '';
   rename = '';
 
-  constructor(methodName: string, src?: ParamModelJson | string) {
+  constructor(methodName: string, src?: ParameterModelJson | string) {
     super();
     this.methodName = methodName;
     if (src) {
       if (typeof src === 'string') {
-        this.create(src);
+        this.id = src;
       } else {
         this.load(src);
       }
     }
   }
 
-  create(id: string) {
-    this.id = id;
-  }
-
-  load(json: ParamModelJson) {
+  load(json: ParameterModelJson) {
     this.clear();
-    if (json.doc) this.doc.load(json.doc);
+    if (json.documentation) this.documentation.load(json.documentation);
     if (json.id) this.id = json.id;
-    else throw new Error('Param without ID.');
+    else throw new Error('Parameter without ID.');
     if (json.rename) this.rename = json.rename;
     if (json.types) {
       this.types.length = 0;
@@ -45,40 +40,36 @@ export class ParamModel extends Model<ParamModelJson> {
     }
   }
 
-  save(): ParamModelJson {
+  save(): ParameterModelJson {
     const { id } = this;
-
-    let doc: ParamDocJson = undefined;
-    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
-
+    
+    let documentation: ModelDocumentationJson = undefined;
+    if (!this.documentation.isDefault()) documentation = this.documentation.save();
+    
     let rename: string = undefined;
     if (this.rename.length) rename = this.rename;
-
+    
     let types: string[] = undefined;
     if (this.types.length) types = ([] as string[]).concat(this.types);
 
-    return { doc, id, rename, types };
+    return { documentation: documentation, id, rename, types };
   }
 
   clear() {
-    this.doc.clear();
+    this.documentation.clear();
     this.types.length = 0;
     this.rename = '';
   }
 
   generateDom(): string {
-    let dom = ParamModel.HTML_TEMPLATE;
-
-    const replaceAll = (from: string, to: string) => {
-      const fromS = '${' + from + '}';
-      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
-    };
-
-    replaceAll('RENAME', this.rename);
-    replaceAll('TYPES', this.types.join('\n'));
-    replaceAll('LINES', this.doc.lines.join('\n'));
-    replaceAll('METHOD_NAME', this.methodName);
-    replaceAll('PARAM_NAME', this.id);
+    const { methodName, rename, types, documentation, id} = this;
+    
+    let dom = ParameterModel.HTML_TEMPLATE;
+    dom = replaceAll(dom, '${RENAME}', rename);
+    dom = replaceAll(dom, '${PARAMETER_TYPES}', types.join('\n'));
+    dom = replaceAll(dom, '${PARAMETER_DESCRIPTION}', documentation.description.join('\n'));
+    dom = replaceAll(dom, '${METHOD_NAME}', methodName);
+    dom = replaceAll(dom, '${PARAMETER_NAME}', id);
     return dom;
   }
 
@@ -88,9 +79,8 @@ export class ParamModel extends Model<ParamModelJson> {
 
   isDefault(): boolean {
     if (this.rename.length) return false;
-    if (this.doc && !this.doc.isDefault()) return false;
     if (this.types.length) return false;
-    return true;
+    return this.documentation.isDefault();
   }
 
   get name(): string {
@@ -98,14 +88,9 @@ export class ParamModel extends Model<ParamModelJson> {
   }
 }
 
-/**
- * **ParamModelJson**
- *
- * @author JabDoesThings
- */
-export type ParamModelJson = {
-  doc: ParamDocJson;
+export type ParameterModelJson = {
+  types: string[];
   id: string;
   rename: string;
-  types: string[];
+  documentation: ModelDocumentationJson;
 };

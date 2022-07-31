@@ -1,4 +1,4 @@
-import { WILDCARD_TYPE } from '../Generator';
+import { WILDCARD_TYPE } from '../ZomboidGenerator';
 import * as ast from '../luaparser/ast';
 import { LuaClass } from './LuaClass';
 import { LuaField } from './LuaField';
@@ -7,24 +7,25 @@ import { LuaMethod } from './LuaMethod';
 import { fixParameters, scanBodyForFields } from './LuaUtils';
 import { sanitizeName } from './model/ModelUtils';
 
-/**
- * **LuaConstructor**
- *
- * @author JabDoesThings
- */
+/** @author JabDoesThings */
 export class LuaConstructor extends LuaMethod {
-  readonly clazz: LuaClass;
+  readonly _class_: LuaClass;
 
-  constructor(library: LuaLibrary, clazz: LuaClass, parsed: ast.FunctionDeclaration | ast.AssignmentStatement, params: string[]) {
-    super(library, clazz, parsed, 'constructor', params, false);
-    this.clazz = clazz;
+  constructor(
+    library: LuaLibrary,
+    _class_: LuaClass,
+    parsed: ast.FunctionDeclaration | ast.AssignmentStatement,
+    parameters: string[]
+  ) {
+    super(library, _class_, parsed, 'constructor', parameters, false);
+    this._class_ = _class_;
   }
 
   protected onCompile(prefix: string): string {
-    const { clazz } = this;
-    const { library } = this.clazz.file;
-    let classModel = this.clazz.model;
-    if(!classModel) classModel = library.getClassModel(clazz);
+    const { _class_ } = this;
+    const { library } = _class_.file;
+    let classModel = library.getClassModel(_class_);
+    if (!classModel) classModel = library.getClassModel(_class_);
     const constructorModel = classModel ? classModel._constructor_ : null;
     const docs = constructorModel ? constructorModel.generateDoc(prefix, this) : '';
 
@@ -42,24 +43,24 @@ export class LuaConstructor extends LuaMethod {
     };
 
     // Compile parameter(s). (If any)
-    let paramS = '';
-    let params: string[] = [];
+    let parametersString = '';
+    let parameters: string[] = [];
 
-    // If the model is present, set param names from it as some params may be renamed.
+    // If the model is present, set parameter names from it as some parameters may be renamed.
     if (constructorModel && constructorModel.testSignature(this)) {
-      for (const param of constructorModel.params) {
-        const types = param.types && param.types.length ? compileTypes(param.types) : WILDCARD_TYPE;
-        params.push(`${param.name}: ${types}`);
+      for (const parameter of constructorModel.parameters) {
+        const types = parameter.types && parameter.types.length ? compileTypes(parameter.types) : WILDCARD_TYPE;
+        parameters.push(`${parameter.name}: ${types}`);
       }
     } else {
-      params = fixParameters(this.params).map((param) => `${param}: ${WILDCARD_TYPE}`);
+      parameters = fixParameters(this.parameters).map((param) => `${param}: ${WILDCARD_TYPE}`);
     }
-    if (params.length) {
-      for (const param of params) paramS += `${param}, `;
-      paramS = paramS.substring(0, paramS.length - 2);
+    if (parameters.length) {
+      for (const parameter of parameters) parametersString += `${parameter}, `;
+      parametersString = parametersString.substring(0, parametersString.length - 2);
     }
 
-    return `${docs.length ? `${docs}\n` : ''}${prefix}constructor(${paramS});`;
+    return `${docs.length ? `${docs}\n` : ''}${prefix}constructor(${parametersString});`;
   }
 
   scan() {
@@ -67,7 +68,12 @@ export class LuaConstructor extends LuaMethod {
     if (!parsed || !container || container.type !== 'class') return;
 
     const declaration = parsed as ast.FunctionDeclaration;
-    const fieldRefs = scanBodyForFields(declaration.body, this.container.name, [].concat(this.params), true);
+    const fieldRefs = scanBodyForFields(
+      declaration.body,
+      this.container.name,
+      [].concat(this.parameters),
+      true
+    );
 
     // Grab the name of the returned local table. This is what initial values for fields are set.
     let returnName;

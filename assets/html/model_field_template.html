@@ -11,13 +11,25 @@
     <!-- Lines -->
     <div class="model-field field-multi-line lines">
       <label>Description</label>
-      <textarea target="field:${FIELD_NAME}:lines" type="text">${LINES}</textarea>
+      <textarea target="field:${FIELD_NAME}:description" type="text">${DESCRIPTION}</textarea>
     </div>
 
     <!-- Return Types -->
     <div class="model-field field-multi-line lines">
       <label>Return Types</label>
-      <textarea target="field:${FIELD_NAME}:returntypes" type="text">${RETURN_TYPES}</textarea>
+      <textarea target="field:${FIELD_NAME}:return_types" type="text">${RETURN_TYPES}</textarea>
+    </div>
+
+    <!-- Return Description -->
+    <div class="model-field field-multi-line lines">
+      <label>Return Description</label>
+      <textarea target="field:${FIELD_NAME}:return_lines" type="text">${RETURN_DESCRIPTION}</textarea>
+    </div>
+
+    <!-- Wrap Wildcard Type -->
+    <div class="model-field field-multi-line lines">
+      <input target="method:${METHOD_NAME}:wrap_wildcard_type" type="checkbox" ${WRAP_WILDCARD_TYPE}></textarea>
+      <label>Wrap Wildcard Type</label>
     </div>
   </div>
 </div>

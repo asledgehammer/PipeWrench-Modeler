@@ -8,28 +8,34 @@
   
   <div class="model-content">
 
-    <!-- Lines -->
-    <div class="model-field field-multi-line lines">
+    <!-- Description -->
+    <div class="model-field field-multi-line description">
       <label>Description</label>
-      <textarea target="method:${METHOD_NAME}:lines">${LINES}</textarea>
+      <textarea target="method:${METHOD_NAME}:description">${DESCRIPTION}</textarea>
     </div>
 
     <!-- Parameters -->
-    <div class="model-groups params" style="display: ${HAS_PARAMS};">
+    <div class="model-groups params" style="display: ${HAS_PARAMETERS};">
       <label style="margin-bottom: 9px">Parameters</label>
-      ${PARAMS}
+      ${PARAMETERS}
     </div>
 
     <!-- Return Types -->
     <div class="model-field field-multi-line lines">
       <label>Return Types</label>
-      <textarea target="method:${METHOD_NAME}:returntypes">${RETURN_TYPES}</textarea>
+      <textarea target="method:${METHOD_NAME}:return_types">${RETURN_TYPES}</textarea>
     </div>
 
-    <!-- Cast Unknown Type -->
+    <!-- Return Description -->
     <div class="model-field field-multi-line lines">
-      <input target="method:${METHOD_NAME}:wrapunknowntype" type="checkbox" ${CHECKED}></textarea>
-      <label>Wrap Unknown Type</label>
+      <label>Return Description</label>
+      <textarea target="field:${FIELD_NAME}:return_description" type="text">${RETURN_DESCRIPTION}</textarea>
+    </div>
+
+    <!-- Wrap Wildcard Type -->
+    <div class="model-field field-multi-line lines">
+      <input target="method:${METHOD_NAME}:wrap_wildcard_type" type="checkbox" ${WRAP_WILDCARD_TYPE}></textarea>
+      <label>Wrap Wildcard Type</label>
     </div>
   </div>
 </div>

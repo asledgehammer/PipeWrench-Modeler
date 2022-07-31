@@ -3,7 +3,7 @@
  *
  * @author JabDoesThings
  */
-export class DocBuilder {
+export class DocumentationBuilder {
   private readonly lines: string[] = [];
   private readonly isComment: boolean;
 
@@ -29,7 +29,7 @@ export class DocBuilder {
    * @param lines The lines to append to the documentation.
    * @returns this
    */
-  appendLine(...lines: string[]): DocBuilder {
+  appendLine(...lines: string[]): DocumentationBuilder {
     if (!lines.length) {
       this.lines.push('');
       return this;
@@ -38,7 +38,7 @@ export class DocBuilder {
     return this;
   }
 
-  appendAnnotation(name: string, value: string = ''): DocBuilder {
+  appendAnnotation(name: string, value: string = ''): DocumentationBuilder {
     return this.appendLine(`@${name}${value.length ? ` ${value}` : ''}`);
   }
 
@@ -49,7 +49,7 @@ export class DocBuilder {
    * @param description The text to append to the parameter.
    * @returns this
    */
-  appendParam(name: string, description: string = ''): DocBuilder {
+  appendParam(name: string, description: string = ''): DocumentationBuilder {
     return this.appendLine(`@param ${name} ${description.length ? `- ${description}` : ''}`);
   }
 
@@ -59,7 +59,7 @@ export class DocBuilder {
    * @param description The text to append to the parameter.
    * @returns this
    */
-  appendReturn(description: string): DocBuilder {
+  appendReturn(description: string): DocumentationBuilder {
     return this.appendLine(`@returns ${description}`);
   }
 

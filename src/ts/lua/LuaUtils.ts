@@ -1,5 +1,5 @@
-import * as fs from 'fs';
 import * as ast from '../luaparser/ast';
+
 import {
   DeriveInfo,
   FieldReference,
@@ -8,8 +8,11 @@ import {
   ProxyInfo,
   RequireInfo,
   TableConstructorInfo,
-} from './types';
+} from './LuaTypes';
 
+/** @author JabDoesThings */
+
+/** Global DEBUG flag. (For verbose logging) */
 export let DEBUG = false;
 
 /**
@@ -127,7 +130,9 @@ export const getProxyInfo = (statement: ast.LocalStatement): ProxyInfo | null =>
   return { proxy, target };
 };
 
-export const getTableConstructor = (statement: ast.AssignmentStatement): TableConstructorInfo | null => {
+export const getTableConstructor = (
+  statement: ast.AssignmentStatement
+): TableConstructorInfo | null => {
   if (statement.init.length !== 1 || statement.init[0].type !== 'TableConstructorExpression') {
     return null;
   }
@@ -138,46 +143,50 @@ export const getTableConstructor = (statement: ast.AssignmentStatement): TableCo
   return { name };
 };
 
-export const getFunctionDeclaration = (declaration: ast.FunctionDeclaration): FunctionInfo | null => {
+export const getFunctionDeclaration = (
+  declaration: ast.FunctionDeclaration
+): FunctionInfo | null => {
   // The name of the function is assigned in the identifier.
   let name;
-  if(declaration.identifier.type === 'MemberExpression') {
+  if (declaration.identifier.type === 'MemberExpression') {
     name = declaration.identifier.identifier.name;
     // Check if the function is assigned to anything other than global.
-    if(declaration.identifier.base.type === 'Identifier') {
-      if(declaration.identifier.base.name) return null;
+    if (declaration.identifier.base.type === 'Identifier') {
+      if (declaration.identifier.base.name) return null;
     }
   } else {
     name = declaration.identifier.name;
-  }  
+  }
 
   // Whether the function is accessible outside of its scope.
   // (Useful info for upstream processing)
   const isLocal = declaration.isLocal;
 
-
   // Compile parameter names in order. (If present)
-  const params: string[] = [];
+  const parameters: string[] = [];
   if (declaration.parameters && declaration.parameters.length) {
     for (let index = 0; index < declaration.parameters.length; index++) {
       // NOTE: Maybe an issue that VarArgLiterals can be provided here?
-      const param = declaration.parameters[index] as ast.Identifier;
-      params.push(param.name);
+      const parameter = declaration.parameters[index] as ast.Identifier;
+      parameters.push(parameter.name);
     }
   }
 
   // NOTE: This is a multi-pathed-table function assignment so we'll need to
   // ignore these for now.
-  if(declaration.parameters && declaration.parameters.length) {
+  if (declaration.parameters && declaration.parameters.length) {
     return null;
   }
 
-  if(name === 'Default') console.log(declaration);
+  if (name === 'Default') console.log(declaration);
 
-  return { isLocal, name, params };
+  return { isLocal, name, parameters: parameters };
 };
 
-export const getMethodDeclaration = (b: boolean, declaration: ast.FunctionDeclaration): MethodInfo | null => {
+export const getMethodDeclaration = (
+  b: boolean,
+  declaration: ast.FunctionDeclaration
+): MethodInfo | null => {
   // This is how we know that this is a function assigned to a table on definition.
   if (declaration.identifier && declaration.identifier.type !== 'MemberExpression') {
     // if (b) console.log('M A', declaration);
@@ -198,16 +207,16 @@ export const getMethodDeclaration = (b: boolean, declaration: ast.FunctionDeclar
     return null;
   }
   // Compile parameter names in order. (If present)
-  const params: string[] = [];
+  const parameters: string[] = [];
   if (declaration.parameters && declaration.parameters.length) {
     for (let index = 0; index < declaration.parameters.length; index++) {
       // NOTE: Maybe an issue that VarArgLiterals can be provided here?
-      const param = declaration.parameters[index] as ast.Identifier;
-      params.push(param.name);
+      const parameter = declaration.parameters[index] as ast.Identifier;
+      parameters.push(parameter.name);
     }
   }
 
-  return { className, name, params, isStatic };
+  return { className, name, parameters: parameters, isStatic };
 };
 
 export const getMethodDeclarationFromAssignment = (
@@ -215,13 +224,21 @@ export const getMethodDeclarationFromAssignment = (
   statement: ast.AssignmentStatement
 ): MethodInfo | null => {
   // This is how we know that this is a function assigned to a table on definition.
-  if (!statement.init || statement.init.length !== 1 || statement.init[0].type !== 'FunctionDeclaration') {
+  if (
+    !statement.init ||
+    statement.init.length !== 1 ||
+    statement.init[0].type !== 'FunctionDeclaration'
+  ) {
     // if (b) console.log('M2 A', statement);
     return null;
   }
   const declaration = statement.init[0] as ast.FunctionDeclaration;
 
-  if (!statement.variables || statement.variables.length !== 1 || statement.variables[0].type !== 'MemberExpression') {
+  if (
+    !statement.variables ||
+    statement.variables.length !== 1 ||
+    statement.variables[0].type !== 'MemberExpression'
+  ) {
     // if (b) console.log('M2 B', statement);
     return null;
   }
@@ -248,15 +265,15 @@ export const getMethodDeclarationFromAssignment = (
     return null;
   }
 
-  const params: string[] = [];
+  const parameters: string[] = [];
   if (declaration.parameters && declaration.parameters.length) {
     for (let index = 0; index < declaration.parameters.length; index++) {
       // NOTE: Maybe an issue that VarArgLiterals can be provided here?
-      params.push((declaration.parameters[index] as ast.Identifier).name);
+      parameters.push((declaration.parameters[index] as ast.Identifier).name);
     }
   }
 
-  return { className, name, params, isStatic };
+  return { className, name, parameters: parameters, isStatic };
 };
 
 /**
@@ -282,18 +299,48 @@ export const scanBodyForFields = (
       }
       continue;
     } else if (entry.type === 'WhileStatement') {
-      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), onlyLocals, fieldReferences);
+      scanBodyForFields(
+        entry.body,
+        selfName,
+        [].concat(locals, scopedLocals),
+        onlyLocals,
+        fieldReferences
+      );
       continue;
     } else if (entry.type === 'DoStatement') {
-      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), onlyLocals, fieldReferences);
+      scanBodyForFields(
+        entry.body,
+        selfName,
+        [].concat(locals, scopedLocals),
+        onlyLocals,
+        fieldReferences
+      );
     } else if (entry.type === 'ForGenericStatement') {
-      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), onlyLocals, fieldReferences);
+      scanBodyForFields(
+        entry.body,
+        selfName,
+        [].concat(locals, scopedLocals),
+        onlyLocals,
+        fieldReferences
+      );
     } else if (entry.type === 'ForNumericStatement') {
-      scanBodyForFields(entry.body, selfName, [].concat(locals, scopedLocals), onlyLocals, fieldReferences);
+      scanBodyForFields(
+        entry.body,
+        selfName,
+        [].concat(locals, scopedLocals),
+        onlyLocals,
+        fieldReferences
+      );
     } else if (entry.type === 'IfStatement') {
       const clauses = entry.clauses;
       for (const clause of clauses) {
-        scanBodyForFields(clause.body, selfName, [].concat(locals, scopedLocals), onlyLocals, fieldReferences);
+        scanBodyForFields(
+          clause.body,
+          selfName,
+          [].concat(locals, scopedLocals),
+          onlyLocals,
+          fieldReferences
+        );
       }
     } else if (entry.type !== 'AssignmentStatement') continue;
 
@@ -359,8 +406,8 @@ export const printMethodInfo = (info: MethodInfo): string => {
   str += `${info.className}`;
   str += info.isStatic ? '.' : ':';
   str += `${info.name}(`;
-  if (info.params.length) {
-    for (const param of info.params) str += `${param}, `;
+  if (info.parameters.length) {
+    for (const parameter of info.parameters) str += `${parameter}, `;
     str = str.substring(0, str.length - 2);
   }
   return str + ')';
@@ -370,8 +417,8 @@ export const printFunctionInfo = (info: FunctionInfo): string => {
   let str = '';
   if (info.isLocal) str += 'local ';
   str += `${info.name}(`;
-  if (info.params.length) {
-    for (const param of info.params) str += `${param}, `;
+  if (info.parameters.length) {
+    for (const parameter of info.parameters) str += `${parameter}, `;
     str = str.substring(0, str.length - 2);
   }
   return str + ')';
@@ -402,20 +449,20 @@ const badParameterNames: string[] = [
   'default',
 ];
 
-export const sanitizeParameter = (param: string) => {
-  if(badParameterNames.indexOf(param) !== -1) return `_${param}_`;
-  return param;
+export const sanitizeParameter = (parameter: string) => {
+  if (badParameterNames.indexOf(parameter) !== -1) return `_${parameter}_`;
+  return parameter;
 };
 
-export const fixParameters = (params: string[]): string[] => {
-  const pre = [].concat(params).reverse();
-  const fixed: string[] = [];
+export const fixParameters = (parameters: string[]): string[] => {
+  const reversedParameters = ([] as string[]).concat(parameters).reverse();
+  const fixedParameters: string[] = [];
   let index = 0;
-  while(pre.length) {
-    let next = pre.pop();
-    if (pre.indexOf(next) !== -1 || next === '_') next = `arg${index}`;
-    fixed.push(sanitizeParameter(next));
+  while (reversedParameters.length) {
+    let next = reversedParameters.pop();
+    if (reversedParameters.indexOf(next) !== -1 || next === '_') next = `arg${index}`;
+    fixedParameters.push(sanitizeParameter(next));
     index++;
   }
-  return fixed;
-}
+  return fixedParameters;
+};

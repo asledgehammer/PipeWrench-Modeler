@@ -1,22 +1,21 @@
-import { DocBuilder } from '../../DocBuilder';
-import { LuaFunction } from '../LuaFunction';
-import { FunctionDoc, FunctionDocJson } from './doc/FunctionDoc';
-import { Model } from './Model';
-import { ParamModel, ParamModelJson } from './ParamModel';
-import { ReturnModel, ReturnModelJson } from './ReturnModel';
+import { DocumentationBuilder } from '../../DocumentationBuilder';
 
-/**
- * **FunctionModel**
- *
- * @author JabDoesThings
- */
+import { LuaFunction } from '../LuaFunction';
+
+import { Model } from './Model';
+import { ModelDocumentation, ModelDocumentationJson } from './doc/ModelDocumentation';
+import { ParameterModel, ParameterModelJson } from './ParamModel';
+import { ReturnModel, ReturnModelJson } from './ReturnModel';
+import { replaceAll } from '../../Utils';
+
+/** @author JabDoesThings */
 export class FunctionModel extends Model<FunctionModelJson> {
   /** (Loaded via {@link ModelUIManager}) */
   static HTML_TEMPLATE: string = '';
 
-  readonly doc = new FunctionDoc();
-  readonly params: ParamModel[] = [];
-  readonly returns = new ReturnModel();
+  readonly documentation = new ModelDocumentation();
+  readonly parameters: ParameterModel[] = [];
+  readonly _return_ = new ReturnModel();
   readonly name: string;
 
   constructor(name: string, json?: FunctionModelJson) {
@@ -25,166 +24,133 @@ export class FunctionModel extends Model<FunctionModelJson> {
     if (json) this.load(json);
   }
 
-  populate() {}
-
   load(json: FunctionModelJson) {
     this.clear();
-    if (json.doc) this.doc.load(json.doc);
-    if (json.params) for (const param of json.params) this.params.push(new ParamModel(this.name, param));
-    if (json.returns) this.returns.load(json.returns);
+    if (json.documentation) this.documentation.load(json.documentation);
+    if (json.parameters) {
+      for (const parameter of json.parameters) {
+        this.parameters.push(new ParameterModel(this.name, parameter));
+      }
+    }
+    if (json._return_) this._return_.load(json._return_);
   }
 
   save(): FunctionModelJson {
-    let doc: FunctionDocJson = undefined;
-    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
-
-    let params: ParamModelJson[] = undefined;
-    let oneParamChanged = false;
-    for (const param of this.params) {
-      if(!param.isDefault()) {
-        oneParamChanged = true;
+    let documentation: ModelDocumentationJson = undefined;
+    if (this.documentation && !this.documentation.isDefault()) {
+      documentation = this.documentation.save();
+    }
+    let parameters: ParameterModelJson[] = undefined;
+    let oneParameterChanged = false;
+    for (const parameter of this.parameters) {
+      if (!parameter.isDefault()) {
+        oneParameterChanged = true;
         break;
       }
     }
-    if(oneParamChanged) {
-      params = [];
-      for (const param of this.params) {
-        params.push(param.save());
+    if (oneParameterChanged) {
+      parameters = [];
+      for (const parameter of this.parameters) {
+        parameters.push(parameter.save());
       }
     }
 
-    let returns: ReturnModelJson = undefined;
-    if (this.returns && !this.returns.isDefault()) {
-      returns = this.returns.save();
-    }
+    let _return_: ReturnModelJson = undefined;
+    if (!this._return_.isDefault()) _return_ = this._return_.save();
 
-    return { doc, params, returns };
+    return { documentation, parameters, _return_ };
   }
 
   clear() {
-    this.doc.clear();
-    this.params.length = 0;
-    this.returns.clear();
+    this.documentation.clear();
+    this.parameters.length = 0;
+    this._return_.clear();
   }
 
-  generateDoc(prefix: string, func: LuaFunction): string {
-    if (!this.testSignature(func)) return '';
+  generateDocumentation(prefix: string, _function_: LuaFunction): string {
+    if (!this.testSignature(_function_)) return '';
+    const { documentation: functionDocumentation, parameters } = this;
 
-    const { doc: funcDoc, params } = this;
+    const documentationBuilder = new DocumentationBuilder();
+    documentationBuilder.appendAnnotation('noSelf');
 
-    const doc = new DocBuilder();
-    doc.appendAnnotation('noSelf');
-
-    if (funcDoc) {
-      const { lines } = funcDoc;
+    if (functionDocumentation) {
+      const { description: functionDescription } = functionDocumentation;
 
       // Process lines. (If defined)
-      if (lines && lines.length) {
-        for (const line of lines) doc.appendLine(line);
-        doc.appendLine();
+      if (functionDescription.length) {
+        for (const line of functionDescription) documentationBuilder.appendLine(line);
+        documentationBuilder.appendLine();
       }
 
-      // Process params. (If defined)
-      if (params) {
-        for (const param of params) {
-          const { name, doc: paramDoc } = param;
-
-          if (!doc) {
-            doc.appendParam(name);
+      // Process parameter(s). (If defined)
+      if (parameters) {
+        for (const parameter of parameters) {
+          const { name: parameterName, documentation: parameterDocumentation } = parameter;
+          const { description: parameterDescription } = parameterDocumentation;
+          // No lines. Print basic @param <name>
+          if (!parameterDescription.length) {
+            // documentationBuilder.appendParam(parameterName);
             continue;
-          } else {
-            const { lines } = paramDoc;
-
-            // No lines. Print basic @param <name>
-            if (!lines || !lines.length) {
-              doc.appendParam(name);
-              continue;
-            }
-
-            doc.appendParam(name, lines[0]);
-
-            // Check if multi-line.
-            if (lines.length === 1) continue;
-            for (let index = 1; index < lines.length; index++) {
-              doc.appendLine(lines[index]);
-            }
+          }
+          documentationBuilder.appendParam(parameterName, parameterDescription[0]);
+          // Check if multi-line.
+          if (parameterDescription.length === 1) continue;
+          for (let index = 1; index < parameterDescription.length; index++) {
+            documentationBuilder.appendLine(parameterDescription[index]);
           }
         }
       }
     }
-    return doc.build(prefix);
+    return documentationBuilder.isEmpty() ? '' : documentationBuilder.build(prefix);
   }
 
   generateDom(): string {
+    const { name, documentation, parameters, _return_ } = this;
+
+    let parametersDom = '';
+    if (this.parameters.length) {
+      for (const parameter of this.parameters) {
+        parametersDom += parameter.generateDom();
+      }
+    }
+
     let dom = FunctionModel.HTML_TEMPLATE;
-
-    const replaceAll = (from: string, to: string) => {
-      const fromS = '${' + from + '}';
-      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
-    };
-
-    let linesS = '';
-
-    const { doc } = this;
-    if (doc) {
-      const { lines } = doc;
-      if (lines) {
-        linesS = '';
-        for (const line of lines) linesS += `${line}\n`;
-        linesS = linesS.substring(0, linesS.length - 1);
-      }
-    }
-
-    let paramsS = '';
-    if (this.params.length) {
-      for (const param of this.params) {
-        paramsS += param.generateDom();
-      }
-    }
-
-    replaceAll('RETURN_TYPES', this.returns.types.join('\n'));
-    replaceAll('HAS_PARAMS', this.params.length ? 'inline-block' : 'none');
-    replaceAll('METHOD_NAME', this.name);
-    replaceAll('LINES', linesS);
-    replaceAll('PARAMS', paramsS);
-    replaceAll('CHECKED', this.returns.applyUnknownType ? 'checked': '');
-
+    dom = replaceAll(dom, '${METHOD_NAME}', name);
+    dom = replaceAll(dom, '${DESCRIPTION}', documentation.description.join('\n'));
+    dom = replaceAll(dom, '${HAS_PARAMETERS}', parameters.length ? 'inline-block' : 'none');
+    dom = replaceAll(dom, '${PARAMETERS}', parametersDom);
+    dom = replaceAll(dom, '${RETURN_TYPES}', _return_.types.join('\n'));
+    dom = replaceAll(dom, '${RETURN_DESCRIPTION}', _return_.description.join('\n'));
+    dom = replaceAll(dom, '${WRAP_WILDCARD_TYPE}', _return_.wrapWildcardType ? 'checked' : '');
     return dom;
   }
 
-  testSignature(func: LuaFunction): boolean {
-    if (func.name !== this.name) return false;
-    if (func.params.length !== this.params.length) return false;
-    if (this.params.length) {
-      for (let index = 0; index < this.params.length; index++) {
-        if (!this.params[index].testSignature(func.params[index])) return false;
+  testSignature(_function_: LuaFunction): boolean {
+    if (_function_.name !== this.name) return false;
+    if (_function_.parameters.length !== this.parameters.length) return false;
+    if (this.parameters.length) {
+      for (let index = 0; index < this.parameters.length; index++) {
+        if (!this.parameters[index].testSignature(_function_.parameters[index])) return false;
       }
     }
     return true;
   }
 
   getParamModel(id: string) {
-    for (const param of this.params) {
-      if (param.id === id) return param;
-    }
+    for (const parameter of this.parameters) if (parameter.id === id) return parameter;
     return null;
   }
 
   isDefault(): boolean {
-    if (this.doc && !this.doc.isDefault()) return false;
-    if (this.returns && !this.returns.isDefault()) return false;
-    for (const param of this.params) if (!param.isDefault()) return false;
-    return true;
+    for (const parameter of this.parameters) if (!parameter.isDefault()) return false;
+    if (!this._return_.isDefault()) return false;
+    return this.documentation.isDefault();
   }
 }
 
-/**
- * **FunctionModelJson**
- *
- * @author JabDoesThings
- */
 export type FunctionModelJson = {
-  doc: FunctionDocJson;
-  params: ParamModelJson[];
-  returns: ReturnModelJson;
+  parameters: ParameterModelJson[];
+  _return_: ReturnModelJson;
+  documentation: ModelDocumentationJson;
 };

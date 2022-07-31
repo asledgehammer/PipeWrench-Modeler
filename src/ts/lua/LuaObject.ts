@@ -1,5 +1,5 @@
+/** @author JabDoesThings */
 export abstract class LuaObject {
-
   compile(prefix: string = '') {
     return this.onCompile(prefix);
   }

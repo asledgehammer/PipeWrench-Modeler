@@ -1,39 +1,37 @@
-import { DocBuilder } from '../../DocBuilder';
+import { DocumentationBuilder } from '../../DocumentationBuilder';
+
 import { LuaConstructor } from '../LuaConstructor';
 import { LuaMethod } from '../LuaMethod';
-import { ClassModel } from './ClassModel';
-import { ConstructorDoc, ConstructorDocJson } from './doc/ConstructorDoc';
-import { Model } from './Model';
-import { ParamModel, ParamModelJson } from './ParamModel';
 
-/**
- * **ConstructorModel**
- *
- * @author JabDoesThings
- */
+import { Model } from './Model';
+import { ModelDocumentation, ModelDocumentationJson } from './doc/ModelDocumentation';
+import { ClassModel } from './ClassModel';
+import { ParameterModel, ParameterModelJson } from './ParamModel';
+import { replaceAll } from '../../Utils';
+
+/** @author JabDoesThings */
 export class ConstructorModel extends Model<ConstructorModelJson> {
   /** (Loaded via {@link ModelUIManager}) */
   static HTML_TEMPLATE: string = '';
 
-  readonly params: ParamModel[] = [];
-  readonly doc: ConstructorDoc;
-  readonly clazz: ClassModel;
+  readonly parameters: ParameterModel[] = [];
+  readonly documentation = new ModelDocumentation();
+  readonly _class_: ClassModel;
 
-  constructor(clazz: ClassModel, json?: ConstructorModelJson) {
+  constructor(_class_: ClassModel, json?: ConstructorModelJson) {
     super();
-    if(!clazz.clazz) throw new Error(`LuaClass is null: ${clazz.name}`);
-    this.clazz = clazz;
-    this.doc = new ConstructorDoc();
-    if (clazz) this.create();
+    if (!_class_._class_) throw new Error(`LuaClass is null: ${_class_.name}`);
+    this._class_ = _class_;
+    if (_class_) this.create();
     if (json) this.load(json);
   }
 
   create() {
-    if (this.clazz.clazz) {
-      const { _constructor_ } = this.clazz.clazz;
-      if(_constructor_) {
-        for (const param of _constructor_.params) {
-          this.params.push(new ParamModel('constructor', param));
+    if (this._class_._class_) {
+      const { _constructor_ } = this._class_._class_;
+      if (_constructor_) {
+        for (const parameter of _constructor_.parameters) {
+          this.parameters.push(new ParameterModel('constructor', parameter));
         }
       }
     }
@@ -41,158 +39,135 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
 
   load(json: ConstructorModelJson) {
     this.clear();
-    if (json.doc) this.doc.load(json.doc);
-
-    if (json.params && this.clazz._constructor_ && this.clazz.clazz) {
-      const { _constructor_ } = this.clazz.clazz;
-
-      if (json.params.length === _constructor_.params.length) {
-        for (const param of json.params) this.params.push(new ParamModel('constructor', param));
+    if (json.documentation) this.documentation.load(json.documentation);
+    if (json.parameters && this._class_._constructor_ && this._class_._class_) {
+      const { _constructor_ } = this._class_._class_;
+      if (json.parameters.length === _constructor_.parameters.length) {
+        for (const parameter of json.parameters) {
+          this.parameters.push(new ParameterModel('constructor', parameter));
+        }
       } else {
-        for (const param of _constructor_.params) {
-          this.params.push(new ParamModel(param));
+        for (const parameter of _constructor_.parameters) {
+          this.parameters.push(new ParameterModel(parameter));
         }
       }
     }
   }
 
   save(): ConstructorModelJson {
-    let params: ParamModelJson[] = undefined;
-    let oneParamChanged = false;
-    for (const param of this.params) {
-      if(!param.isDefault()) {
-        oneParamChanged = true;
+    let parameters: ParameterModelJson[] = undefined;
+    let oneParameterChanged = false;
+    for (const parameters of this.parameters) {
+      if (!parameters.isDefault()) {
+        oneParameterChanged = true;
         break;
       }
     }
-    if(oneParamChanged) {
-      params = [];
-      for (const param of this.params) {
-        params.push(param.save());
+    if (oneParameterChanged) {
+      parameters = [];
+      for (const parameter of this.parameters) {
+        parameters.push(parameter.save());
       }
     }
-
-    let doc: ConstructorDocJson = undefined;
-    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
-
-    return { doc, params };
+    let documentation: ModelDocumentationJson = undefined;
+    if (!this.documentation.isDefault()) {
+      documentation = this.documentation.save();
+    }
+    return { documentation, parameters };
   }
 
   clear() {
-    this.doc.clear();
-    this.params.length = 0;
+    this.documentation.clear();
+    this.parameters.length = 0;
   }
 
   generateDoc(prefix: string, _constructor_: LuaConstructor): string {
     if (!_constructor_ || !this.testSignature(_constructor_)) return '';
 
-    const doc = new DocBuilder();
-    const { doc: constructorDoc, params } = this;
-    if (constructorDoc) {
-      const { lines } = constructorDoc;
+    const documentation = new DocumentationBuilder();
+    const { documentation: constructorDocumentation, parameters } = this;
+    if (constructorDocumentation) {
+      const { description: constructorDescription } = constructorDocumentation;
 
       // Process lines. (If defined)
-      if (lines && lines.length) {
-        for (const line of lines) doc.appendLine(line);
-        doc.appendLine();
+      if (constructorDescription && constructorDescription.length) {
+        for (const line of constructorDescription) documentation.appendLine(line);
+        documentation.appendLine();
       }
 
-      // Process params. (If defined)
-      if (params) {
-        for (const param of params) {
-          const { name, doc: paramDoc } = param;
+      // Process parameter(s). (If defined)
+      if (parameters) {
+        for (const parameter of parameters) {
+          const { name, documentation: parameterDocumentation } = parameter;
 
-          if (!doc) {
-            doc.appendParam(name);
+          if (!documentation) {
+            documentation.appendParam(name);
             continue;
           } else {
-            const { lines } = paramDoc;
+            const { description: parameterDescription } = parameterDocumentation;
 
             // No lines. Print basic @param <name>
-            if (!lines || !lines.length) {
-              doc.appendParam(name);
+            if (!parameterDescription.length) {
+              // documentation.appendParam(name);
               continue;
             }
 
-            doc.appendParam(name, lines[0]);
+            documentation.appendParam(name, parameterDescription[0]);
 
             // Check if multi-line.
-            if (lines.length === 1) continue;
-            for (let index = 1; index < lines.length; index++) {
-              doc.appendLine(lines[index]);
+            if (parameterDescription.length === 1) continue;
+            for (let index = 1; index < parameterDescription.length; index++) {
+              documentation.appendLine(parameterDescription[index]);
             }
           }
         }
       }
     }
-    return doc.isEmpty() ? '' : doc.build(prefix);
+    return documentation.isEmpty() ? '' : documentation.build(prefix);
   }
 
   generateDom(): string {
+    const { documentation, _class_, parameters } = this;
+
+    let parametersString = '';
+    if (this.parameters.length) {
+      for (const parameter of this.parameters) {
+        parametersString += parameter.generateDom();
+      }
+    }
+
     let dom = ConstructorModel.HTML_TEMPLATE;
-
-    const replaceAll = (from: string, to: string) => {
-      const fromS = '${' + from + '}';
-      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
-    };
-
-    let linesS = '';
-
-    const { doc } = this;
-    if (doc) {
-      const { lines } = doc;
-      if (lines) {
-        linesS = '';
-        for (const line of lines) linesS += `${line}\n`;
-        linesS = linesS.substring(0, linesS.length - 1);
-      }
-    }
-
-    let paramsS = '';
-    if (this.params.length) {
-      for (const param of this.params) {
-        paramsS += param.generateDom();
-      }
-    }
-
-    replaceAll('HAS_PARAMS', this.params.length ? 'inline-block' : 'none');
-    replaceAll('CLASS_NAME', this.clazz.name);
-    replaceAll('LINES', linesS);
-    replaceAll('PARAMS', paramsS);
-
+    dom = replaceAll(dom, '${CLASS_NAME}', _class_.name);
+    dom = replaceAll(dom, '${DESCRIPTION}', documentation.description.join('\n'));
+    dom = replaceAll(dom, '${HAS_PARAMETERS}', parameters.length ? 'inline-block' : 'none');
+    dom = replaceAll(dom, '${PARAMETERS}', parametersString);
     return dom;
   }
 
   testSignature(_constructor_: LuaMethod): boolean {
-    if (_constructor_.params.length !== this.params.length) return false;
-    if (this.params.length) {
-      for (let i = 0; i < this.params.length; i++) {
-        if (!this.params[i].testSignature(_constructor_.params[i])) return false;
+    if (_constructor_.parameters.length !== this.parameters.length) return false;
+    if (this.parameters.length) {
+      for (let index = 0; index < this.parameters.length; index++) {
+        if (!this.parameters[index].testSignature(_constructor_.parameters[index])) return false;
       }
     }
     return true;
   }
 
-  getParamModel(id: string) {
-    for (const param of this.params) {
-      if (param.id === id) return param;
-    }
+  getParameterModel(id: string) {
+    for (const parameter of this.parameters) if (parameter.id === id) return parameter;
     return null;
   }
 
   isDefault(): boolean {
-    for (const param of Object.values(this.params)) if (!param.isDefault()) return false;
-    if (this.doc && !this.doc.isDefault()) return false;
-    return true;
+    for (const parameter of Object.values(this.parameters)) {
+      if (!parameter.isDefault()) return false;
+    }
+    return this.documentation.isDefault();
   }
 }
 
-/**
- * **ConstructorModelJson**
- *
- * @author JabDoesThings
- */
 export type ConstructorModelJson = {
-  doc: ConstructorDocJson;
-  params: ParamModelJson[];
+  parameters: ParameterModelJson[];
+  documentation: ModelDocumentationJson;
 };

@@ -1,4 +1,4 @@
-import { NamedElement } from './NamedElement';
+import { LuaNamedObject } from './LuaNamedObject';
 import { LuaField } from './LuaField';
 import { LuaFile } from './LuaFile';
 import { LuaMethod } from './LuaMethod';
@@ -21,7 +21,7 @@ export type LuaContainerType = 'table' | 'class';
  *
  * @author JabDoesThings
  */
-export abstract class LuaContainer extends NamedElement {
+export abstract class LuaContainer extends LuaNamedObject {
   /** The type of instanced container. */
   readonly type: LuaContainerType;
 

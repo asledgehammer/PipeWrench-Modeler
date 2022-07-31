@@ -1,22 +1,26 @@
+const { dialog } = require('electron').remote;
+
 import * as fs from 'fs';
 import * as hljs from 'highlight.js';
 import * as electron from 'electron';
 import * as prettier from 'prettier';
-import { Generator } from '../Generator';
-import { LuaClass } from '../lua/LuaClass';
+
+import { ZomboidGenerator } from '../ZomboidGenerator';
+
 import { LuaLibrary } from '../lua/LuaLibrary';
-import { ClassModel } from '../lua/model/ClassModel';
-import { ConstructorModel } from '../lua/model/ConstructorModel';
-import { FieldModel } from '../lua/model/FieldModel';
-import { FunctionModel } from '../lua/model/FunctionModel';
-import { MethodModel } from '../lua/model/MethodModel';
-import { ParamModel as ParameterModel } from '../lua/model/ParamModel';
-import { TableModel } from '../lua/model/TableModel';
-import { ModelFile } from '../lua/model/ModelFile';
+import { LuaClass } from '../lua/LuaClass';
 import { LuaTable } from '../lua/LuaTable';
 
-const { dialog } = require('electron').remote;
+import { ModelFile } from '../lua/model/ModelFile';
+import { ClassModel } from '../lua/model/ClassModel';
+import { TableModel } from '../lua/model/TableModel';
+import { FunctionModel } from '../lua/model/FunctionModel';
+import { ConstructorModel } from '../lua/model/ConstructorModel';
+import { FieldModel } from '../lua/model/FieldModel';
+import { MethodModel } from '../lua/model/MethodModel';
+import { ParameterModel as ParameterModel } from '../lua/model/ParamModel';
 
+/** @author JabDoesThings */
 export class ModelUIManager {
   readonly leftPanel: HTMLDivElement;
   readonly centerPanel: HTMLDivElement;
@@ -34,14 +38,14 @@ export class ModelUIManager {
   selectedClass: LuaClass;
   selectedTable: LuaTable;
 
-  readonly generator: Generator;
+  readonly generator: ZomboidGenerator;
 
   constructor(luaLibrary: LuaLibrary) {
     this.luaLibrary = luaLibrary;
 
-    this.generator = new Generator(this.luaLibrary);
+    this.generator = new ZomboidGenerator(this.luaLibrary);
 
-    this.modelFile = new ModelFile(luaLibrary.models, 'untitled', '');
+    this.modelFile = this.luaLibrary.models.createFile('untitled');
 
     this.leftPanel = $('.left-panel').get(0) as HTMLDivElement;
     this.centerPanel = $('.center-panel').get(0) as HTMLDivElement;
@@ -128,9 +132,13 @@ export class ModelUIManager {
         for (const match of matches) {
           const name = match.replace('class:', '').replace('table:', '');
           if (match.indexOf('class:') === 0) {
-            _this.$searchBarSuggestions.append(`<label class="lua-class suggestion">${name}</label>`);
+            _this.$searchBarSuggestions.append(
+              `<label class="lua-class suggestion">${name}</label>`
+            );
           } else if (match.indexOf('table:') === 0) {
-            _this.$searchBarSuggestions.append(`<label class="lua-table suggestion">${name}</label>`);
+            _this.$searchBarSuggestions.append(
+              `<label class="lua-table suggestion">${name}</label>`
+            );
           }
         }
 
@@ -172,15 +180,15 @@ export class ModelUIManager {
 
       const { classes, tables, globalFields, globalFunctions } = this.modelFile;
 
-      for (const clazzName of Object.keys(classes)) {
-        const clazz = this.luaLibrary.classes[clazzName];
-        if(clazz) clazz.model = classes[clazzName];
-      } 
+      for (const className of Object.keys(classes)) {
+        const _class_ = this.luaLibrary.classes[className];
+        // if (_class_) _class_.model = classes[className];
+      }
       for (const tableName of Object.keys(tables)) {
         const table = this.luaLibrary.tables[tableName];
-        if(table) table.model = tables[tableName];
-      } 
-      
+        // if (table) table.model = tables[tableName];
+      }
+
       const classNames = Object.keys(classes);
       const tableNames = Object.keys(tables);
 
@@ -289,14 +297,15 @@ export class ModelUIManager {
       $(this).removeClass('selected');
     });
 
-    const clazz = this.luaLibrary.classes[className];
-    if (!clazz) return;
+    const _class_ = this.luaLibrary.classes[className];
+    if (!_class_) return;
 
-    this.selectedClass = clazz;
+    this.selectedClass = _class_;
 
-    let clazzModel = this.modelFile.classes[className];
-    if (!clazzModel) {
-      clazzModel = clazz.generateModel();
+    let classModel = this.modelFile.classes[className];
+    if (!classModel) {
+      classModel = _class_.generateModel();
+      this.modelFile.library.classes[className] = classModel;
       $('#class-list').append(
         `<div class="item selected" element="${className}" onclick="setClass('${className}')">` +
           `<label>${className}</label>` +
@@ -305,29 +314,28 @@ export class ModelUIManager {
     } else {
       $(`#class-list .item[element=${className}`).addClass('selected');
     }
-    this.modelFile.classes[clazz.name] = clazzModel;
-    this.luaLibrary.models.classes[clazz.name] = clazzModel;
-    clazz.model = clazzModel;
+    this.modelFile.classes[_class_.name] = classModel;
+    this.luaLibrary.models.classes[_class_.name] = classModel;
 
     this.$modelPane.empty();
 
-    this.$modelPane.append(clazzModel.generateDom());
-    if (clazzModel._constructor_) {
-      this.$modelPane.append(clazzModel._constructor_.generateDom());
+    this.$modelPane.append(classModel.generateDom());
+    if (classModel._constructor_) {
+      this.$modelPane.append(classModel._constructor_.generateDom());
     }
 
-    const fieldNames = Object.keys(clazzModel.fields);
+    const fieldNames = Object.keys(classModel.fields);
     fieldNames.sort((o1, o2) => o1.localeCompare(o2));
     for (const fieldName of fieldNames) {
-      this.$modelPane.append(clazzModel.fields[fieldName].generateDom());
+      this.$modelPane.append(classModel.fields[fieldName].generateDom());
     }
 
-    const methodNames = Object.keys(clazzModel.methods);
+    const methodNames = Object.keys(classModel.methods);
     methodNames.sort((o1, o2) => o1.localeCompare(o2));
     for (const methodName of methodNames) {
-      const method = clazzModel.methods[methodName];
+      const method = classModel.methods[methodName];
       const e = this.$modelPane.append(method.generateDom());
-      e.find('input[type=checkbox]').prop('checked', method.returns.applyUnknownType);
+      e.find('input[type=checkbox]').prop('checked', method._return_.wrapWildcardType);
     }
 
     const $textAreas = this.$modelPane.find('textarea');
@@ -355,48 +363,48 @@ export class ModelUIManager {
     });
 
     const handleClassTarget = (element: HTMLElement, paths: string[]) => {
-      if (paths[1] === 'lines') {
+      if (paths[1] === 'description') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
-        clazzModel.doc.lines.length = 0;
+        classModel.documentation.description.length = 0;
         for (let line of raw) {
           line = line.trim();
-          if (line.length) clazzModel.doc.lines.push(line);
+          if (line.length) classModel.documentation.description.push(line);
         }
-      } else if (paths[1] === 'authors') {
+      } else if (paths[1] === 'doc_authors') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
-        clazzModel.doc.authors.length = 0;
+        classModel.documentation.authors.length = 0;
         for (let line of raw) {
           line = line.trim();
-          if (line.length) clazzModel.doc.authors.push(line);
+          if (line.length) classModel.documentation.authors.push(line);
         }
       }
     };
 
     const handleConstructorTarget = (element: HTMLElement, paths: string[]) => {
-      if (paths[1] === 'lines') {
+      if (paths[1] === 'description') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
-        clazzModel._constructor_.doc.lines.length = 0;
+        classModel._constructor_.documentation.description.length = 0;
         for (let line of raw) {
           line = line.trim();
-          if (line.length) clazzModel._constructor_.doc.lines.push(line);
+          if (line.length) classModel._constructor_.documentation.description.push(line);
         }
-      } else if (paths[2] === 'param') {
+      } else if (paths[2] === 'parameters') {
         const input = element as HTMLInputElement;
         const paramName = paths[3];
         const field = paths[4];
-        const paramModel = clazzModel._constructor_.getParamModel(paramName);
+        const paramModel = classModel._constructor_.getParameterModel(paramName);
         if (field === 'rename') {
           paramModel.rename = input.value.trim();
-        } else if (field === 'lines') {
+        } else if (field === 'description') {
           const textarea = element as HTMLTextAreaElement;
           const raw = textarea.value.split('\n');
-          paramModel.doc.lines.length = 0;
+          paramModel.documentation.description.length = 0;
           for (let line of raw) {
             line = line.trim();
-            if (line.length) paramModel.doc.lines.push(line);
+            if (line.length) paramModel.documentation.description.push(line);
           }
         } else if (field === 'types') {
           const textarea = element as HTMLTextAreaElement;
@@ -411,96 +419,106 @@ export class ModelUIManager {
     };
 
     const handleFieldTarget = (element: HTMLElement, target: string[]) => {
-      const fieldName = target[1];
-
-      const field = clazz.fields[fieldName];
+      const name = target[1];
+      const field = _class_.fields[name];
       if (!field) {
-        console.warn(`Could not locate the field in class: ${clazz.name}.${field.name}`);
+        console.warn(`Could not locate the field in class: ${_class_.name}.${field.name}`);
         return;
       }
-
-      const fieldModel = clazzModel.getField(field);
-      if (!fieldModel) {
-        console.warn(`Could not locate the FieldModel for field: ${clazz.name}.${field.name}`);
+      const model = classModel.getFieldModel(field);
+      if (!model) {
+        console.warn(`Could not locate the FieldModel for field: ${_class_.name}.${field.name}`);
         return;
       }
-
-      if (target[2] === 'lines') {
+      if (target[2] === 'description') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
-        fieldModel.doc.lines.length = 0;
-        for (let line of raw) fieldModel.doc.lines.push(line);
-      } else if (target[2] === 'returntypes') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        fieldModel.types.length = 0;
-        for (let line of raw) {
-          line = line.trim();
-          if (line.length) fieldModel.types.push(line);
+        model.documentation.description.length = 0;
+        for (let line of raw) model.documentation.description.push(line);
+      } else if (target[2] === 'return') {
+        if (target[3] === 'types') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          model._return_.types.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) model._return_.types.push(line);
+          }
+        } else if (target[3] === 'description') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          model._return_.description.length = 0;
+          for (let line of raw) model._return_.description.push(line);
         }
       }
     };
 
     const handleMethodTarget = (element: HTMLElement, target: string[]) => {
-      const methodName = target[1];
-
-      if (methodName === 'constructor') {
+      const name = target[1];
+      if (name === 'constructor') {
         handleConstructorTarget(element, target);
         return;
       }
-
-      const method = clazz.methods[methodName];
+      const method = _class_.methods[name];
       if (!method) {
-        console.warn(`Could not locate the method in class: ${clazz.name}.${method.name}`);
+        console.warn(`Could not locate the method in class: ${_class_.name}.${method.name}`);
         return;
       }
-
-      const methodModel = clazzModel.getMethod(method);
-      if (!methodModel) {
-        console.warn(`Could not locate the MethodModel for field: ${clazz.name}.${method.name}`);
+      const model = classModel.getMethodModel(method);
+      if (!model) {
+        console.warn(`Could not locate the MethodModel for field: ${_class_.name}.${method.name}`);
         return;
       }
-
-      if (target[2] === 'lines') {
+      if (target[2] === 'description') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
-        methodModel.doc.lines.length = 0;
-        for (let line of raw) methodModel.doc.lines.push(line);
-      } else if (target[2] === 'returntypes') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        methodModel.returns.types.length = 0;
-        for (let line of raw) {
-          line = line.trim();
-          if (line.length) methodModel.returns.types.push(line);
-        }
-      } else if (target[2] === 'param') {
+        model.documentation.description.length = 0;
+        for (let line of raw) model.documentation.description.push(line);
+      } else if (target[2] === 'parameter') {
         const input = element as HTMLInputElement;
-        const paramName = target[3];
+        const parameterName = target[3];
         const field = target[4];
-        const paramModel = methodModel.getParamModel(paramName);
+        const parameterModel = model.getParameterModel(parameterName);
         if (field === 'rename') {
-          paramModel.rename = input.value.trim();
-        } else if (field === 'lines') {
+          parameterModel.rename = input.value.trim();
+        } else if (field === 'description') {
           const textarea = element as HTMLTextAreaElement;
           const raw = textarea.value.split('\n');
-          paramModel.doc.lines.length = 0;
+          parameterModel.documentation.description.length = 0;
           for (let line of raw) {
             line = line.trim();
-            if (line.length) paramModel.doc.lines.push(line);
+            if (line.length) parameterModel.documentation.description.push(line);
           }
         } else if (field === 'types') {
           const textarea = element as HTMLTextAreaElement;
           const raw = textarea.value.split('\n');
-          paramModel.types.length = 0;
+          parameterModel.types.length = 0;
           for (let line of raw) {
             line = line.trim();
-            if (line.length) paramModel.types.push(line);
+            if (line.length) parameterModel.types.push(line);
           }
         }
-      } else if (target[2] === 'wrapunknowntype') {
-        const checkbox = element as HTMLInputElement;
-        methodModel.returns.applyUnknownType = checkbox.checked;
+      } else if (target[2] === 'return') {
+        if (target[3] === 'types') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          model._return_.types.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) model._return_.types.push(line);
+          }
+        } else if (target[3] === 'description') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          model._return_.description.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) model._return_.description.push(line);
+          }
+        } else if (target[3] === 'wrap_wildcard_type') {
+          const checkbox = element as HTMLInputElement;
+          model._return_.wrapWildcardType = checkbox.checked;
+        }
       }
     };
 
@@ -519,7 +537,7 @@ export class ModelUIManager {
       this.$code.empty();
       this.$code.append(s);
 
-      // console.log(JSON.stringify(clazzModel.save(), null, 2));
+      // console.log(JSON.stringify(classModel.save(), null, 2));
     };
 
     // Any model-field with a target will fire this method. Changes to model values
@@ -576,6 +594,7 @@ export class ModelUIManager {
     let tableModel = this.modelFile.tables[tableName];
     if (!tableModel) {
       tableModel = table.generateModel();
+      this.modelFile.library.tables[tableName] = tableModel;
       $('#class-list').append(
         `<div class="item selected" element="${tableName}" onclick="setTable('${tableName}')">` +
           `<label>${tableName}</label>` +
@@ -586,7 +605,6 @@ export class ModelUIManager {
     }
     this.modelFile.tables[table.name] = tableModel;
     this.luaLibrary.models.tables[table.name] = tableModel;
-    table.model = tableModel;
 
     this.$modelPane.empty();
     this.$modelPane.append(tableModel.generateDom());
@@ -602,7 +620,7 @@ export class ModelUIManager {
     for (const methodName of methodNames) {
       const method = tableModel.methods[methodName];
       const e = this.$modelPane.append(method.generateDom());
-      e.find('input[type=checkbox]').prop('checked', method.returns.applyUnknownType);
+      e.find('input[type=checkbox]').prop('checked', method._return_.wrapWildcardType);
     }
 
     const $textAreas = this.$modelPane.find('textarea');
@@ -630,111 +648,122 @@ export class ModelUIManager {
     });
 
     const handleTableTarget = (element: HTMLElement, paths: string[]) => {
-      if (paths[1] === 'lines') {
+      if (paths[1] === 'description') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
-        tableModel.doc.lines.length = 0;
+        tableModel.documentation.description.length = 0;
         for (let line of raw) {
           line = line.trim();
-          if (line.length) tableModel.doc.lines.push(line);
+          if (line.length) tableModel.documentation.description.push(line);
         }
-      } else if (paths[1] === 'authors') {
+      } else if (paths[1] === 'doc_authors') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
-        tableModel.doc.authors.length = 0;
+        tableModel.documentation.authors.length = 0;
         for (let line of raw) {
           line = line.trim();
-          if (line.length) tableModel.doc.authors.push(line);
+          if (line.length) tableModel.documentation.authors.push(line);
         }
       }
     };
 
     const handleFieldTarget = (element: HTMLElement, target: string[]) => {
-      const fieldName = target[1];
-
-      const field = table.fields[fieldName];
+      const name = target[1];
+      const field = table.fields[name];
       if (!field) {
         console.warn(`Could not locate the field in class: ${table.name}.${field.name}`);
         return;
       }
-
-      const fieldModel = tableModel.getField(field);
-      if (!fieldModel) {
+      const model = tableModel.getFieldModel(field);
+      if (!model) {
         console.warn(`Could not locate the FieldModel for field: ${table.name}.${field.name}`);
         return;
       }
-
-      if (target[2] === 'lines') {
+      if (target[2] === 'description') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
-        fieldModel.doc.lines.length = 0;
-        for (let line of raw) fieldModel.doc.lines.push(line);
-      } else if (target[2] === 'returntypes') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        fieldModel.types.length = 0;
-        for (let line of raw) {
-          line = line.trim();
-          if (line.length) fieldModel.types.push(line);
+        model.documentation.description.length = 0;
+        for (let line of raw) model.documentation.description.push(line);
+      } else if (target[2] === 'return') {
+        if (target[3] === 'types') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          model._return_.types.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) model._return_.types.push(line);
+          }
+        } else if (target[3] === 'description') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          model._return_.description.length = 0;
+          for (let line of raw) model._return_.description.push(line);
         }
       }
     };
 
     const handleMethodTarget = (element: HTMLElement, target: string[]) => {
-      const methodName = target[1];
-
-      const method = table.methods[methodName];
+      const name = target[1];
+      const method = table.methods[name];
       if (!method) {
-        console.warn(`Could not locate the method in table: ${table.name}.${method.name}`);
+        console.warn(`Could not locate the method in class: ${table.name}.${method.name}`);
         return;
       }
-
-      const methodModel = tableModel.getMethod(method);
-      if (!methodModel) {
+      const model = tableModel.getMethodModel(method);
+      if (!model) {
         console.warn(`Could not locate the MethodModel for field: ${table.name}.${method.name}`);
         return;
       }
-
-      if (target[2] === 'lines') {
+      if (target[2] === 'description') {
         const textarea = element as HTMLTextAreaElement;
         const raw = textarea.value.split('\n');
-        methodModel.doc.lines.length = 0;
-        for (let line of raw) methodModel.doc.lines.push(line);
-      } else if (target[2] === 'returntypes') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        methodModel.returns.types.length = 0;
-        for (let line of raw) {
-          line = line.trim();
-          if (line.length) methodModel.returns.types.push(line);
-        }
-      } else if (target[2] === 'param') {
+        model.documentation.description.length = 0;
+        for (let line of raw) model.documentation.description.push(line);
+      } else if (target[2] === 'parameter') {
         const input = element as HTMLInputElement;
-        const paramName = target[3];
+        const parameterName = target[3];
         const field = target[4];
-        const paramModel = methodModel.getParamModel(paramName);
+        const parameterModel = model.getParameterModel(parameterName);
         if (field === 'rename') {
-          paramModel.rename = input.value.trim();
-        } else if (field === 'lines') {
+          parameterModel.rename = input.value.trim();
+        } else if (field === 'description') {
           const textarea = element as HTMLTextAreaElement;
           const raw = textarea.value.split('\n');
-          paramModel.doc.lines.length = 0;
+          parameterModel.documentation.description.length = 0;
           for (let line of raw) {
             line = line.trim();
-            if (line.length) paramModel.doc.lines.push(line);
+            if (line.length) parameterModel.documentation.description.push(line);
           }
         } else if (field === 'types') {
           const textarea = element as HTMLTextAreaElement;
           const raw = textarea.value.split('\n');
-          paramModel.types.length = 0;
+          parameterModel.types.length = 0;
           for (let line of raw) {
             line = line.trim();
-            if (line.length) paramModel.types.push(line);
+            if (line.length) parameterModel.types.push(line);
           }
         }
-      } else if (target[2] === 'wrapunknowntype') {
-        const checkbox = element as HTMLInputElement;
-        methodModel.returns.applyUnknownType = checkbox.checked;
+      } else if (target[2] === 'return') {
+        if (target[3] === 'types') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          model._return_.types.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) model._return_.types.push(line);
+          }
+        } else if (target[3] === 'description') {
+          const textarea = element as HTMLTextAreaElement;
+          const raw = textarea.value.split('\n');
+          model._return_.description.length = 0;
+          for (let line of raw) {
+            line = line.trim();
+            if (line.length) model._return_.description.push(line);
+          }
+        } else if (target[3] === 'wrap_wildcard_type') {
+          const checkbox = element as HTMLInputElement;
+          model._return_.wrapWildcardType = checkbox.checked;
+        }
       }
     };
 

@@ -1,64 +1,33 @@
 import { LuaField } from '../LuaField';
-import { FieldDoc, FieldDocJson } from './doc/FieldDoc';
-import { Model } from './Model';
 
-/**
- * **FieldModel**
- *
- * @author JabDoesThings
- */
+import { Model } from './Model';
+import { ModelDocumentation, ModelDocumentationJson } from './doc/ModelDocumentation';
+import { ReturnModel, ReturnModelJson } from './ReturnModel';
+import { replaceAll } from '../../Utils';
+
+/** @author JabDoesThings */
 export class FieldModel extends Model<FieldModelJson> {
   /** (Loaded via {@link ModelUIManager}) */
   static HTML_TEMPLATE: string = '';
 
-  readonly doc = new FieldDoc();
-  readonly types: string[] = [];
+  readonly documentation = new ModelDocumentation();
+  readonly _return_ = new ReturnModel();
   readonly name: string;
-  applyUnknownType: boolean = true;
 
-  constructor(name: string, src?: FieldModelJson | LuaField) {
+  constructor(name: string, src?: FieldModelJson) {
     super();
     this.name = name;
-    if (src) {
-      if (src instanceof LuaField) {
-        this.create(src);
-      } else {
-        this.load(src);
-      }
-    }
+    if (src) this.load(src);
   }
 
-  populate() {}
-
   generateDom(): string {
+    const { name, documentation, _return_ } = this;
+
     let dom = FieldModel.HTML_TEMPLATE;
-
-    const replaceAll = (from: string, to: string) => {
-      const fromS = '${' + from + '}';
-      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
-    };
-
-    let linesS = '';
-    const { doc, types } = this;
-    if (doc) {
-      const { lines } = doc;
-      if (lines) {
-        linesS = '';
-        for (const line of lines) linesS += `${line}\n`;
-        linesS = linesS.substring(0, linesS.length - 1);
-      }
-    }
-
-    let typesS = '';
-    if(types.length) {
-      for (const type of types) typesS += `${type}\n`;
-      typesS = typesS.substring(0, typesS.length - 1);
-    }
-
-    replaceAll('RETURN_TYPES', typesS);
-    replaceAll('FIELD_NAME', this.name);
-    replaceAll('LINES', linesS);
-
+    dom = replaceAll(dom, '${FIELD_NAME}', name);
+    dom = replaceAll(dom, '${DESCRIPTION}', documentation.description.join('\n'));
+    dom = replaceAll(dom, '${RETURN_TYPES}', _return_.types.join('\n'));
+    dom = replaceAll(dom, '${RETURN_DESCRIPTION}', _return_.description.join('\n'));
     return dom;
   }
 
@@ -66,48 +35,31 @@ export class FieldModel extends Model<FieldModelJson> {
     return field.name === this.name;
   }
 
-  create(field: LuaField) {}
-
   load(json: FieldModelJson) {
     this.clear();
-    if (json.doc) this.doc.load(json.doc);
-    if (json.types) for (const type of json.types) this.types.push(type);
-    if (json.applyUnknownType != null) this.applyUnknownType = json.applyUnknownType;
+    if (json._return_) this._return_.load(json._return_);
+    if (json.documentation) this.documentation.load(json.documentation);
   }
 
   save(): FieldModelJson {
-    let doc: FieldDocJson = undefined;
-    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
-
-    let types: string[] = undefined;
-    if (this.types.length) types = ([] as string[]).concat(this.types);
-
-    let applyUnknownType = this.applyUnknownType ? undefined : false;
-
-    return { doc, types, applyUnknownType };
+    let documentation: ModelDocumentationJson = undefined;
+    if (!this.documentation.isDefault()) documentation = this.documentation.save();
+    let _return_: ReturnModelJson = undefined;
+    if (!this._return_.isDefault()) _return_ = this._return_.save();
+    return { documentation, _return_ };
   }
 
   clear() {
-    this.doc.clear();
-    this.types.length = 0;
-    this.applyUnknownType = true;
+    this.documentation.clear();
+    this._return_.clear();
   }
 
   isDefault(): boolean {
-    if (!this.applyUnknownType) return false;
-    if (this.doc && !this.doc.isDefault()) return false;
-    if (this.types.length) return false;
-    return true;
+    return this.documentation.isDefault() && this._return_.isDefault();
   }
 }
 
-/**
- * **FieldModelJson**
- *
- * @author JabDoesThings
- */
 export type FieldModelJson = {
-  doc: FieldDocJson;
-  types: string[];
-  applyUnknownType: boolean;
+  _return_: ReturnModelJson;
+  documentation: ModelDocumentationJson;
 };

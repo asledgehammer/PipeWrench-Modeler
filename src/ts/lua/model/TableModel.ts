@@ -1,25 +1,28 @@
-import { FieldModel, FieldModelJson } from './FieldModel';
-import { MethodModel, MethodModelJson } from './MethodModel';
-import { TableDoc, TableDocJson } from './doc/TableDoc';
+import { unsanitizeName } from './ModelUtils';
+import { DocumentationBuilder } from '../../DocumentationBuilder';
+
 import { LuaTable } from '../LuaTable';
 import { LuaField } from '../LuaField';
 import { LuaMethod } from '../LuaMethod';
-import { DocBuilder } from '../../DocBuilder';
-import { Model } from './Model';
-import { unsanitizeName } from './ModelUtils';
 
-/**
- * **TableModel**
- *
- * @author JabDoesThings
- */
+import { Model } from './Model';
+import { FieldModel, FieldModelJson } from './FieldModel';
+import { MethodModel, MethodModelJson } from './MethodModel';
+
+import {
+  AuthoredModelDocumentation,
+  AuthoredModelDocumentationJson,
+} from './doc/AuthoredModelDocumentation';
+import { replaceAll } from '../../Utils';
+
+/** @author JabDoesThings */
 export class TableModel extends Model<TableModelJson> {
   /** (Loaded via {@link ModelUIManager}) */
   static HTML_TEMPLATE: string = '';
 
-  readonly doc: TableDoc = new TableDoc();
   readonly fields: { [id: string]: FieldModel } = {};
   readonly methods: { [id: string]: MethodModel } = {};
+  readonly documentation = new AuthoredModelDocumentation();
   readonly name: string;
   readonly table: LuaTable;
 
@@ -31,19 +34,20 @@ export class TableModel extends Model<TableModelJson> {
   }
 
   populate() {
-    const { fields, methods} = this.table;
+    const { fields, methods } = this.table;
     const fieldNames = Object.keys(fields);
+
     fieldNames.sort((o1, o2) => o1.localeCompare(o2));
-    for(const fieldName of fieldNames) {
-      if(!this.fields[fieldName]) {
-        this.fields[fieldName] = new FieldModel(fieldName, fields[fieldName]);
+    for (const fieldName of fieldNames) {
+      if (!this.fields[fieldName]) {
+        this.fields[fieldName] = new FieldModel(fieldName);
       }
     }
 
     const methodNames = Object.keys(methods);
     methodNames.sort((o1, o2) => o1.localeCompare(o2));
-    for(const methodName of methodNames) {
-      if(!this.methods[methodName]) {
+    for (const methodName of methodNames) {
+      if (!this.methods[methodName]) {
         this.methods[methodName] = new MethodModel(methodName, methods[methodName]);
       }
     }
@@ -53,18 +57,18 @@ export class TableModel extends Model<TableModelJson> {
     this.clear();
 
     if (json.fields) {
-      for (const name of Object.keys(json.fields)) {
-        this.fields[name] = new FieldModel(name, json.fields[name]);
+      for (const fieldName of Object.keys(json.fields)) {
+        this.fields[fieldName] = new FieldModel(fieldName, json.fields[fieldName]);
       }
     }
 
     if (json.methods) {
-      for (const name of Object.keys(json.methods)) {
-        this.methods[name] = new MethodModel(name, json.methods[name]);
+      for (const methodName of Object.keys(json.methods)) {
+        this.methods[methodName] = new MethodModel(methodName, json.methods[methodName]);
       }
     }
 
-    if (json.doc) this.doc.load(json.doc);
+    if (json.documentation) this.documentation.load(json.documentation);
   }
 
   save(): TableModelJson {
@@ -76,7 +80,7 @@ export class TableModel extends Model<TableModelJson> {
       if (!field.isDefault()) {
         oneFieldDifferent = true;
         break;
-      } 
+      }
     }
     if (oneFieldDifferent) {
       fields = {};
@@ -91,80 +95,60 @@ export class TableModel extends Model<TableModelJson> {
       if (!method.isDefault()) {
         oneMethodDifferent = true;
         break;
-      } 
+      }
     }
     if (oneMethodDifferent) {
       methods = {};
-      for (const name of Object.keys(this.methods)) {
-        const methodModel = this.methods[name];
-        if (!methodModel.isDefault()) methods[unsanitizeName(name)] = methodModel.save();
+      for (const methodName of Object.keys(this.methods)) {
+        const methodModel = this.methods[methodName];
+        if (!methodModel.isDefault()) methods[unsanitizeName(methodName)] = methodModel.save();
       }
     }
 
-    let doc: TableDocJson = undefined;
-    if (this.doc && !this.doc.isDefault()) doc = this.doc.save();
+    let documentation: AuthoredModelDocumentationJson = undefined;
+    if (!this.documentation.isDefault()) documentation = this.documentation.save();
 
-    return { fields, methods, doc };
+    return { fields, methods, documentation };
   }
 
   clear() {
     for (const key of Object.keys(this.fields)) delete this.fields[key];
     for (const key of Object.keys(this.methods)) delete this.methods[key];
-    this.doc.clear();
+    this.documentation.clear();
   }
 
-  generateDoc(prefix: string, table: LuaTable): string {
-    const doc = new DocBuilder();
-    const { doc: tableDoc } = this;
+  generateDocumentation(prefix: string): string {
+    const documentationBuilder = new DocumentationBuilder();
+    const { documentation: tableDoc } = this;
     if (tableDoc) {
-      const { authors, lines } = tableDoc;
+      const { authors, description: tableDescription } = tableDoc;
 
       // Process authors. (If defined)
       if (authors && authors.length) {
         let s = '[';
         for (const author of authors) s += `${author}, `;
         s = `${s.substring(0, s.length - 2)}]`;
-        doc.appendAnnotation('docAuthors', s);
+        documentationBuilder.appendAnnotation('docAuthors', s);
       }
-      
+
       // Process lines. (If defined)
-      if (lines && lines.length) {
-        if(authors && authors.length) doc.appendLine();
-        for (const line of lines) doc.appendLine(line);
+      if (tableDescription && tableDescription.length) {
+        if (authors && authors.length) documentationBuilder.appendLine();
+        for (const line of tableDescription) documentationBuilder.appendLine(line);
       }
     }
 
-    return doc.isEmpty() ? '' : doc.build(prefix);
+    return documentationBuilder.isEmpty() ? '' : documentationBuilder.build(prefix);
   }
 
   generateDom(): string {
+    const { name, documentation } = this;
+    const { authors, description } = documentation;
+
     let dom = TableModel.HTML_TEMPLATE;
-
-    const replaceAll = (from: string, to: string) => {
-      const fromS = '${' + from + '}';
-      while (dom.indexOf(fromS) !== -1) dom = dom.replace(fromS, to);
-    };
-
-    let authorsS = '';
-    let linesS = '';
-
-    const { doc } = this;
-    if (doc) {
-      const { authors, lines } = doc;
-      if (authors.length) {
-        if (authors) for (const author of authors) authorsS += `${author}\n`;
-        authorsS = authorsS.substring(0, authorsS.length - 1);
-      }
-      if (lines.length) {
-        for (const line of lines) linesS += `${line}\n`;
-        linesS = linesS.substring(0, linesS.length - 1);
-      }
-    }
-
-    replaceAll('TABLE_NAME', this.name);
-    replaceAll('AUTHORS', authorsS);
-    replaceAll('LINES', linesS);
-
+    dom = replaceAll(dom, '${TABLE_NAME}', name);
+    dom = replaceAll(dom, '${DOC_AUTHORS}', authors.join('\n'));
+    dom = replaceAll(dom, '${DESCRIPTION}', description.join('\n'));
     return dom;
   }
 
@@ -172,36 +156,27 @@ export class TableModel extends Model<TableModelJson> {
     return table.name === this.name;
   }
 
-  getField(field: LuaField): FieldModel {
+  getFieldModel(field: LuaField): FieldModel {
     const model = this.fields[field.name];
     if (model && model.testSignature(field)) return model;
     return null;
   }
 
-  getMethod(method: LuaMethod): MethodModel {
+  getMethodModel(method: LuaMethod): MethodModel {
     const model = this.methods[method.name];
     if (model && model.testSignature(method)) return model;
     return null;
   }
 
   isDefault(): boolean {
-    // Check fields.
     for (const field of Object.values(this.fields)) if (!field.isDefault()) return false;
-    // Check methods.
     for (const method of Object.values(this.methods)) if (!method.isDefault()) return false;
-    // Check doc.
-    if (this.doc && !this.doc.isDefault()) return false;
-    return true;
+    return this.documentation.isDefault();
   }
 }
 
-/**
- * **TableJson**
- *
- * @author JabDoesThings
- */
 export type TableModelJson = {
-  doc: TableDocJson;
   fields: { [id: string]: FieldModelJson };
   methods: { [id: string]: MethodModelJson };
+  documentation: AuthoredModelDocumentationJson;
 };

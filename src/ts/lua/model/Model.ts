@@ -1,3 +1,4 @@
+/** @author JabDoesThings */
 export abstract class Model<JsonType> {
   abstract load(json: JsonType): void;
   abstract save(): JsonType;
