@@ -45,11 +45,11 @@ export class LuaMethod extends LuaNamedObject {
     if (container instanceof LuaClass) {
       const classModel = library.getClassModel(container);
       methodModel = classModel ? classModel.getMethodModel(this) : null;
-      documentationString = methodModel ? methodModel.generateDoc(prefix, this) : '';
+      documentationString = methodModel ? methodModel.generateDocumentation(prefix, this) : '';
     } else if (container instanceof LuaTable) {
       const tableModel = library.getTableModel(container);
       methodModel = tableModel ? tableModel.getMethodModel(this) : null;
-      documentationString = methodModel ? methodModel.generateDoc(prefix, this) : '';
+      documentationString = methodModel ? methodModel.generateDocumentation(prefix, this) : '';
     }
 
     const compileTypes = (types: string[]): string => {

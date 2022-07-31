@@ -69,7 +69,7 @@ export class FunctionModel extends Model<FunctionModelJson> {
 
   generateDocumentation(prefix: string, _function_: LuaFunction): string {
     if (!this.testSignature(_function_)) return '';
-    const { documentation: functionDocumentation, parameters } = this;
+    const { documentation: functionDocumentation, parameters, _return_ } = this;
 
     const documentationBuilder = new DocumentationBuilder();
     documentationBuilder.appendAnnotation('noSelf');
@@ -79,20 +79,25 @@ export class FunctionModel extends Model<FunctionModelJson> {
 
       // Process lines. (If defined)
       if (functionDescription.length) {
+        if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
         for (const line of functionDescription) documentationBuilder.appendLine(line);
-        documentationBuilder.appendLine();
       }
 
       // Process parameter(s). (If defined)
-      if (parameters) {
+      if (parameters.length) {
+        let first = true;
         for (const parameter of parameters) {
           const { name: parameterName, documentation: parameterDocumentation } = parameter;
           const { description: parameterDescription } = parameterDocumentation;
-          // No lines. Print basic @param <name>
-          if (!parameterDescription.length) {
-            // documentationBuilder.appendParam(parameterName);
-            continue;
+
+          if (!parameterDescription.length) continue;
+          
+          // Check for spacing. (If needed)
+          if(first) {
+            if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
+            first = false;
           }
+
           documentationBuilder.appendParam(parameterName, parameterDescription[0]);
           // Check if multi-line.
           if (parameterDescription.length === 1) continue;
@@ -102,6 +107,7 @@ export class FunctionModel extends Model<FunctionModelJson> {
         }
       }
     }
+    _return_.generateDocumentation(documentationBuilder);
     return documentationBuilder.isEmpty() ? '' : documentationBuilder.build(prefix);
   }
 

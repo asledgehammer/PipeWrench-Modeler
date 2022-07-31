@@ -58,10 +58,6 @@ export class ClassModel extends Model<ClassModelJson> {
         this.methods[methodName] = new MethodModel(methodName, methods[methodName]);
       }
     }
-
-    if (this._constructor_.isDefault() && _constructor_) {
-      this._constructor_.create();
-    }
   }
 
   load(json: ClassModelJson) {

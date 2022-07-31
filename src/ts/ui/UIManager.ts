@@ -19,6 +19,8 @@ import { ConstructorModel } from '../lua/model/ConstructorModel';
 import { FieldModel } from '../lua/model/FieldModel';
 import { MethodModel } from '../lua/model/MethodModel';
 import { ParameterModel as ParameterModel } from '../lua/model/ParamModel';
+import { applyTextArea } from '../Utils';
+import { LuaContainer } from '../lua/LuaContainer';
 
 /** @author JabDoesThings */
 export class ModelUIManager {
@@ -277,6 +279,156 @@ export class ModelUIManager {
     this.$modelPane.empty();
   }
 
+  handleClassTarget(model: ClassModel, element: HTMLElement, paths: string[]): void {
+    if (paths[1] === 'description') {
+      const textarea = element as HTMLTextAreaElement;
+      applyTextArea(textarea, model.documentation.description);
+    } else if (paths[1] === 'doc_authors') {
+      const textarea = element as HTMLTextAreaElement;
+      applyTextArea(textarea, model.documentation.authors);
+    }
+  }
+
+  handleTableTarget(model: TableModel, element: HTMLElement, paths: string[]): void {
+    if (paths[1] === 'description') {
+      const textarea = element as HTMLTextAreaElement;
+      applyTextArea(textarea, model.documentation.description);
+    } else if (paths[1] === 'doc_authors') {
+      const textarea = element as HTMLTextAreaElement;
+      applyTextArea(textarea, model.documentation.authors);
+    }
+  }
+
+  handleConstructorTarget(container: LuaClass, element: HTMLElement, paths: string[]): void {
+    const classModel = this.luaLibrary.models.getClassModel(container);
+    const { _constructor_ } = classModel;
+    if (paths[2] === 'description') {
+      const textarea = element as HTMLTextAreaElement;
+      applyTextArea(textarea, _constructor_.documentation.description);
+    } else if (paths[2] === 'parameter') {
+      const input = element as HTMLInputElement;
+      const parameterName = paths[3];
+      const parameterModel = _constructor_.getParameterModel(parameterName);
+      const field = paths[4];
+      if (field === 'rename') {
+        parameterModel.rename = input.value.trim();
+      } else if (field === 'description') {
+        const textarea = element as HTMLTextAreaElement;
+        applyTextArea(textarea, parameterModel.documentation.description);
+      } else if (field === 'types') {
+        const textarea = element as HTMLTextAreaElement;
+        applyTextArea(textarea, parameterModel.types);
+      }
+    }
+  }
+
+  handleFieldTarget(container: LuaContainer, element: HTMLElement, target: string[]): void {
+    const name = target[1];
+    const field = container.fields[name];
+    if (!field) {
+      console.warn(`Could not locate the field in container: ${container.name}.${field.name}`);
+      return;
+    }
+
+    let model: FieldModel;
+    if(container instanceof LuaClass) {
+      const classModel = this.luaLibrary.models.getClassModel(container);
+      model = classModel?.getFieldModel(field);
+    } else if(container instanceof LuaTable) {
+      const tableModel = this.luaLibrary.models.getTableModel(container);
+      model = tableModel?.getFieldModel(field);
+    }
+    if (!model) {
+      console.warn(`Could not locate the FieldModel for field: ${container.name}.${field.name}`);
+      return;
+    }
+
+    if (target[2] === 'description') {
+      const textarea = element as HTMLTextAreaElement;
+      applyTextArea(textarea, model.documentation.description);
+    } else if (target[2] === 'return') {
+      const { _return_ } = model;
+      if (target[3] === 'types') {
+        const textarea = element as HTMLTextAreaElement;
+        applyTextArea(textarea, _return_.types);
+      } else if (target[3] === 'description') {
+        const textarea = element as HTMLTextAreaElement;
+        applyTextArea(textarea, _return_.description);
+      }
+    }
+  }
+
+  handleMethodTarget(container: LuaContainer, element: HTMLElement, target: string[]): void {
+    const name = target[1];
+    if (name === 'constructor') {
+      this.handleConstructorTarget(container as LuaClass, element, target);
+      return;
+    }
+    const method = container.methods[name];
+    if (!method) {
+      console.warn(`Could not locate method: ${container.name}.${method.name}`);
+      return;
+    }
+
+    let model: MethodModel;
+    if(container instanceof LuaClass) {
+      const classModel = this.luaLibrary.models.getClassModel(container);
+      model = classModel?.getMethodModel(method);
+    } else if(container instanceof LuaTable) {
+      const tableModel = this.luaLibrary.models.getTableModel(container);
+      model = tableModel?.getMethodModel(method);
+    }
+    if (!model) {
+      console.warn(`Could not locate MethodModel: ${container.name}.${method.name}`);
+      return;
+    }
+
+    if (target[2] === 'description') {
+      const textarea = element as HTMLTextAreaElement;
+      applyTextArea(textarea, model.documentation.description);
+    } else if (target[2] === 'parameter') {
+      const input = element as HTMLInputElement;
+      const parameterName = target[3];
+      const field = target[4];
+      const parameterModel = model.getParameterModel(parameterName);
+      if (field === 'rename') {
+        parameterModel.rename = input.value.trim();
+      } else if (field === 'description') {
+        const textarea = element as HTMLTextAreaElement;
+        applyTextArea(textarea, parameterModel.documentation.description);
+      } else if (field === 'types') {
+        const textarea = element as HTMLTextAreaElement;
+        applyTextArea(textarea, parameterModel.types);
+      }
+    } else if (target[2] === 'return') {
+      const { _return_ } = model;
+      if (target[3] === 'types') {
+        const textarea = element as HTMLTextAreaElement;
+        applyTextArea(textarea, _return_.types);
+      } else if (target[3] === 'description') {
+        const textarea = element as HTMLTextAreaElement;
+        applyTextArea(textarea, _return_.description);
+      } else if (target[3] === 'wrap_wildcard_type') {
+        const checkbox = element as HTMLInputElement;
+        model._return_.wrapWildcardType = checkbox.checked;
+      }
+    }
+  };
+
+  setCode(code: string): void {
+    code = prettier.format(code, {
+      singleQuote: true,
+      bracketSpacing: true,
+      parser: 'typescript',
+      printWidth: 120,
+    });
+
+    const html = hljs.default.highlight(code, { language: 'typescript' }).value;
+    code = `<pre><code class="hljs language-typescript">${html}</code></pre>`;
+    this.$code.empty();
+    this.$code.append(code);
+  }
+
   setClass(className: string) {
     console.log(`setClass(${className})`);
 
@@ -362,184 +514,7 @@ export class ModelUIManager {
       }
     });
 
-    const handleClassTarget = (element: HTMLElement, paths: string[]) => {
-      if (paths[1] === 'description') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        classModel.documentation.description.length = 0;
-        for (let line of raw) {
-          line = line.trim();
-          if (line.length) classModel.documentation.description.push(line);
-        }
-      } else if (paths[1] === 'doc_authors') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        classModel.documentation.authors.length = 0;
-        for (let line of raw) {
-          line = line.trim();
-          if (line.length) classModel.documentation.authors.push(line);
-        }
-      }
-    };
-
-    const handleConstructorTarget = (element: HTMLElement, paths: string[]) => {
-      if (paths[1] === 'description') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        classModel._constructor_.documentation.description.length = 0;
-        for (let line of raw) {
-          line = line.trim();
-          if (line.length) classModel._constructor_.documentation.description.push(line);
-        }
-      } else if (paths[2] === 'parameters') {
-        const input = element as HTMLInputElement;
-        const paramName = paths[3];
-        const field = paths[4];
-        const paramModel = classModel._constructor_.getParameterModel(paramName);
-        if (field === 'rename') {
-          paramModel.rename = input.value.trim();
-        } else if (field === 'description') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          paramModel.documentation.description.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) paramModel.documentation.description.push(line);
-          }
-        } else if (field === 'types') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          paramModel.types.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) paramModel.types.push(line);
-          }
-        }
-      }
-    };
-
-    const handleFieldTarget = (element: HTMLElement, target: string[]) => {
-      const name = target[1];
-      const field = _class_.fields[name];
-      if (!field) {
-        console.warn(`Could not locate the field in class: ${_class_.name}.${field.name}`);
-        return;
-      }
-      const model = classModel.getFieldModel(field);
-      if (!model) {
-        console.warn(`Could not locate the FieldModel for field: ${_class_.name}.${field.name}`);
-        return;
-      }
-      if (target[2] === 'description') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        model.documentation.description.length = 0;
-        for (let line of raw) model.documentation.description.push(line);
-      } else if (target[2] === 'return') {
-        if (target[3] === 'types') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          model._return_.types.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) model._return_.types.push(line);
-          }
-        } else if (target[3] === 'description') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          model._return_.description.length = 0;
-          for (let line of raw) model._return_.description.push(line);
-        }
-      }
-    };
-
-    const handleMethodTarget = (element: HTMLElement, target: string[]) => {
-      const name = target[1];
-      if (name === 'constructor') {
-        handleConstructorTarget(element, target);
-        return;
-      }
-      const method = _class_.methods[name];
-      if (!method) {
-        console.warn(`Could not locate the method in class: ${_class_.name}.${method.name}`);
-        return;
-      }
-      const model = classModel.getMethodModel(method);
-      if (!model) {
-        console.warn(`Could not locate the MethodModel for field: ${_class_.name}.${method.name}`);
-        return;
-      }
-      if (target[2] === 'description') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        model.documentation.description.length = 0;
-        for (let line of raw) model.documentation.description.push(line);
-      } else if (target[2] === 'parameter') {
-        const input = element as HTMLInputElement;
-        const parameterName = target[3];
-        const field = target[4];
-        const parameterModel = model.getParameterModel(parameterName);
-        if (field === 'rename') {
-          parameterModel.rename = input.value.trim();
-        } else if (field === 'description') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          parameterModel.documentation.description.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) parameterModel.documentation.description.push(line);
-          }
-        } else if (field === 'types') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          parameterModel.types.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) parameterModel.types.push(line);
-          }
-        }
-      } else if (target[2] === 'return') {
-        if (target[3] === 'types') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          model._return_.types.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) model._return_.types.push(line);
-          }
-        } else if (target[3] === 'description') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          model._return_.description.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) model._return_.description.push(line);
-          }
-        } else if (target[3] === 'wrap_wildcard_type') {
-          const checkbox = element as HTMLInputElement;
-          model._return_.wrapWildcardType = checkbox.checked;
-        }
-      }
-    };
-
-    const updateCode = () => {
-      let code = '';
-      if (this.selectedClass) code = this.selectedClass.compile();
-      code = prettier.format(code, {
-        singleQuote: true,
-        bracketSpacing: true,
-        parser: 'typescript',
-        printWidth: 120,
-      });
-      const html = hljs.default.highlight(code, { language: 'typescript' }).value;
-      let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>';
-
-      this.$code.empty();
-      this.$code.append(s);
-
-      // console.log(JSON.stringify(classModel.save(), null, 2));
-    };
-
+    const _this_ = this;
     // Any model-field with a target will fire this method. Changes to model values
     // are handled here.
     $('*[target]').on('input', function () {
@@ -548,22 +523,22 @@ export class ModelUIManager {
         const paths = target.split(':');
         const type = paths[0];
         if (type === 'class') {
-          handleClassTarget(this, paths);
+          _this_.handleClassTarget(classModel, this, paths);
         } else if (type === 'constructor') {
-          handleConstructorTarget(this, paths);
+          _this_.handleConstructorTarget(_class_, this, paths);
         } else if (type === 'field') {
-          handleFieldTarget(this, paths);
+          _this_.handleFieldTarget(_class_, this, paths);
         } else if (type === 'method') {
-          handleMethodTarget(this, paths);
+          _this_.handleMethodTarget(_class_, this, paths);
         }
       }
 
       // Reflect the changes to the model by updating the code-panel.
-      updateCode();
+      _this_.setCode(_class_.compile());
     });
 
     this.$modelPane.fadeIn();
-    updateCode();
+    this.setCode(_class_.compile());
   }
 
   setTable(tableName: string) {
@@ -647,143 +622,7 @@ export class ModelUIManager {
       }
     });
 
-    const handleTableTarget = (element: HTMLElement, paths: string[]) => {
-      if (paths[1] === 'description') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        tableModel.documentation.description.length = 0;
-        for (let line of raw) {
-          line = line.trim();
-          if (line.length) tableModel.documentation.description.push(line);
-        }
-      } else if (paths[1] === 'doc_authors') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        tableModel.documentation.authors.length = 0;
-        for (let line of raw) {
-          line = line.trim();
-          if (line.length) tableModel.documentation.authors.push(line);
-        }
-      }
-    };
-
-    const handleFieldTarget = (element: HTMLElement, target: string[]) => {
-      const name = target[1];
-      const field = table.fields[name];
-      if (!field) {
-        console.warn(`Could not locate the field in class: ${table.name}.${field.name}`);
-        return;
-      }
-      const model = tableModel.getFieldModel(field);
-      if (!model) {
-        console.warn(`Could not locate the FieldModel for field: ${table.name}.${field.name}`);
-        return;
-      }
-      if (target[2] === 'description') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        model.documentation.description.length = 0;
-        for (let line of raw) model.documentation.description.push(line);
-      } else if (target[2] === 'return') {
-        if (target[3] === 'types') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          model._return_.types.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) model._return_.types.push(line);
-          }
-        } else if (target[3] === 'description') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          model._return_.description.length = 0;
-          for (let line of raw) model._return_.description.push(line);
-        }
-      }
-    };
-
-    const handleMethodTarget = (element: HTMLElement, target: string[]) => {
-      const name = target[1];
-      const method = table.methods[name];
-      if (!method) {
-        console.warn(`Could not locate the method in class: ${table.name}.${method.name}`);
-        return;
-      }
-      const model = tableModel.getMethodModel(method);
-      if (!model) {
-        console.warn(`Could not locate the MethodModel for field: ${table.name}.${method.name}`);
-        return;
-      }
-      if (target[2] === 'description') {
-        const textarea = element as HTMLTextAreaElement;
-        const raw = textarea.value.split('\n');
-        model.documentation.description.length = 0;
-        for (let line of raw) model.documentation.description.push(line);
-      } else if (target[2] === 'parameter') {
-        const input = element as HTMLInputElement;
-        const parameterName = target[3];
-        const field = target[4];
-        const parameterModel = model.getParameterModel(parameterName);
-        if (field === 'rename') {
-          parameterModel.rename = input.value.trim();
-        } else if (field === 'description') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          parameterModel.documentation.description.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) parameterModel.documentation.description.push(line);
-          }
-        } else if (field === 'types') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          parameterModel.types.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) parameterModel.types.push(line);
-          }
-        }
-      } else if (target[2] === 'return') {
-        if (target[3] === 'types') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          model._return_.types.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) model._return_.types.push(line);
-          }
-        } else if (target[3] === 'description') {
-          const textarea = element as HTMLTextAreaElement;
-          const raw = textarea.value.split('\n');
-          model._return_.description.length = 0;
-          for (let line of raw) {
-            line = line.trim();
-            if (line.length) model._return_.description.push(line);
-          }
-        } else if (target[3] === 'wrap_wildcard_type') {
-          const checkbox = element as HTMLInputElement;
-          model._return_.wrapWildcardType = checkbox.checked;
-        }
-      }
-    };
-
-    const updateCode = () => {
-      let code = '';
-      if (this.selectedTable) code = this.selectedTable.compile();
-      code = prettier.format(code, {
-        singleQuote: true,
-        bracketSpacing: true,
-        parser: 'typescript',
-        printWidth: 120,
-      });
-
-      const html = hljs.default.highlight(code, { language: 'typescript' }).value;
-      let s = '<pre><code class="hljs language-typescript">' + html + '</code></pre>';
-
-      this.$code.empty();
-      this.$code.append(s);
-    };
-
+    const _this_ = this;
     // Any model-field with a target will fire this method. Changes to model values
     // are handled here.
     $('*[target]').on('input', function () {
@@ -791,20 +630,20 @@ export class ModelUIManager {
       if (target) {
         const paths = target.split(':');
         const type = paths[0];
-        if (type === 'class') {
-          handleTableTarget(this, paths);
+        if (type === 'table') {
+          _this_.handleTableTarget(tableModel, this, paths);
         } else if (type === 'field') {
-          handleFieldTarget(this, paths);
+          _this_.handleFieldTarget(table, this, paths);
         } else if (type === 'method') {
-          handleMethodTarget(this, paths);
+          _this_.handleMethodTarget(table, this, paths);
         }
       }
 
       // Reflect the changes to the model by updating the code-panel.
-      updateCode();
+      _this_.setCode(table.compile());
     });
 
     this.$modelPane.fadeIn();
-    updateCode();
+    this.setCode(table.compile());
   }
 }

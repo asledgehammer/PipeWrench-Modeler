@@ -34,124 +34,60 @@ export class LuaField extends LuaNamedObject {
     this.isStatic = isStatic;
   }
 
-  generateDoc(prefix: string): string {
-    const types: string[] = [WILDCARD_TYPE];
-    let sDoc = '';
-
-    const processField = (model: FieldModel) => {
-      const { _return_, documentation: fieldDoc } = model;
-      const { types: fTypes } = _return_;
-      // Process field types.
-      if (fTypes && fTypes.length) {
-        types.length = 0;
-        for (const fType of fTypes) {
-          // Prevent duplicate type entries.
-          if (types.indexOf(fType) !== -1) continue;
-          types.push(fType);
-        }
-      }
-      if (fieldDoc) {
-        const doc = new DocumentationBuilder();
-        const { description: lines } = fieldDoc;
-        // Process lines. (If defined)
-        if (lines && lines.length) {
-          for (const line of lines) doc.appendLine(line);
-        }
-        if (!doc.isEmpty()) sDoc = doc.build(prefix);
-      }
-    };
-
+  getModel(): FieldModel {
     const { container } = this;
     const { library } = container.file;
-    if (container) {
-      let fieldModel: FieldModel;
-      if (container instanceof LuaClass) {
-        let classModel = library.getClassModel(container);
-        fieldModel = classModel ? classModel.getFieldModel(this) : null;
-      }
-      if (fieldModel) {
-        if (container instanceof LuaClass) {
-          processField(fieldModel);
-        } else if (container instanceof LuaTable) {
-          processField(fieldModel);
-        }
-      } else {
-        const { library } = this.container.file;
-        if (container instanceof LuaClass) {
-          const classModel = library.getClassModel(container);
-          if (classModel) {
-            fieldModel = classModel.getFieldModel(this);
-            if (fieldModel) processField(fieldModel);
-          }
-        } else if (container instanceof LuaTable) {
-          const tableModel = library.getTableModel(container);
-          if (tableModel) {
-            fieldModel = tableModel.getFieldModel(this);
-            if (fieldModel) processField(fieldModel);
-          }
-        }
-      }
-    }
 
-    return sDoc;
+    let model: FieldModel;
+    if (container instanceof LuaClass) {
+      const classModel = library.getClassModel(container);
+      model = classModel ? classModel.getFieldModel(this) : null;
+    } else if (container instanceof LuaTable) {
+      const tableModel = library.getTableModel(container);
+      model = tableModel ? tableModel.getFieldModel(this) : null;
+    }
+    return model;
+  }
+
+  generateDocumentation(prefix: string): string {
+    const model = this.getModel();
+    return model ? model.generateDocumentation(prefix) : '';
   }
 
   onCompile(prefix: string): string {
-    const { name } = this;
-    const lTypes: string[] = [WILDCARD_TYPE];
-    let documentationString = '';
+    const { name, container, isStatic } = this;
+    const documentationString = this.generateDocumentation(prefix);
 
-    const processField = (model: FieldModel) => {
-      const { _return_, documentation: fieldDoc } = model;
-      const { types: fTypes } = _return_;
-
-      // Process field types.
-      if (fTypes.length) {
-        lTypes.length = 0;
-        for (const fType of fTypes) {
-          // Prevent duplicate type entries.
-          if (lTypes.indexOf(fType) === -1) lTypes.push(fType);
-        }
+    const processTypes = (types: string[], model: FieldModel): void => {
+      const { _return_ } = model;
+      const { types: returnTypes } = _return_;
+      types.length = 0;
+      if (!returnTypes.length) {
+        types.push(WILDCARD_TYPE);
+        return;
       }
-
-      if (fieldDoc) {
-        const { description } = fieldDoc;
-        const documentationBuilder = new DocumentationBuilder();
-
-        // Process lines. (If defined)
-        if (description && description.length) {
-          for (const line of description) documentationBuilder.appendLine(line);
-        }
-
-        if (!documentationBuilder.isEmpty()) documentationString = documentationBuilder.build(prefix);
+      for (const type of returnTypes) {
+        if (types.indexOf(type) === -1) types.push(type);
       }
     };
+    
+    const types: string[] = [];
 
-    const { container } = this;
-    const { library } = container.file;
     if (container) {
-      let fieldModel: FieldModel;
-      if (container instanceof LuaClass) {
-        const classModel = library.getClassModel(container);
-        fieldModel = classModel ? classModel.getFieldModel(this) : null;
-      } else if(container instanceof LuaTable) {
-        const tableModel = library.getTableModel(container);
-        fieldModel = tableModel ? tableModel.getFieldModel(this) : null;
-      }
-
-      if (fieldModel) {
-        processField(fieldModel);
-      } 
+      const fieldModel = this.getModel();
+      if (fieldModel) processTypes(types, fieldModel);
     }
 
-    const sStatic = this.isStatic ? 'static ' : '';
-    if (documentationString.length) return `${documentationString}\n${prefix}${sStatic}${sanitizeName(name)}: ${lTypes.join(' | ')};`;
-    return `${prefix}${sStatic}${sanitizeName(name)}: ${lTypes.join(' | ')};`;
+    const sStatic = isStatic ? 'static ' : '';
+    const sanitizedName = sanitizeName(name);
+    if (documentationString.length)
+      return `${documentationString}\n${prefix}${sStatic}${sanitizedName}: ${types.join(' | ')};`;
+    return `${prefix}${sStatic}${sanitizedName}: ${types.join(' | ')};`;
   }
 
   generateAPI(prefix: string, file: LuaFile): string {
     const { name } = this;
-    const doc = this.generateDoc(prefix);
+    const doc = this.generateDocumentation(prefix);
     return `${prefix}${doc ? `${doc}\n` : ''}${prefix}export const ${sanitizeName(
       name
     )} = ${this.getFullPath(file)};`;

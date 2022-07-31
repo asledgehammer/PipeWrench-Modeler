@@ -4,6 +4,7 @@ import { Model } from './Model';
 import { ModelDocumentation, ModelDocumentationJson } from './doc/ModelDocumentation';
 import { ReturnModel, ReturnModelJson } from './ReturnModel';
 import { replaceAll } from '../../Utils';
+import { DocumentationBuilder } from '../../DocumentationBuilder';
 
 /** @author JabDoesThings */
 export class FieldModel extends Model<FieldModelJson> {
@@ -18,6 +19,22 @@ export class FieldModel extends Model<FieldModelJson> {
     super();
     this.name = name;
     if (src) this.load(src);
+  }
+
+  generateDocumentation(prefix: string): string {
+    const { documentation: fieldDoc, _return_ } = this;
+    const { description: fieldDescription } = fieldDoc;
+
+    const documentationBuilder = new DocumentationBuilder();
+
+    // Process description. (If defined)
+    if (fieldDescription && fieldDescription.length) {
+      for (const line of fieldDescription) documentationBuilder.appendLine(line);
+    }
+
+    _return_.generateDocumentation(documentationBuilder);
+
+    return documentationBuilder.isEmpty() ? '' : documentationBuilder.build(prefix);
   }
 
   generateDom(): string {

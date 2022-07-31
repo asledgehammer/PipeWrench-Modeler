@@ -1,3 +1,4 @@
+import { DocumentationBuilder } from '../../DocumentationBuilder';
 import { Model } from './Model';
 
 /** @author JabDoesThings */
@@ -34,6 +35,21 @@ export class ReturnModel extends Model<ReturnModelJson> {
     this.description.length = 0;
     this.types.length = 0;
     this.wrapWildcardType = true;
+  }
+
+  generateDocumentation(documentationBuilder: DocumentationBuilder) {
+    const { description } = this;
+    if (description.length && description[0].length) {
+      if(!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
+      if (description.length >= 1) {
+        documentationBuilder.appendReturn(description[0]);
+      }
+      if (description.length > 1) {
+        for (let index = 1; index < description.length; index++) {
+          documentationBuilder.appendLine(description[index]);
+        }
+      }
+    }
   }
 
   generateDom(): string {

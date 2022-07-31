@@ -188,3 +188,12 @@ export const prettify = (code: string): string => {
   }
   return string;
 };
+
+export const applyTextArea = (textarea: HTMLTextAreaElement, destination: string[]): void => {
+  const source = textarea.value.split('\n');
+  destination.length = 0;
+  for (let line of source) {
+    line = line.trim();
+    if (line.length) destination.push(line);
+  }
+};

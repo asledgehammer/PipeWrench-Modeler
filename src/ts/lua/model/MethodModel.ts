@@ -69,31 +69,35 @@ export class MethodModel extends Model<MethodModelJson> {
     this._return_.clear();
   }
 
-  generateDoc(prefix: string, method: LuaMethod): string {
+  generateDocumentation(prefix: string, method: LuaMethod): string {
     if (!this.testSignature(method)) return '';
-    const { documentation: methodDocumentation, parameters } = this;
-
+    const { documentation: methodDocumentation, parameters, _return_ } = this;
+    const { description: methodDescription } = methodDocumentation;
+    
     const documentationBuilder = new DocumentationBuilder();
      
     if(method.isStatic) documentationBuilder.appendAnnotation('noSelf');
 
-    if (methodDocumentation) {
-      const { description: methodDescription } = methodDocumentation;
       // Process lines. (If defined)
       if (methodDescription.length) {
+        if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
         for (const line of methodDescription) documentationBuilder.appendLine(line);
-        documentationBuilder.appendLine();
       }
       // Process parameter(s). (If defined)
       if (parameters.length) {
+        let first = true;
         for (const parameter of parameters) {
           const { name: parameterName, documentation: parameterDocumentation } = parameter;
           const { description: parameterDescription } = parameterDocumentation;
-          // No lines. Print basic @param <name>
-          if (!parameterDescription.length) {
-            // documentationBuilder.appendParam(parameterName);
-            continue;
+
+          if (!parameterDescription.length) continue;
+          
+          // Check for spacing. (If needed)
+          if(first) {
+            if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
+            first = false;
           }
+
           documentationBuilder.appendParam(parameterName, parameterDescription[0]);
           // Check if multi-line.
           if (parameterDescription.length === 1) continue;
@@ -102,7 +106,8 @@ export class MethodModel extends Model<MethodModelJson> {
           }
         }
       }
-    }
+
+      _return_.generateDocumentation(documentationBuilder);
     return documentationBuilder.isEmpty() ? '' : documentationBuilder.build(prefix);
   }
 

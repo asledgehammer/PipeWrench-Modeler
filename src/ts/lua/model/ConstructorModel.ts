@@ -26,7 +26,7 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
     if (json) this.load(json);
   }
 
-  create() {
+  private create() {
     if (this._class_._class_) {
       const { _constructor_ } = this._class_._class_;
       if (_constructor_) {
@@ -40,7 +40,7 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
   load(json: ConstructorModelJson) {
     this.clear();
     if (json.documentation) this.documentation.load(json.documentation);
-    if (json.parameters && this._class_._constructor_ && this._class_._class_) {
+    if (json.parameters && this._class_._class_ && this._class_._class_._constructor_) {
       const { _constructor_ } = this._class_._class_;
       if (json.parameters.length === _constructor_.parameters.length) {
         for (const parameter of json.parameters) {
@@ -84,46 +84,42 @@ export class ConstructorModel extends Model<ConstructorModelJson> {
   generateDoc(prefix: string, _constructor_: LuaConstructor): string {
     if (!_constructor_ || !this.testSignature(_constructor_)) return '';
 
-    const documentation = new DocumentationBuilder();
+    const documentationBuilder = new DocumentationBuilder();
     const { documentation: constructorDocumentation, parameters } = this;
     if (constructorDocumentation) {
       const { description: constructorDescription } = constructorDocumentation;
 
       // Process lines. (If defined)
       if (constructorDescription && constructorDescription.length) {
-        for (const line of constructorDescription) documentation.appendLine(line);
-        documentation.appendLine();
+        if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
+        for (const line of constructorDescription) documentationBuilder.appendLine(line);
       }
 
       // Process parameter(s). (If defined)
-      if (parameters) {
+      if (parameters.length) {
+        let first = true;
         for (const parameter of parameters) {
-          const { name, documentation: parameterDocumentation } = parameter;
+          const { name: parameterName, documentation: parameterDocumentation } = parameter;
+          const { description: parameterDescription } = parameterDocumentation;
 
-          if (!documentation) {
-            documentation.appendParam(name);
-            continue;
-          } else {
-            const { description: parameterDescription } = parameterDocumentation;
+          if (!parameterDescription.length) continue;
 
-            // No lines. Print basic @param <name>
-            if (!parameterDescription.length) {
-              // documentation.appendParam(name);
-              continue;
-            }
+          // Check for spacing. (If needed)
+          if (first) {
+            if (!documentationBuilder.isEmpty()) documentationBuilder.appendLine();
+            first = false;
+          }
 
-            documentation.appendParam(name, parameterDescription[0]);
-
-            // Check if multi-line.
-            if (parameterDescription.length === 1) continue;
-            for (let index = 1; index < parameterDescription.length; index++) {
-              documentation.appendLine(parameterDescription[index]);
-            }
+          documentationBuilder.appendParam(parameterName, parameterDescription[0]);
+          // Check if multi-line.
+          if (parameterDescription.length === 1) continue;
+          for (let index = 1; index < parameterDescription.length; index++) {
+            documentationBuilder.appendLine(parameterDescription[index]);
           }
         }
       }
     }
-    return documentation.isEmpty() ? '' : documentation.build(prefix);
+    return documentationBuilder.isEmpty() ? '' : documentationBuilder.build(prefix);
   }
 
   generateDom(): string {
