@@ -30,10 +30,11 @@ Models are instructions provided by humans that are digested by the generator. T
   - Arrow-key support for the search menu.
   - Rough edges with CSS.
 
+# Support
+
 ## asledgehammer Discord
 https://discord.gg/u3vWvcPX8f
 
-## Support
 If you like what I do and helped your community a lot, feel free to buy me a coffee!
 https://ko-fi.com/jabdoesthings
 https://www.paypal.com/paypalme/JabJabJab
