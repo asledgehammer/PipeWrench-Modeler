@@ -1,0 +1,134 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Generator = exports.WILDCARD_TYPE = void 0;
+const fs = __importStar(require("fs"));
+const Utils_1 = require("./Utils");
+exports.WILDCARD_TYPE = 'any';
+class Generator {
+    constructor(library) {
+        this.moduleName = 'PipeWrench';
+        this.distDir = './dist';
+        this.partialsDir = `${this.distDir}/partials`;
+        this.library = library;
+    }
+    run() {
+        Generator.funcCache.length = 0;
+        this.setupDirectories();
+        this.generateDefinitions();
+        this.generateReferencePartial();
+        this.generateLuaInterfacePartial();
+        this.generateAPIPartial();
+    }
+    setupDirectories() {
+        const { distDir, partialsDir } = this;
+        if (!fs.existsSync(distDir))
+            fs.mkdirSync(distDir);
+        Utils_1.cleardirsSync(distDir);
+        fs.mkdirSync(`${partialsDir}`);
+    }
+    generateDefinitions() {
+        const { library, moduleName } = this;
+        const { luaFiles } = library;
+        const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
+        for (const fileName of luaFileNames) {
+            const file = luaFiles[fileName];
+            console.log(`Generating: ${file.id.replace('.lua', '.d.ts')}..`);
+            const code = file.generate(moduleName);
+            Utils_1.mkdirsSync(`./dist/lua/${file.folder}`);
+            Utils_1.writeTSFile(`./dist/lua/${file.fileLocal.replace('.lua', '.d.ts')}`, Utils_1.prettify(code));
+        }
+    }
+    generateAPIPartial() {
+        const { library, moduleName, partialsDir } = this;
+        const { luaFiles } = library;
+        const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
+        let code = '';
+        for (const fileName of luaFileNames) {
+            const file = luaFiles[fileName];
+            const fileCode = file.generateAPI('  ', moduleName);
+            if (fileCode.length)
+                code += `${fileCode}\n`;
+        }
+        let s = '/** @noResolution @noSelfInFile */\n';
+        s += `/// <reference path="reference.d.ts" />\n\n`;
+        s += `declare module '${moduleName}' {\n`;
+        s += '// [PARTIAL:START]\n';
+        s += code;
+        s += '// [PARTIAL:STOP]\n';
+        s += '}\n';
+        Utils_1.writeTSFile(`${partialsDir}/Lua.api.partial.d.ts`, Utils_1.prettify(s));
+    }
+    generateReferencePartial() {
+        const { distDir, partialsDir } = this;
+        const luaDir = Utils_1.scandirs(`${distDir}`);
+        const references = [];
+        const recurse = (dir) => {
+            if (dir.name !== 'dist') {
+                const fileNames = Object.keys(dir.files).sort((o1, o2) => o1.localeCompare(o2));
+                if (fileNames.length) {
+                    for (const fileName of fileNames) {
+                        const file = dir.files[fileName];
+                        const refPath = file.path.replace(`${distDir}/`, '');
+                        references.push(`/// <reference path="${refPath}" />`);
+                    }
+                }
+            }
+            const dirNames = Object.keys(dir.dirs).sort((o1, o2) => o1.localeCompare(o2));
+            for (const subdirName of dirNames)
+                recurse(dir.dirs[subdirName]);
+        };
+        recurse(luaDir);
+        references.sort((o1, o2) => o1.localeCompare(o2));
+        let code = '// [PARTIAL:START]\n';
+        for (const reference of references)
+            code += `${reference}\n`;
+        code += '// [PARTIAL:STOP]\n';
+        Utils_1.writeTSFile(`${partialsDir}/Lua.reference.partial.d.ts`, Utils_1.prettify(code));
+    }
+    generateLuaInterfacePartial() {
+        const { library, partialsDir } = this;
+        const { luaFiles } = library;
+        const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
+        let luaCode = '';
+        let prefix = '  ';
+        luaCode += 'local Exports = {}\n';
+        luaCode += '-- [PARTIAL:START]\n';
+        luaCode += '_G.PIPEWRENCH_READY = false\n';
+        luaCode += `triggerEvent('OnPipeWrenchBoot', false)\n`;
+        luaCode += 'Events.OnGameBoot.Add(function()\n\n';
+        for (const fileName of luaFileNames) {
+            const file = luaFiles[fileName];
+            const fileCode = file.generateLua(prefix);
+            if (fileCode.length)
+                luaCode += `${fileCode}\n`;
+        }
+        luaCode += `${prefix}_G.PIPEWRENCH_READY = true\n`;
+        luaCode += `${prefix}-- Trigger reimport blocks for all compiled PipeWrench TypeScript file(s).\n`;
+        luaCode += `${prefix}triggerEvent('OnPipeWrenchBoot', true)\n`;
+        luaCode += 'end)\n';
+        luaCode += '-- [PARTIAL:STOP]\n\n';
+        luaCode += 'return Exports\n';
+        Utils_1.writeLuaFile(`${partialsDir}/Lua.interface.partial.lua`, luaCode);
+    }
+}
+exports.Generator = Generator;
+Generator.funcCache = [];
