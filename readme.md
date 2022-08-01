@@ -15,6 +15,9 @@ Models are instructions provided by humans that are digested by the generator. T
 ## Commands
 
 - Development
+  - Install `gruntjs`.
+  - Install `Ruby`.
+  - Install `SASS`.
   - Run `grunt` for watching `.ts` and `.scss` files to compile.
 
 - Application
