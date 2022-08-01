@@ -6,5 +6,8 @@
 package-lock.json
 node_modules/
 .eslintrc.json
-assets/media/lua/
-assets/media/models/
+assets/media/lua/client
+assets/media/lua/server
+assets/media/lua/shared
+
+assets/media/models/**/*.json
