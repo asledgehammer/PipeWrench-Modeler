@@ -61,17 +61,16 @@ export class LuaField extends LuaNamedObject {
     const processTypes = (types: string[], model: FieldModel): void => {
       const { _return_ } = model;
       const { types: returnTypes } = _return_;
-      types.length = 0;
       if (!returnTypes.length) {
-        types.push(WILDCARD_TYPE);
         return;
       }
+      types.length = 0;
       for (const type of returnTypes) {
         if (types.indexOf(type) === -1) types.push(type);
       }
     };
     
-    const types: string[] = [];
+    const types: string[] = [WILDCARD_TYPE];
 
     if (container) {
       const fieldModel = this.getModel();

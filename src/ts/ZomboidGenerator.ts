@@ -1,6 +1,12 @@
 import * as fs from 'fs';
 import { LuaLibrary } from './lua/LuaLibrary';
 
+// import os module
+const os = require('os');
+
+// check the available memory
+const userHomeDir = os.homedir();
+
 import {
   cleardirsSync,
   Directory,
@@ -17,8 +23,13 @@ export class ZomboidGenerator {
   static FUNCTION_CACHE: string[] = [];
   readonly library: LuaLibrary;
   private readonly moduleName = 'PipeWrench';
-  private readonly distDir = './dist';
-  private readonly partialsDir = `${this.distDir}/partials`;
+  private readonly zomboidDir = `${userHomeDir}/Zomboid`;
+  private readonly rootDir = `${this.zomboidDir}/PipeWrench`;
+  private readonly outputDir = `${this.rootDir}/output`;
+  private readonly luaDir = `${this.outputDir}/lua`;
+
+  private readonly generatedDir = `${this.rootDir}/generated`;
+  private readonly partialsDir = `${this.generatedDir}/partials`;
 
   constructor(library: LuaLibrary) {
     this.library = library;
@@ -34,11 +45,17 @@ export class ZomboidGenerator {
   }
 
   setupDirectories() {
-    const { distDir, partialsDir } = this;
+    const { rootDir: distDir, generatedDir, partialsDir, outputDir, luaDir, zomboidDir } = this;
     // Initialize directories.
+    if (!fs.existsSync(zomboidDir)) fs.mkdirSync(zomboidDir);
     if (!fs.existsSync(distDir)) fs.mkdirSync(distDir);
-    cleardirsSync(distDir);
-    fs.mkdirSync(`${partialsDir}`);
+
+    if (!fs.existsSync(generatedDir)) fs.mkdirSync(generatedDir);
+    if (!fs.existsSync(partialsDir)) fs.mkdirSync(partialsDir);
+
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
+    if (!fs.existsSync(luaDir)) fs.mkdirSync(luaDir);
+    else cleardirsSync(this.luaDir);
   }
 
   generateDefinitions() {
@@ -49,8 +66,11 @@ export class ZomboidGenerator {
       const file = luaFiles[fileName];
       console.log(`Generating: ${file.id.replace('.lua', '.d.ts')}..`);
       const code = file.generateDefinitionFile(moduleName);
-      mkdirsSync(`./dist/lua/${file.folder}`);
-      writeTSFile(`./dist/lua/${file.fileLocal.replace('.lua', '.d.ts')}`, prettify(code));
+      mkdirsSync(`${this.luaDir}/${file.folder}`);
+      writeTSFile(
+        `${this.outputDir}/lua/${file.fileLocal.replace('.lua', '.d.ts')}`,
+        prettify(code)
+      );
     }
   }
 
@@ -77,7 +97,7 @@ export class ZomboidGenerator {
   }
 
   generateReferencePartial() {
-    const { distDir, partialsDir } = this;
+    const { rootDir: distDir, partialsDir } = this;
     // Grab the entire file tree generated so far.
     const luaDir = scandirs(`${distDir}`);
     const references: string[] = [];
