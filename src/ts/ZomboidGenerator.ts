@@ -108,7 +108,7 @@ export class ZomboidGenerator {
         if (fileNames.length) {
           for (const fileName of fileNames) {
             const file = dir.files[fileName];
-            const refPath = file.path.replace(`${distDir}/`, '');
+            const refPath = file.path.replace(`${this.outputDir}/`, '');
             references.push(`/// <reference path="${refPath}" />`);
           }
         }
@@ -117,7 +117,7 @@ export class ZomboidGenerator {
       for (const subdirName of dirNames) recurse(dir.dirs[subdirName]);
     };
     // Start the filetree walk.
-    recurse(luaDir);
+    recurse(luaDir.dirs['output'].dirs['lua']);
     // Generate the reference partial.
     references.sort((o1, o2) => o1.localeCompare(o2));
     let code = '// [PARTIAL:START]\n';
