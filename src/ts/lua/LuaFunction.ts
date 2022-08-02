@@ -7,8 +7,6 @@ import { sanitizeName } from './model/ModelUtils';
 import { LuaFile } from './LuaFile';
 import { LuaNamedObject } from './LuaNamedObject';
 
-import { FunctionModel } from './model/FunctionModel';
-
 /** @author JabDoesThings */
 export class LuaFunction extends LuaNamedObject {
   readonly file: LuaFile;
@@ -114,11 +112,15 @@ export class LuaFunction extends LuaNamedObject {
   }
 
   generateAPI(prefix: string): string {
-    const { name, fullPath } = this;
-    const documentation = this.generateDocumentation(prefix);
-    return `${prefix}${
-      documentation ? `${documentation}\n` : ''
-    }${prefix}export const ${sanitizeName(name)} = ${fullPath};`;
+    
+    // This is the only way I know how to have this not error out. -Jab
+    return this.onCompile(prefix);
+
+    // const { name, fullPath } = this;
+    // const documentation = this.generateDocumentation(prefix);
+    // return `${prefix}${
+    //   documentation ? `${documentation}\n` : ''
+    // }${prefix}export const ${sanitizeName(name)} = ${fullPath};`;
   }
 
   generateLuaInterface(prefix: string = ''): string {

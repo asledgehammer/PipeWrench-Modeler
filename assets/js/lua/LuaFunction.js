@@ -89,9 +89,7 @@ class LuaFunction extends LuaNamedObject_1.LuaNamedObject {
         return compiled;
     }
     generateAPI(prefix) {
-        const { name, fullPath } = this;
-        const documentation = this.generateDocumentation(prefix);
-        return `${prefix}${documentation ? `${documentation}\n` : ''}${prefix}export const ${ModelUtils_1.sanitizeName(name)} = ${fullPath};`;
+        return this.onCompile(prefix);
     }
     generateLuaInterface(prefix = '') {
         let parametersString = '(';
