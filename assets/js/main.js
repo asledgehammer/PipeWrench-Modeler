@@ -23,6 +23,7 @@ exports.start = function () {
     // const menu = electron.remote.Menu.buildFromTemplate(template);
     // electron.remote.Menu.setApplicationMenu(menu);
     setTimeout(() => {
+        console.log('### Loading please wait ###');
         luaLibrary = new LuaLibrary_1.LuaLibrary();
         luaLibrary.scan();
         luaLibrary.parse();
@@ -33,8 +34,20 @@ exports.start = function () {
         window.setTable = (tableName) => {
             modelUIManager.setTable(tableName);
         };
-        for (const index in luaLibrary.classes) {
-            modelUIManager.setClass(luaLibrary.classes[index].name);
+        // Loading all entries
+        const classes = Object.values(luaLibrary.classes);
+        const tables = Object.values(luaLibrary.tables);
+        console.log("Sorting classes...");
+        classes.sort((a, b) => a.name.localeCompare(b.name));
+        console.log("Sorting tables...");
+        tables.sort((a, b) => a.name.localeCompare(b.name));
+        console.log("Loading classes...");
+        for (const index in classes) {
+            modelUIManager.setClass(classes[index].name);
+        }
+        console.log("Loading tables...");
+        for (const index in classes) {
+            modelUIManager.setTable(tables[index].name);
         }
         console.log('### Ready ###');
     }, 100);
