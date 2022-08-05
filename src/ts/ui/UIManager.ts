@@ -437,7 +437,7 @@ export class ModelUIManager {
   }
 
   setClass(className: string) {
-    console.log(`setClass(${className})`);
+    // console.log(`setClass(${className})`);
 
     this.selectedTable = null;
     if (!className) {
