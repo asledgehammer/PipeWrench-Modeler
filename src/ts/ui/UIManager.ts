@@ -53,6 +53,7 @@ export class ModelUIManager {
     this.centerPanel = $('.center-panel').get(0) as HTMLDivElement;
     this.rightPanel = $('.right-panel').get(0) as HTMLDivElement;
 
+    // @ts-ignore
     this.modelPane = $(this.centerPanel).find('.model-pane').get(0);
     this.$modelPane = $(this.modelPane);
 
