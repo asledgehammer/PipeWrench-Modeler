@@ -117,7 +117,17 @@ export class LuaMethod extends LuaNamedObject {
     let compiled = `${s}${prefix}${this.isStatic ? 'static ' : ''}${this.name}: `;
     if (wrapWildcardType) compiled += '(';
     compiled += `(${parametersString}) => ${returnString}`;
-    if (wrapWildcardType) compiled += `) | ${WILDCARD_TYPE}`;
+
+    ///////////////////////////////////////
+    // KONIJIMA FIX
+    // Fix the static method using ':' instead of '.' by removing the '| any'
+    if (wrapWildcardType) compiled += `)`;
+    if (wrapWildcardType && !this.isStatic) compiled += ` | ${WILDCARD_TYPE}`;
+    ///////////////////////////////////////
+    // ORIGINAL
+    // if (wrapWildcardType) compiled += `) | ${WILDCARD_TYPE}`;
+    ///////////////////////////////////////
+
     compiled += ';';
 
     return compiled;
