@@ -37,6 +37,10 @@ export let start = function () {
       modelUIManager.setTable(tableName);
     };
 
+    for (const index in luaLibrary.classes) {
+      modelUIManager.setClass(luaLibrary.classes[index].name);
+    }
+
     console.log('### Ready ###');
   }, 100);
 };
