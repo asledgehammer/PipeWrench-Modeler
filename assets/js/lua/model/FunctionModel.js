@@ -8,6 +8,7 @@ const ParamModel_1 = require("./ParamModel");
 const ReturnModel_1 = require("./ReturnModel");
 const Utils_1 = require("../../Utils");
 const ModelUtils_1 = require("./ModelUtils");
+/** @author JabDoesThings */
 class FunctionModel extends Model_1.Model {
     constructor(name, json) {
         super();
@@ -123,4 +124,5 @@ class FunctionModel extends Model_1.Model {
     }
 }
 exports.FunctionModel = FunctionModel;
+/** (Loaded via {@link ModelUIManager}) */
 FunctionModel.HTML_TEMPLATE = '';

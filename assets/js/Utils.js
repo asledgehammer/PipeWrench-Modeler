@@ -65,6 +65,7 @@ exports.rmdirsync = function (path) {
 exports.cleardirsSync = function (path) {
     let files = [];
     if (fs.existsSync(path)) {
+        // Remove dir(s) first.
         files = fs.readdirSync(path);
         files.forEach((dir) => {
             var dirPath = `${path}/${dir}`;
@@ -73,6 +74,7 @@ exports.cleardirsSync = function (path) {
                 fs.rmdirSync(dirPath);
             }
         });
+        // Remove file(s).
         files = fs.readdirSync(path);
         files.forEach((file) => {
             var filePath = `${path}/${file}`;
@@ -162,6 +164,14 @@ exports.prettify = (code) => {
         printWidth: 120,
     });
 };
+/**
+ * A temporary workaround for no `replaceAll` function by default.
+ *
+ * @param string The string to transform.
+ * @param target The target phrase to replace.
+ * @param to The phrase to replace the target.
+ * @returns The transformed string.
+ */
 exports.replaceAll = (string, target, to, position = 0) => {
     let index;
     let lastIndex = position;

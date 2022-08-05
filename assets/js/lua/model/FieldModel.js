@@ -6,6 +6,7 @@ const ModelDocumentation_1 = require("./doc/ModelDocumentation");
 const ReturnModel_1 = require("./ReturnModel");
 const Utils_1 = require("../../Utils");
 const DocumentationBuilder_1 = require("../../DocumentationBuilder");
+/** @author JabDoesThings */
 class FieldModel extends Model_1.Model {
     constructor(name, src) {
         super();
@@ -19,6 +20,7 @@ class FieldModel extends Model_1.Model {
         const { documentation: fieldDoc, _return_ } = this;
         const { description: fieldDescription } = fieldDoc;
         const documentationBuilder = new DocumentationBuilder_1.DocumentationBuilder();
+        // Process description. (If defined)
         if (fieldDescription && fieldDescription.length) {
             for (const line of fieldDescription)
                 documentationBuilder.appendLine(line);
@@ -63,4 +65,5 @@ class FieldModel extends Model_1.Model {
     }
 }
 exports.FieldModel = FieldModel;
+/** (Loaded via {@link ModelUIManager}) */
 FieldModel.HTML_TEMPLATE = '';

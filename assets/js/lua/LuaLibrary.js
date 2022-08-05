@@ -24,6 +24,7 @@ const fs = __importStar(require("fs"));
 const LuaFile_1 = require("./LuaFile");
 const LuaClass_1 = require("./LuaClass");
 const ModelLibrary_1 = require("./model/ModelLibrary");
+/** @author JabDoesThings */
 class LuaLibrary {
     constructor() {
         this.models = new ModelLibrary_1.ModelLibrary(this);
@@ -70,6 +71,8 @@ class LuaLibrary {
         this.tables = {};
         this.globalFields = {};
         this.globalFunctions = {};
+        // The root class doesn't define itself using 'derive(type: string)'.
+        // Add it manually.
         this.classes['ISBaseObject'] = new LuaClass_1.LuaClass(null, 'ISBaseObject');
         this.classes['ISBaseObject'].file = new LuaFile_1.LuaFile(this, '', '');
         for (const file of this.files) {
@@ -125,14 +128,17 @@ class LuaLibrary {
     }
     audit() {
         for (const className of Object.keys(this.classes)) {
+            // Classes takes precedence over duplicate tables.
             if (this.tables[className])
                 delete this.tables[className];
+            // Make sure that class properties are properly assigned.
             this.classes[className].audit();
         }
     }
     linkClasses() {
         for (const name of Object.keys(this.classes)) {
             const _class_ = this.classes[name];
+            // Ignore the root class.
             if (_class_.name === 'ISBaseObject')
                 continue;
             let superClass = this.classes[_class_.superClassName];
