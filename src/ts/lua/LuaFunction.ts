@@ -105,7 +105,8 @@ export class LuaFunction extends LuaNamedObject {
     let compiled = `${s}${prefix}export const ${sanitizeName(name)}: `;
     if (wrapWildcardType) compiled += '(';
     compiled += `(${parametersString}) => ${returnString}`;
-    if (wrapWildcardType) compiled += `) | ${WILDCARD_TYPE}`;
+    if (wrapWildcardType) compiled += `)`;
+    
     compiled += ';';
 
     return compiled;

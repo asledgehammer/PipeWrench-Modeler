@@ -90,7 +90,7 @@ class LuaFunction extends LuaNamedObject_1.LuaNamedObject {
             compiled += '(';
         compiled += `(${parametersString}) => ${returnString}`;
         if (wrapWildcardType)
-            compiled += `) | ${ZomboidGenerator_1.WILDCARD_TYPE}`;
+            compiled += `)`;
         compiled += ';';
         return compiled;
     }
