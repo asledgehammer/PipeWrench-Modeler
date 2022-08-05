@@ -489,7 +489,7 @@ class ModelUIManager {
         this.setCode(_class_.compile());
     }
     setTable(tableName) {
-        console.log(`setTable(${tableName})`);
+        //console.log(`setTable(${tableName})`);
         this.selectedClass = null;
         if (!tableName) {
             this.selectedTable = null;

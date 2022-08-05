@@ -549,7 +549,7 @@ export class ModelUIManager {
   }
 
   setTable(tableName: string) {
-    console.log(`setTable(${tableName})`);
+    //console.log(`setTable(${tableName})`);
 
     this.selectedClass = null;
     if (!tableName) {
