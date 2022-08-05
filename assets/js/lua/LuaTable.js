@@ -38,7 +38,7 @@ class LuaTable extends LuaContainer_1.LuaContainer {
         let s = documentation.length ? `${prefix}${documentation}\n` : '';
         // Render empty tables on one line.
         if (this.isEmpty()) {
-            return `${s}\n${prefix}export class ${ModelUtils_1.sanitizeName(name)} { static [id: string]: ${ZomboidGenerator_1.WILDCARD_TYPE}; }`;
+            return `${s}\n${prefix}export abstract class ${ModelUtils_1.sanitizeName(name)} { static [id: string]: ${ZomboidGenerator_1.WILDCARD_TYPE}; }`;
         }
         const { staticFields, nonStaticFields } = this.sortFields();
         const { staticMethods, nonStaticMethods } = this.sortMethods();
@@ -46,7 +46,7 @@ class LuaTable extends LuaContainer_1.LuaContainer {
         // Make sure that no one can try to use Lua tables as a class, even though we're using
         // the class type for tables. This is to keep things clean. We *could* go with an interface,
         // however values cannot be assigned to them in TypeScript like tables can in Lua.
-        s += `${prefix}export class ${ModelUtils_1.sanitizeName(name)} {\n\n${newPrefix}private constructor();\n\n`;
+        s += `${prefix}export abstract class ${ModelUtils_1.sanitizeName(name)} {\n\n`;
         // Wildcard.
         s += `${newPrefix}static [id: string]: ${ZomboidGenerator_1.WILDCARD_TYPE};\n\n`;
         // Render static field(s). (If any)
@@ -81,7 +81,7 @@ class LuaTable extends LuaContainer_1.LuaContainer {
         const model = library.getTableModel(this);
         const documentation = this.generateDocumentation(prefix, model);
         // Render empty classes on one line.
-        return `${prefix}${documentation ? `${documentation}\n` : ''}${prefix}export class ${ModelUtils_1.sanitizeName(this.name)} {}`;
+        return `${prefix}${documentation ? `${documentation}\n` : ''}${prefix}export abstract class ${ModelUtils_1.sanitizeName(this.name)} extends ${this.fullPath} {}`;
     }
     generateLuaInterface(prefix = '') {
         const { name } = this;
@@ -89,6 +89,12 @@ class LuaTable extends LuaContainer_1.LuaContainer {
     }
     isEmpty() {
         return !Object.keys(this.fields).length && !Object.keys(this.methods).length;
+    }
+    get namespace() {
+        return this.file.containerNamespace;
+    }
+    get fullPath() {
+        return `${this.namespace}.${ModelUtils_1.sanitizeName(this.name)}`;
     }
 }
 exports.LuaTable = LuaTable;
