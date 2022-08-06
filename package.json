@@ -4,7 +4,7 @@
   "description": "None",
   "main": "main.js",
   "scripts": {
-    "start": "./node_modules/electron/dist/electron.exe main.js"
+    "start": "npx electron main.js"
   },
   "devDependencies": {
     "@microsoft/tsdoc": "^0.12.10",
