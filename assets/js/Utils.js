@@ -45,8 +45,6 @@ exports.MIT_LICENSE = [
     'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,',
     'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE',
     'SOFTWARE.',
-    '',
-    'File generated at: $TIME_GENERATED$',
 ];
 exports.rmdirsync = function (path) {
     let files = [];
@@ -145,7 +143,7 @@ exports.mkdirsSync = (path) => {
         if (next === '.')
             continue;
         if (!fs.existsSync(built))
-            fs.mkdirSync(built);
+            fs.mkdirSync(built, { recursive: true });
     }
 };
 exports.writeTSFile = (path, code) => {

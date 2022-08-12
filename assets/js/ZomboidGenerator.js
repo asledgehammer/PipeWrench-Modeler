@@ -40,27 +40,32 @@ class ZomboidGenerator {
     }
     run() {
         ZomboidGenerator.FUNCTION_CACHE.length = 0;
+        console.log("- setupDirectories...");
         this.setupDirectories();
+        console.log("- generateDefinitions...");
         this.generateDefinitions();
+        console.log("- generateReferencePartial...");
         this.generateReferencePartial();
+        console.log("- generateLuaInterfacePartial...");
         this.generateLuaInterfacePartial();
+        console.log("- generateAPIPartial...");
         this.generateAPIPartial();
     }
     setupDirectories() {
         const { rootDir: distDir, generatedDir, partialsDir, outputDir, luaDir, zomboidDir } = this;
         // Initialize directories.
         if (!fs.existsSync(zomboidDir))
-            fs.mkdirSync(zomboidDir);
+            fs.mkdirSync(zomboidDir, { recursive: true });
         if (!fs.existsSync(distDir))
-            fs.mkdirSync(distDir);
+            fs.mkdirSync(distDir, { recursive: true });
         if (!fs.existsSync(generatedDir))
-            fs.mkdirSync(generatedDir);
+            fs.mkdirSync(generatedDir, { recursive: true });
         if (!fs.existsSync(partialsDir))
-            fs.mkdirSync(partialsDir);
+            fs.mkdirSync(partialsDir, { recursive: true });
         if (!fs.existsSync(outputDir))
-            fs.mkdirSync(outputDir);
+            fs.mkdirSync(outputDir, { recursive: true });
         if (!fs.existsSync(luaDir))
-            fs.mkdirSync(luaDir);
+            fs.mkdirSync(luaDir, { recursive: true });
         else
             Utils_1.cleardirsSync(this.luaDir);
     }
@@ -71,6 +76,7 @@ class ZomboidGenerator {
         for (const fileName of luaFileNames) {
             const file = luaFiles[fileName];
             console.log(`Generating: ${file.id.replace('.lua', '.d.ts')}..`);
+            console.log(file.folder);
             const code = file.generateDefinitionFile(moduleName);
             Utils_1.mkdirsSync(`${this.luaDir}/${file.folder}`);
             Utils_1.writeTSFile(`${this.outputDir}/lua/${file.fileLocal.replace('.lua', '.d.ts')}`, Utils_1.prettify(code));

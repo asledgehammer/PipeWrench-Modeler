@@ -1,6 +1,7 @@
 {
   "version": "4.6.2",
   "compilerOptions": {
+    "lib": ["ESNext", "DOM"],
     "strict": false,
     "module": "commonjs",
     "jsx": "preserve",
@@ -28,7 +29,8 @@
     "target": "ES6"
   },
   "files": [
-    "src/ts/main.ts"
+    "src/ts/main.ts",
+    "src/ts/headless.ts"
   ],
   "lib": [
     "es6",

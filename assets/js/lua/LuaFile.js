@@ -40,8 +40,9 @@ class LuaFile {
      * @param library The library storing all discovered Lua.
      * @param id The `require(..) / require '..'` path to the file.
      * @param file The path to the file on the disk.
+     * @param luapath The path to the zomboid lua directory on the disk.
      */
-    constructor(library, id, file) {
+    constructor(library, id, file, luapath) {
         /** All proxy assigners discovered in the file. */
         this.proxies = {};
         /** All pseudo-classes discovered in the file. */
@@ -55,14 +56,20 @@ class LuaFile {
         this.library = library;
         this.id = id;
         this.file = file;
-        this.fileLocal = file.replace('./assets/media/lua/', '');
+        this.fileLocal = file.replace(luapath, '');
+        // console.log("luapath:", luapath)
+        // console.log("id:", this.id)
+        // console.log("file:", this.file)
+        // console.log("fileLocal:", this.fileLocal)
         let split = this.fileLocal.split('/');
         split.pop();
         this.folder = split.join('/');
+        // console.log("folder:", this.folder)
+        // console.log("-----------------------")
         split = this.fileLocal.split('.');
         split.pop();
-        this.containerNamespace = `lua.${this.folder.split('/').join('.')}`;
-        this.propertyNamespace = `lua.${split.join('.').split('/').join('.')}`;
+        this.containerNamespace = `lua.${this.folder.split('/').join('.')}`.replaceAll('..', '.');
+        this.propertyNamespace = `lua.${split.join('.').split('/').join('.')}`.replaceAll('..', '.');
     }
     /**
      * Cleans & parses Lua in the file using LuaParse.
