@@ -1,3 +1,4 @@
+import path from 'path';
 import { LuaLibrary } from './lua/LuaLibrary';
 import { ZomboidGenerator } from './ZomboidGenerator';
 
@@ -17,6 +18,12 @@ export let start = function () {
 
   const luaLibrary = new LuaLibrary();
   const generator = new ZomboidGenerator(luaLibrary);
+
+  // Fix luapath
+  if (!args.luapath) {
+    args.luapath = path.resolve(__dirname, "../media/lua")
+  }
+  args.luapath = args.luapath.replaceAll("\\", "/")
 
   luaLibrary.scan(args.luapath || null);
   luaLibrary.parse(args.luapath || null);

@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.start = void 0;
+const path_1 = __importDefault(require("path"));
 const LuaLibrary_1 = require("./lua/LuaLibrary");
 const ZomboidGenerator_1 = require("./ZomboidGenerator");
 // Entry Point from HTML.
@@ -15,6 +19,10 @@ exports.start = function () {
     console.log("Args:", args);
     const luaLibrary = new LuaLibrary_1.LuaLibrary();
     const generator = new ZomboidGenerator_1.ZomboidGenerator(luaLibrary);
+    if (!args.luapath) {
+        args.luapath = path_1.default.resolve(__dirname, "../media/lua");
+    }
+    args.luapath = args.luapath.replaceAll("\\", "/");
     luaLibrary.scan(args.luapath || null);
     luaLibrary.parse(args.luapath || null);
     // Loading all entries
