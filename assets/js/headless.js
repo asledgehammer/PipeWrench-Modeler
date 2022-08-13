@@ -19,6 +19,7 @@ exports.start = function () {
     console.log("Args:", args);
     const luaLibrary = new LuaLibrary_1.LuaLibrary();
     const generator = new ZomboidGenerator_1.ZomboidGenerator(luaLibrary);
+    // Fix luapath
     if (!args.luapath) {
         args.luapath = path_1.default.resolve(__dirname, "../media/lua");
     }

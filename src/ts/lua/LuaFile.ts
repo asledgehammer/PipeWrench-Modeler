@@ -84,9 +84,11 @@ export class LuaFile {
     // console.log("file:", this.file)
     // console.log("fileLocal:", this.fileLocal)
     let split = this.fileLocal.split('/');
+    split.shift();
+    this.fileLocal = split.join('/')
     split.pop();
     this.folder = split.join('/');
-    // console.log("folder:", this.folder)
+    console.log("folder:", this.folder)
     // console.log("-----------------------")
     split = this.fileLocal.split('.');
     split.pop();
