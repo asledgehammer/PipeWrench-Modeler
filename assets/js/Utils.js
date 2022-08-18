@@ -45,8 +45,6 @@ exports.MIT_LICENSE = [
     'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,',
     'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE',
     'SOFTWARE.',
-    '',
-    'File generated at: $TIME_GENERATED$',
 ];
 exports.rmdirsync = function (path) {
     let files = [];
@@ -65,6 +63,7 @@ exports.rmdirsync = function (path) {
 exports.cleardirsSync = function (path) {
     let files = [];
     if (fs.existsSync(path)) {
+        // Remove dir(s) first.
         files = fs.readdirSync(path);
         files.forEach((dir) => {
             var dirPath = `${path}/${dir}`;
@@ -73,6 +72,7 @@ exports.cleardirsSync = function (path) {
                 fs.rmdirSync(dirPath);
             }
         });
+        // Remove file(s).
         files = fs.readdirSync(path);
         files.forEach((file) => {
             var filePath = `${path}/${file}`;
@@ -143,7 +143,7 @@ exports.mkdirsSync = (path) => {
         if (next === '.')
             continue;
         if (!fs.existsSync(built))
-            fs.mkdirSync(built);
+            fs.mkdirSync(built, { recursive: true });
     }
 };
 exports.writeTSFile = (path, code) => {
@@ -162,6 +162,14 @@ exports.prettify = (code) => {
         printWidth: 120,
     });
 };
+/**
+ * A temporary workaround for no `replaceAll` function by default.
+ *
+ * @param string The string to transform.
+ * @param target The target phrase to replace.
+ * @param to The phrase to replace the target.
+ * @returns The transformed string.
+ */
 exports.replaceAll = (string, target, to, position = 0) => {
     let index;
     let lastIndex = position;

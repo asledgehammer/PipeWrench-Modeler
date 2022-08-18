@@ -6,6 +6,7 @@ const LuaField_1 = require("./LuaField");
 const LuaMethod_1 = require("./LuaMethod");
 const LuaUtils_1 = require("./LuaUtils");
 const ModelUtils_1 = require("./model/ModelUtils");
+/** @author JabDoesThings */
 class LuaConstructor extends LuaMethod_1.LuaMethod {
     constructor(library, _class_, parsed, parameters) {
         super(library, _class_, parsed, 'constructor', parameters, false);
@@ -33,8 +34,10 @@ class LuaConstructor extends LuaMethod_1.LuaMethod {
             }
             return returnS;
         };
+        // Compile parameter(s). (If any)
         let parametersString = '';
         let parameters = [];
+        // If the model is present, set parameter names from it as some parameters may be renamed.
         if (constructorModel && constructorModel.testSignature(this)) {
             for (const parameter of constructorModel.parameters) {
                 const types = parameter.types && parameter.types.length ? compileTypes(parameter.types) : ZomboidGenerator_1.WILDCARD_TYPE;
@@ -57,6 +60,7 @@ class LuaConstructor extends LuaMethod_1.LuaMethod {
             return;
         const declaration = parsed;
         const fieldRefs = LuaUtils_1.scanBodyForFields(declaration.body, this.container.name, [].concat(this.parameters), true);
+        // Grab the name of the returned local table. This is what initial values for fields are set.
         let returnName;
         for (let index = declaration.body.length - 1; index >= 0; index--) {
             const statement = declaration.body[index];
@@ -66,6 +70,7 @@ class LuaConstructor extends LuaMethod_1.LuaMethod {
                 break;
             }
         }
+        // Go through all local assignments and add the ones matching the returnName as fields to the containser.
         for (const ref of fieldRefs) {
             if (ref.containerName === returnName) {
                 const { fieldName } = ref;

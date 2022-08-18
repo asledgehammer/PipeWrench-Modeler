@@ -30,31 +30,62 @@ const LuaTable_1 = require("./LuaTable");
 const LuaFunction_1 = require("./LuaFunction");
 const LuaMethod_1 = require("./LuaMethod");
 const LuaConstructor_1 = require("./LuaConstructor");
+/**
+ * **LuaFile** loads, parses, and processes Lua code stored in files.
+ *
+ * @author JabDoesThings
+ */
 class LuaFile {
-    constructor(library, id, file) {
+    /**
+     * @param library The library storing all discovered Lua.
+     * @param id The `require(..) / require '..'` path to the file.
+     * @param file The path to the file on the disk.
+     * @param luapath The path to the zomboid lua directory on the disk.
+     */
+    constructor(library, id, file, luapath) {
+        /** All proxy assigners discovered in the file. */
         this.proxies = {};
+        /** All pseudo-classes discovered in the file. */
         this.classes = {};
+        /** All tables discovered in the file. */
         this.tables = {};
         this.globalFields = {};
         this.globalFunctions = {};
+        /** All requires in the file. (Used for dependency chains) */
         this.requires = [];
         this.library = library;
         this.id = id;
         this.file = file;
-        this.fileLocal = file.replace('./assets/media/lua/', '');
+        this.fileLocal = file.replace(luapath, '');
+        // console.log("luapath:", luapath)
+        // console.log("id:", this.id)
+        // console.log("file:", this.file)
+        // console.log("fileLocal:", this.fileLocal)
         let split = this.fileLocal.split('/');
+        split.shift();
+        this.fileLocal = split.join('/');
         split.pop();
         this.folder = split.join('/');
+        console.log("folder:", this.folder);
+        // console.log("-----------------------")
         split = this.fileLocal.split('.');
         split.pop();
-        this.containerNamespace = `lua.${this.folder.split('/').join('.')}`;
-        this.propertyNamespace = `lua.${split.join('.').split('/').join('.')}`;
+        this.containerNamespace = `lua.${this.folder.split('/').join('.')}`.replaceAll('..', '.');
+        this.propertyNamespace = `lua.${split.join('.').split('/').join('.')}`.replaceAll('..', '.');
     }
+    /**
+     * Cleans & parses Lua in the file using LuaParse.
+     */
     parse() {
         let raw = fs.readFileSync(this.file).toString();
         raw = LuaUtils_1.correctKahluaCode(raw);
         this.parsed = parser.parse(raw, { luaVersion: '5.1' });
     }
+    /**
+     * Ran first, scans for all `require(..) | require '..'` call-statements in the file.
+     * These statements are used for generating dependency-chains for all files in the
+     * library.
+     */
     scanRequires() {
         const processRequire = (statement) => {
             const info = LuaUtils_1.getRequireInfo(statement);
@@ -75,6 +106,10 @@ class LuaFile {
             }
         }
     }
+    /**
+     * Ran second, scans and discovers global functions, global pseudo-classes, and proxy
+     * assignments to discovered elements in the file.
+     */
     scanGlobals() {
         const { parsed } = this;
         const localVars = [];
@@ -82,14 +117,17 @@ class LuaFile {
             const info = LuaUtils_1.getTableConstructor(statement);
             if (!info)
                 return false;
+            // Double-check if reused local tables are being reassigned. Ignore these.
             if (localVars.indexOf(info.name) !== -1)
                 return false;
+            // Make sure that the root class isn't rendered as a table.
             if (info.name === 'ISBaseObject') {
                 this.classes['ISBaseObject'] = this.library.classes['ISBaseObject'];
                 return false;
             }
             const table = new LuaTable_1.LuaTable(this, info.name);
             this.tables[info.name] = this.library.tables[info.name] = table;
+            // console.log(`Adding table: ${table.name}`);
             return true;
         };
         const processDerive = (statement) => {
@@ -102,6 +140,7 @@ class LuaFile {
             }
             const _class_ = new LuaClass_1.LuaClass(this, info.subClass, info.superClass);
             this.classes[info.subClass] = this.library.classes[info.subClass] = _class_;
+            // console.log(`Adding class: ${_class_.name}`);
             return true;
         };
         const processLocalProxy = (statement) => {
@@ -110,6 +149,7 @@ class LuaFile {
                 return false;
             if (LuaUtils_1.DEBUG)
                 LuaUtils_1.printProxyInfo(info);
+            // Check to make sure a class exists for the proxy.
             if (!this.library.classes[info.target])
                 return false;
             this.proxies[info.proxy] = info.target;
@@ -128,11 +168,13 @@ class LuaFile {
             }
             return true;
         };
+        // Scan for local vars.
         for (const statement of parsed.body) {
             if (statement.type === 'LocalStatement') {
                 localVars.push(statement.variables[0].name);
             }
         }
+        // Scan for explicit class declaractions.
         for (const statement of parsed.body) {
             if (statement.type === 'AssignmentStatement') {
                 if (processDerive(statement))
@@ -145,6 +187,7 @@ class LuaFile {
                     continue;
             }
         }
+        // Scan for local references to class declarations.
         for (const statement of parsed.body) {
             if (statement.type === 'LocalStatement') {
                 if (processLocalProxy(statement))
@@ -152,6 +195,10 @@ class LuaFile {
             }
         }
     }
+    /**
+     * Ran third, scans for elements assigned to global elements like methods and static
+     * functions | properties.
+     */
     scanMembers() {
         const { parsed } = this;
         const processMethod = (declaration) => {
@@ -183,6 +230,7 @@ class LuaFile {
                 table.methods[info.name] = method;
                 return true;
             }
+            // console.warn(`Cannot resolve container for method: \n\t${printMethodInfo(info)}`);
             return true;
         };
         const processMethodFromAssignment = (statement) => {
@@ -214,8 +262,10 @@ class LuaFile {
                 table.methods[info.name] = method;
                 return true;
             }
+            // console.warn(`Cannot resolve container for method: \n\t${printMethodInfo(info)}`);
             return true;
         };
+        // Scan for class function declarations.
         for (const statement of parsed.body) {
             if (statement.type === 'FunctionDeclaration') {
                 if (processMethod(statement))
@@ -223,6 +273,7 @@ class LuaFile {
                 const info = LuaUtils_1.getFunctionDeclaration(statement);
                 if (!info || info.isLocal || info.name === 'new' || info.name === 'toString')
                     continue;
+                // console.log(`Global function: ${info.name}`);
                 const _function_ = new LuaFunction_1.LuaFunction(this, statement, info.name, info.parameters, info.isLocal);
                 this.library.globalFunctions[_function_.name] = _function_;
             }
@@ -230,6 +281,7 @@ class LuaFile {
                 if (statement.init.length === 1) {
                     const init = statement.init[0];
                     if (init.type === 'FunctionDeclaration') {
+                        // These assignments can only be static.
                         if (processMethodFromAssignment(statement))
                             continue;
                     }
@@ -255,6 +307,7 @@ class LuaFile {
         for (const fieldName of fieldNames)
             code += `${fields[fieldName].compile('  ')}\n\n`;
         for (const functionName of funcNames) {
+            // Not sure why these two would exist in the global scope.
             if (functionName === 'new' || functionName === 'toString')
                 continue;
             const _function_ = functions[functionName];
@@ -312,10 +365,13 @@ class LuaFile {
             code += `${fields[fieldName].generateAPI(partial, this)}\n`;
         for (const functionName of functionNames) {
             const _function_ = functions[functionName];
+            // Only render global functions for the API.
             if (_function_.isLocal)
                 continue;
+            // Not sure why these two would exist in the global scope.
             if (functionName === 'new' || functionName === 'toString')
                 continue;
+            // Avoid duplicate global functions.
             if (ZomboidGenerator_1.ZomboidGenerator.FUNCTION_CACHE.indexOf(functionName) !== -1)
                 continue;
             ZomboidGenerator_1.ZomboidGenerator.FUNCTION_CACHE.push(functionName);

@@ -17,7 +17,7 @@ function createWindow() {
     height: 768,
     minWidth: 800,
     minHeight: 600,
-
+    maximizable: true,
     setMenuBarVisibility: true,
     // autoHideMenuBar: true,
     webPreferences: {
@@ -36,7 +36,7 @@ function createWindow() {
   // mainWindow.setAutoHideMenuBar(true);
   // mainWindow.setMenu(null);
   mainWindow.webContents.openDevTools({
-    mode: 'right',
+    mode: 'detach',
   });
 
   mainWindow.loadFile('index.html');

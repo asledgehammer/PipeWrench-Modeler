@@ -21,7 +21,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ZomboidGenerator = exports.WILDCARD_TYPE = void 0;
 const fs = __importStar(require("fs"));
+// import os module
 const os = require('os');
+// check the available memory
 const userHomeDir = os.homedir();
 const Utils_1 = require("./Utils");
 exports.WILDCARD_TYPE = 'any';
@@ -38,26 +40,32 @@ class ZomboidGenerator {
     }
     run() {
         ZomboidGenerator.FUNCTION_CACHE.length = 0;
+        console.log("- setupDirectories...");
         this.setupDirectories();
+        console.log("- generateDefinitions...");
         this.generateDefinitions();
+        console.log("- generateReferencePartial...");
         this.generateReferencePartial();
+        console.log("- generateLuaInterfacePartial...");
         this.generateLuaInterfacePartial();
+        console.log("- generateAPIPartial...");
         this.generateAPIPartial();
     }
     setupDirectories() {
         const { rootDir: distDir, generatedDir, partialsDir, outputDir, luaDir, zomboidDir } = this;
+        // Initialize directories.
         if (!fs.existsSync(zomboidDir))
-            fs.mkdirSync(zomboidDir);
+            fs.mkdirSync(zomboidDir, { recursive: true });
         if (!fs.existsSync(distDir))
-            fs.mkdirSync(distDir);
+            fs.mkdirSync(distDir, { recursive: true });
         if (!fs.existsSync(generatedDir))
-            fs.mkdirSync(generatedDir);
+            fs.mkdirSync(generatedDir, { recursive: true });
         if (!fs.existsSync(partialsDir))
-            fs.mkdirSync(partialsDir);
+            fs.mkdirSync(partialsDir, { recursive: true });
         if (!fs.existsSync(outputDir))
-            fs.mkdirSync(outputDir);
+            fs.mkdirSync(outputDir, { recursive: true });
         if (!fs.existsSync(luaDir))
-            fs.mkdirSync(luaDir);
+            fs.mkdirSync(luaDir, { recursive: true });
         else
             Utils_1.cleardirsSync(this.luaDir);
     }
@@ -68,6 +76,7 @@ class ZomboidGenerator {
         for (const fileName of luaFileNames) {
             const file = luaFiles[fileName];
             console.log(`Generating: ${file.id.replace('.lua', '.d.ts')}..`);
+            console.log(file.folder);
             const code = file.generateDefinitionFile(moduleName);
             Utils_1.mkdirsSync(`${this.luaDir}/${file.folder}`);
             Utils_1.writeTSFile(`${this.outputDir}/lua/${file.fileLocal.replace('.lua', '.d.ts')}`, Utils_1.prettify(code));
@@ -84,6 +93,7 @@ class ZomboidGenerator {
             if (fileCode.length)
                 code += `${fileCode}\n`;
         }
+        // Wrap and save the code.
         let s = '/** @noResolution @noSelfInFile */\n';
         s += `/// <reference path="reference.d.ts" />\n\n`;
         s += `declare module '${moduleName}' {\n`;
@@ -95,8 +105,10 @@ class ZomboidGenerator {
     }
     generateReferencePartial() {
         const { rootDir: distDir, partialsDir } = this;
+        // Grab the entire file tree generated so far.
         const luaDir = Utils_1.scandirs(`${distDir}`);
         const references = [];
+        // Generate the index.
         const recurse = (dir) => {
             if (dir.name !== 'dist') {
                 const fileNames = Object.keys(dir.files).sort((o1, o2) => o1.localeCompare(o2));
@@ -112,7 +124,9 @@ class ZomboidGenerator {
             for (const subdirName of dirNames)
                 recurse(dir.dirs[subdirName]);
         };
+        // Start the filetree walk.
         recurse(luaDir.dirs['output'].dirs['lua']);
+        // Generate the reference partial.
         references.sort((o1, o2) => o1.localeCompare(o2));
         let code = '// [PARTIAL:START]\n';
         for (const reference of references)

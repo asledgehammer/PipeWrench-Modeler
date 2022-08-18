@@ -25,42 +25,62 @@ const ClassModel_1 = require("./ClassModel");
 const TableModel_1 = require("./TableModel");
 const FieldModel_1 = require("./FieldModel");
 const FunctionModel_1 = require("./FunctionModel");
+/** @author JabDoesThings */
 class ModelFile {
+    /**
+     * @param library The library storing all models.
+     * @param id The name of the file.
+     * @param file The path to the file on the disk.
+     */
     constructor(library, id, file = '') {
+        /** All classes discovered in the file. */
         this.classes = {};
+        /** All table(s) discovered in the file. */
         this.tables = {};
+        /** All global field(s) discovered in the file. */
         this.globalFields = {};
+        /** All global functions(s) discovered in the file. */
         this.globalFunctions = {};
         this.library = library;
         this.id = id;
         this.file = file;
     }
+    /**
+     * Parses contents of the file from JSON.
+     */
     parse() {
         const raw = fs.readFileSync(this.file).toString();
         this.parsed = JSON.parse(raw);
         this.version = this.parsed.version;
     }
+    /**
+     * Scans the parsed JSON, loading classes, tables, global fields, and global functions.
+     */
     scan() {
         const { parsed } = this;
         const { classes, tables, globalFields, globalFunctions } = parsed;
         this.clear();
+        // Load class models.
         if (classes) {
             for (const name of Object.keys(classes)) {
                 const luaClass = this.library.luaLibrary.classes[name];
                 this.library.classes[name] = this.classes[name] = new ClassModel_1.ClassModel(luaClass, name, classes[name]);
             }
         }
+        // Load table models.
         if (tables) {
             for (const name of Object.keys(tables)) {
                 const luaTable = this.library.luaLibrary.tables[name];
                 this.library.tables[name] = this.tables[name] = new TableModel_1.TableModel(luaTable, name, tables[name]);
             }
         }
+        // Load global field models.
         if (globalFields) {
             for (const name of Object.keys(globalFields)) {
                 this.library.globalFields[name] = this.globalFields[name] = new FieldModel_1.FieldModel(name, globalFields[name]);
             }
         }
+        // Load global function models.
         if (globalFunctions) {
             for (const name of Object.keys(globalFunctions)) {
                 this.library.globalFunctions[name] = this.globalFunctions[name] = new FunctionModel_1.FunctionModel(name, globalFunctions[name]);
@@ -72,6 +92,8 @@ class ModelFile {
             _class_.populate();
         for (const table of Object.values(this.tables))
             table.populate();
+        // for (const field of Object.values(this.globalFields)) field.populate();
+        // for (const _function_ of Object.values(this.globalFunctions)) _function_.populate();
     }
     save(path) {
         let classes = undefined;
@@ -110,6 +132,9 @@ class ModelFile {
         const data = JSON.stringify(json, null, 2);
         fs.writeFileSync(path, data);
     }
+    /**
+     * Clears all classes, tables, global fields, and global functions loaded from the file.
+     */
     clear() {
         for (const id of Object.keys(this.classes))
             delete this.classes[id];

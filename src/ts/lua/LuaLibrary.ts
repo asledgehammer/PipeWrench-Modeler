@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import path from 'path';
 
 import { LuaFile } from './LuaFile';
 import { LuaClass } from './LuaClass';
@@ -24,11 +25,12 @@ export class LuaLibrary {
   globalFields: { [id: string]: LuaField } = {};
   globalFunctions: { [id: string]: LuaFunction } = {};
 
-  scan() {
+  scan(luaPath?: string) {
+    luaPath = luaPath || './assets/media/lua';
     this.files = [];
-    this.scanDir('./assets/media/lua/shared');
-    this.scanDir('./assets/media/lua/client');
-    this.scanDir('./assets/media/lua/server');
+    this.scanDir(path.join(luaPath, 'shared').replaceAll("\\", "/"));
+    this.scanDir(path.join(luaPath, 'client').replaceAll("\\", "/"));
+    this.scanDir(path.join(luaPath, 'server').replaceAll("\\", "/"));
     this.files.sort((a: string, b: string) => {
       return a.localeCompare(b);
     });
@@ -57,7 +59,9 @@ export class LuaLibrary {
     }
   }
 
-  parse() {
+  parse(luaPath?: string) {
+    luaPath = luaPath || './assets/media/lua';
+
     this.classes = {};
     this.tables = {};
     this.globalFields = {};
@@ -66,18 +70,18 @@ export class LuaLibrary {
     // The root class doesn't define itself using 'derive(type: string)'.
     // Add it manually.
     this.classes['ISBaseObject'] = new LuaClass(null, 'ISBaseObject');
-    this.classes['ISBaseObject'].file = new LuaFile(this, '', '');
+    this.classes['ISBaseObject'].file = new LuaFile(this, '', '', luaPath.replace("./", "/"));
 
     for (const file of this.files) {
       const id = file
-        .replace('./assets/media/lua/client/', '')
-        .replace('./assets/media/lua/server/', '')
-        .replace('./assets/media/lua/shared/', '')
+        .replace(path.join(luaPath, 'client').replaceAll("\\", "/"), '')
+        .replace(path.join(luaPath, 'server').replaceAll("\\", "/"), '')
+        .replace(path.join(luaPath, 'shared').replaceAll("\\", "/"), '')
         .replace('.lua', '')
         .replace('.Lua', '')
         .replace('.LUA', '');
 
-      const luaFile = new LuaFile(this, id, file);
+      const luaFile = new LuaFile(this, id, file, luaPath.replace("./", "/"));
       luaFile.parse();
       luaFile.scanRequires();
 

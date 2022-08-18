@@ -35,6 +35,7 @@ const FieldModel_1 = require("../lua/model/FieldModel");
 const MethodModel_1 = require("../lua/model/MethodModel");
 const ParamModel_1 = require("../lua/model/ParamModel");
 const Utils_1 = require("../Utils");
+/** @author JabDoesThings */
 class ModelUIManager {
     constructor(luaLibrary) {
         this.path = null;
@@ -51,9 +52,11 @@ class ModelUIManager {
                 const { classes, tables, globalFields, globalFunctions } = this.modelFile;
                 for (const className of Object.keys(classes)) {
                     const _class_ = this.luaLibrary.classes[className];
+                    // if (_class_) _class_.model = classes[className];
                 }
                 for (const tableName of Object.keys(tables)) {
                     const table = this.luaLibrary.tables[tableName];
+                    // if (table) table.model = tables[tableName];
                 }
                 const classNames = Object.keys(classes);
                 const tableNames = Object.keys(tables);
@@ -99,6 +102,7 @@ class ModelUIManager {
                     if (result.canceled || result.filePath == null) {
                         return;
                     }
+                    // Ensure the file-name ends with the extension.
                     let path = result.filePath;
                     if (!path.toLowerCase().endsWith('.json')) {
                         path += '.json';
@@ -113,6 +117,7 @@ class ModelUIManager {
         this.leftPanel = $('.left-panel').get(0);
         this.centerPanel = $('.center-panel').get(0);
         this.rightPanel = $('.right-panel').get(0);
+        // @ts-ignore
         this.modelPane = $(this.centerPanel).find('.model-pane').get(0);
         this.$modelPane = $(this.modelPane);
         this.$searchBar = $($('.search-bar').get(0));
@@ -385,7 +390,7 @@ class ModelUIManager {
         this.$code.append(code);
     }
     setClass(className) {
-        console.log(`setClass(${className})`);
+        // console.log(`setClass(${className})`);
         this.selectedTable = null;
         if (!className) {
             this.selectedClass = null;
@@ -395,6 +400,7 @@ class ModelUIManager {
             });
             return;
         }
+        // Make sure not to reload an already selected class.
         if (this.selectedClass && this.selectedClass.name === className)
             return;
         $('#class-list .item').each(function () {
@@ -456,6 +462,8 @@ class ModelUIManager {
             }
         });
         const _this_ = this;
+        // Any model-field with a target will fire this method. Changes to model values
+        // are handled here.
         $('*[target]').on('input', function () {
             const target = this.getAttribute('target');
             if (target) {
@@ -474,13 +482,14 @@ class ModelUIManager {
                     _this_.handleMethodTarget(_class_, this, paths);
                 }
             }
+            // Reflect the changes to the model by updating the code-panel.
             _this_.setCode(_class_.compile());
         });
         this.$modelPane.fadeIn();
         this.setCode(_class_.compile());
     }
     setTable(tableName) {
-        console.log(`setTable(${tableName})`);
+        //console.log(`setTable(${tableName})`);
         this.selectedClass = null;
         if (!tableName) {
             this.selectedTable = null;
@@ -490,6 +499,7 @@ class ModelUIManager {
             });
             return;
         }
+        // Make sure not to reload an already selected table.
         if (this.selectedTable && this.selectedTable.name === tableName)
             return;
         const table = this.luaLibrary.tables[tableName];
@@ -549,6 +559,8 @@ class ModelUIManager {
             }
         });
         const _this_ = this;
+        // Any model-field with a target will fire this method. Changes to model values
+        // are handled here.
         $('*[target]').on('input', function () {
             const target = this.getAttribute('target');
             if (target) {
@@ -564,6 +576,7 @@ class ModelUIManager {
                     _this_.handleMethodTarget(table, this, paths);
                 }
             }
+            // Reflect the changes to the model by updating the code-panel.
             _this_.setCode(table.compile());
         });
         this.$modelPane.fadeIn();

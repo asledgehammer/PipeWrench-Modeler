@@ -44,7 +44,7 @@ export class LuaTable extends LuaContainer {
 
     // Render empty tables on one line.
     if (this.isEmpty()) {
-      return `${s}\n${prefix}export class ${sanitizeName(
+      return `${s}\n${prefix}export abstract class ${sanitizeName(
         name
       )} { static [id: string]: ${WILDCARD_TYPE}; }`;
     }
@@ -56,7 +56,7 @@ export class LuaTable extends LuaContainer {
     // Make sure that no one can try to use Lua tables as a class, even though we're using
     // the class type for tables. This is to keep things clean. We *could* go with an interface,
     // however values cannot be assigned to them in TypeScript like tables can in Lua.
-    s += `${prefix}export class ${sanitizeName(name)} {\n\n${newPrefix}private constructor();\n\n`;
+    s += `${prefix}export abstract class ${sanitizeName(name)} {\n\n`;
 
     // Wildcard.
     s += `${newPrefix}static [id: string]: ${WILDCARD_TYPE};\n\n`;
@@ -97,7 +97,9 @@ export class LuaTable extends LuaContainer {
     const documentation = this.generateDocumentation(prefix, model);
 
     // Render empty classes on one line.
-    return `${prefix}${documentation ? `${documentation}\n` : ''}${prefix}export class ${sanitizeName(this.name)} {}`;
+    return `${prefix}${documentation ? `${documentation}\n` : ''}${prefix}export abstract class ${sanitizeName(this.name)} extends ${
+      this.fullPath
+    } {}`;
   }
 
   generateLuaInterface(prefix: string = ''): string {
@@ -107,5 +109,13 @@ export class LuaTable extends LuaContainer {
 
   isEmpty(): boolean {
     return !Object.keys(this.fields).length && !Object.keys(this.methods).length;
+  }
+
+  get namespace() {
+    return this.file.containerNamespace;
+  }
+
+  get fullPath() {
+    return `${this.namespace}.${sanitizeName(this.name)}`;
   }
 }

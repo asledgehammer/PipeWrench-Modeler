@@ -9,6 +9,7 @@ const ConstructorModel_1 = require("./ConstructorModel");
 const FieldModel_1 = require("./FieldModel");
 const MethodModel_1 = require("./MethodModel");
 const AuthoredModelDocumentation_1 = require("./doc/AuthoredModelDocumentation");
+/** @author JabDoesThings */
 class ClassModel extends Model_1.Model {
     constructor(_class_, name, src) {
         super();
@@ -17,10 +18,15 @@ class ClassModel extends Model_1.Model {
         this.documentation = new AuthoredModelDocumentation_1.AuthoredModelDocumentation();
         this._class_ = _class_;
         this.name = name;
+        // Initialize only after assigning this._class_, since the loading code is in the
+        // constructor.
         this._constructor_ = new ConstructorModel_1.ConstructorModel(this);
         if (src)
             this.load(src);
     }
+    /**
+     * Populates any fields, methods, and a constructor if they are not present.
+     */
     populate() {
         const { fields, methods, _constructor_ } = this._class_;
         const fieldNames = Object.keys(fields);
@@ -110,6 +116,7 @@ class ClassModel extends Model_1.Model {
         const { documentation: classDoc } = this;
         if (classDoc) {
             const { authors, description } = classDoc;
+            // Process authors. (If defined)
             if (authors && authors.length) {
                 let s = '';
                 for (let author of authors) {
@@ -125,6 +132,7 @@ class ClassModel extends Model_1.Model {
                     doc.appendAnnotation('docAuthors', s);
                 }
             }
+            // Process lines. (If defined)
             if (description && description.length) {
                 let foundLine = false;
                 for (let line of description) {
@@ -188,4 +196,5 @@ class ClassModel extends Model_1.Model {
     }
 }
 exports.ClassModel = ClassModel;
+/** (Loaded via {@link ModelUIManager}) */
 ClassModel.HTML_TEMPLATE = '';

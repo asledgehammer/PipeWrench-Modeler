@@ -24,8 +24,8 @@ export const MIT_LICENSE = [
   'LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,',
   'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE',
   'SOFTWARE.',
-  '',
-  'File generated at: $TIME_GENERATED$',
+  //'',
+  //'File generated at: $TIME_GENERATED$',
 ];
 
 export type Directory = {
@@ -147,7 +147,7 @@ export const mkdirsSync = (path: string) => {
   for (const next of split) {
     built += built.length ? `/${next}` : next;
     if (next === '.') continue;
-    if (!fs.existsSync(built)) fs.mkdirSync(built);
+    if (!fs.existsSync(built)) fs.mkdirSync(built, { recursive: true });
   }
 };
 

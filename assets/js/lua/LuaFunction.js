@@ -5,6 +5,7 @@ const ZomboidGenerator_1 = require("../ZomboidGenerator");
 const LuaUtils_1 = require("./LuaUtils");
 const ModelUtils_1 = require("./model/ModelUtils");
 const LuaNamedObject_1 = require("./LuaNamedObject");
+/** @author JabDoesThings */
 class LuaFunction extends LuaNamedObject_1.LuaNamedObject {
     constructor(file, parsed, name, parameters, isLocal) {
         super(name);
@@ -34,8 +35,10 @@ class LuaFunction extends LuaNamedObject_1.LuaNamedObject {
             }
             return returnString;
         };
+        // Compile parameter(s). (If any)
         let parametersString = '';
         let parameters = [];
+        // If the model is present, set parameter names from it as some parameters may be renamed.
         if (model) {
             for (const parameter of model.parameters) {
                 const types = parameter.types && parameter.types.length ? compileTypes(parameter.types) : ZomboidGenerator_1.WILDCARD_TYPE;
@@ -50,6 +53,7 @@ class LuaFunction extends LuaNamedObject_1.LuaNamedObject {
                 parametersString += `${parameter}, `;
             parametersString = parametersString.substring(0, parametersString.length - 2);
         }
+        // Compile return type(s). (If any)
         let returnString = '';
         let returnTypes = [];
         let wrapWildcardType = true;
@@ -59,6 +63,7 @@ class LuaFunction extends LuaNamedObject_1.LuaNamedObject {
                 wrapWildcardType = returns.wrapWildcardType;
                 if (returns.types && returns.types.length) {
                     for (const type of returns.types) {
+                        // Prevent duplicate return types.
                         if (returnTypes.indexOf(type) === -1)
                             returnTypes.push(type);
                     }
@@ -74,6 +79,7 @@ class LuaFunction extends LuaNamedObject_1.LuaNamedObject {
             }
         }
         else {
+            // Default return type.
             returnString = ZomboidGenerator_1.WILDCARD_TYPE;
         }
         let s = '';
@@ -84,14 +90,21 @@ class LuaFunction extends LuaNamedObject_1.LuaNamedObject {
             compiled += '(';
         compiled += `(${parametersString}) => ${returnString}`;
         if (wrapWildcardType)
-            compiled += `) | ${ZomboidGenerator_1.WILDCARD_TYPE}`;
+            compiled += `)`;
         compiled += ';';
         return compiled;
     }
     generateAPI(prefix) {
+        // This is the only way I know how to have this not error out. -Jab
         return this.onCompile(prefix);
+        // const { name, fullPath } = this;
+        // const documentation = this.generateDocumentation(prefix);
+        // return `${prefix}${
+        //   documentation ? `${documentation}\n` : ''
+        // }${prefix}export const ${sanitizeName(name)} = ${fullPath};`;
     }
     generateLuaInterface(prefix = '') {
+        // Compile parameter(s)..
         let parametersString = '(';
         const { name, parameters } = this;
         if (parameters.length) {
@@ -100,6 +113,7 @@ class LuaFunction extends LuaNamedObject_1.LuaNamedObject {
             parametersString = parametersString.substring(0, parametersString.length - 1);
         }
         parametersString += ')';
+        // Functions are assigned differently.
         return `${prefix} function Exports.${ModelUtils_1.sanitizeName(name)}${parametersString} return ${name}${parametersString} end\n`;
     }
     get namespace() {

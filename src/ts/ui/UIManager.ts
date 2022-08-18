@@ -436,7 +436,7 @@ export class ModelUIManager {
   }
 
   setClass(className: string) {
-    console.log(`setClass(${className})`);
+    // console.log(`setClass(${className})`);
 
     this.selectedTable = null;
     if (!className) {
@@ -548,7 +548,7 @@ export class ModelUIManager {
   }
 
   setTable(tableName: string) {
-    console.log(`setTable(${tableName})`);
+    //console.log(`setTable(${tableName})`);
 
     this.selectedClass = null;
     if (!tableName) {
