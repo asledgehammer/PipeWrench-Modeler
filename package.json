@@ -21,6 +21,7 @@
     "grunt-contrib-watch": "latest",
     "grunt-postcss": "latest",
     "grunt-ts": "latest",
+    "java-parser": "^2.0.2",
     "sass": "^1.26.10",
     "tslint": "latest",
     "tslint-config-standard": "latest",
