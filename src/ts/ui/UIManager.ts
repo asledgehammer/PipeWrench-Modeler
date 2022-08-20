@@ -1,4 +1,4 @@
-const { dialog } = require('electron').remote;
+const { dialog } = require('electron');
 
 import * as fs from 'fs';
 import * as hljs from 'highlight.js';
@@ -234,7 +234,7 @@ export class ModelUIManager {
 
   save = (as: boolean) => {
     if (as) {
-      const { dialog } = require('electron').remote;
+      const { dialog } = require('electron');
 
       interface DialogResult {
         canceled: boolean;
@@ -331,10 +331,10 @@ export class ModelUIManager {
     }
 
     let model: FieldModel;
-    if(container instanceof LuaClass) {
+    if (container instanceof LuaClass) {
       const classModel = this.luaLibrary.models.getClassModel(container);
       model = classModel?.getFieldModel(field);
-    } else if(container instanceof LuaTable) {
+    } else if (container instanceof LuaTable) {
       const tableModel = this.luaLibrary.models.getTableModel(container);
       model = tableModel?.getFieldModel(field);
     }
@@ -371,10 +371,10 @@ export class ModelUIManager {
     }
 
     let model: MethodModel;
-    if(container instanceof LuaClass) {
+    if (container instanceof LuaClass) {
       const classModel = this.luaLibrary.models.getClassModel(container);
       model = classModel?.getMethodModel(method);
-    } else if(container instanceof LuaTable) {
+    } else if (container instanceof LuaTable) {
       const tableModel = this.luaLibrary.models.getTableModel(container);
       model = tableModel?.getMethodModel(method);
     }
@@ -417,7 +417,7 @@ export class ModelUIManager {
 
   setCode(code: string | null): void {
 
-    if(!code || !code.length) {
+    if (!code || !code.length) {
       this.$code.empty();
       return;
     }
@@ -466,8 +466,8 @@ export class ModelUIManager {
       this.modelFile.library.classes[className] = classModel;
       $('#class-list').append(
         `<div class="item selected" element="${className}" onclick="setClass('${className}')">` +
-          `<label>${className}</label>` +
-          `</div>`
+        `<label>${className}</label>` +
+        `</div>`
       );
     } else {
       $(`#class-list .item[element=${className}`).addClass('selected');
@@ -578,8 +578,8 @@ export class ModelUIManager {
       this.modelFile.library.tables[tableName] = tableModel;
       $('#class-list').append(
         `<div class="item selected" element="${tableName}" onclick="setTable('${tableName}')">` +
-          `<label>${tableName}</label>` +
-          `</div>`
+        `<label>${tableName}</label>` +
+        `</div>`
       );
     } else {
       $(`#class-list .item[element=${tableName}`).addClass('selected');

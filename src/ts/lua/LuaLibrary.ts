@@ -77,9 +77,9 @@ export class LuaLibrary {
         .replace(path.join(luaPath, 'client').replaceAll("\\", "/"), '')
         .replace(path.join(luaPath, 'server').replaceAll("\\", "/"), '')
         .replace(path.join(luaPath, 'shared').replaceAll("\\", "/"), '')
-        .replace('.lua', '')
-        .replace('.Lua', '')
-        .replace('.LUA', '');
+      // .replace('.lua', '')
+      // .replace('.Lua', '')
+      // .replace('.LUA', '');
 
       const luaFile = new LuaFile(this, id, file, luaPath.replace("./", "/"));
       luaFile.parse();

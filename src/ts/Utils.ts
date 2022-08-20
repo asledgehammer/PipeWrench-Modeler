@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import path from 'path';
 import * as prettier from 'prettier';
 import { DocumentationBuilder } from './DocumentationBuilder';
 
@@ -133,22 +134,16 @@ export const wrapModule = (
   let backup = '';
   for (let i = 0; i < fileLocal.split('/').length; i++) backup += '../';
 
-  let s = '/** @noResolution @noSelfInFile */\n';
+  let s = '/**  @noSelfInFile */\n';
   s += `/// <reference path="${backup}reference.d.ts" />\n`;
   s += `/// <reference path="${backup}PipeWrench.d.ts" />\n`;
-  s += "import * as PipeWrench from 'PipeWrench';\n\n";
-  s += `declare module '${moduleName}' {\n`;
+  s += `\ndeclare module '${moduleName}' {\n`;
   return `${s}${code}}\n`;
 };
 
-export const mkdirsSync = (path: string) => {
-  const split = path.split('/');
-  let built = '';
-  for (const next of split) {
-    built += built.length ? `/${next}` : next;
-    if (next === '.') continue;
-    if (!fs.existsSync(built)) fs.mkdirSync(built, { recursive: true });
-  }
+export const mkdirsSync = (fp: string) => {
+  const dir = path.dirname(fp)
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 };
 
 export const writeTSFile = (path: string, code: string) => {
@@ -178,7 +173,7 @@ export const prettify = (code: string): string => {
  * @param to The phrase to replace the target.
  * @returns The transformed string.
  */
- export const replaceAll = (string: string, target: string, to: string, position: number = 0): string => {
+export const replaceAll = (string: string, target: string, to: string, position: number = 0): string => {
   let index: number;
   let lastIndex: number = position;
   while ((index = string.indexOf(target, lastIndex)) !== -1) {

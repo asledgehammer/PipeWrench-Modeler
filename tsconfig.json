@@ -1,7 +1,10 @@
 {
   "version": "4.6.2",
   "compilerOptions": {
-    "lib": ["ESNext", "DOM"],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
     "strict": false,
     "module": "commonjs",
     "jsx": "preserve",
@@ -34,6 +37,6 @@
   ],
   "lib": [
     "es6",
-    "dom"
+    "dom",
   ]
 }

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { LuaLibrary } from './lua/LuaLibrary';
-
+import path from "path";
 // import os module
 const os = require('os');
 
@@ -22,14 +22,13 @@ export const WILDCARD_TYPE = 'any';
 export class ZomboidGenerator {
   static FUNCTION_CACHE: string[] = [];
   readonly library: LuaLibrary;
-  private readonly moduleName = 'PipeWrench';
-  private readonly zomboidDir = `${userHomeDir}/Zomboid`;
-  private readonly rootDir = `${this.zomboidDir}/PipeWrench`;
-  private readonly outputDir = `${this.rootDir}/output`;
+  private readonly moduleName = '@asledgehammer/pipewrench';
+  private readonly rootDir = `./PipeWrench`;
+  private readonly outputDir = `${this.rootDir}`;
   private readonly luaDir = `${this.outputDir}/lua`;
 
   private readonly generatedDir = `${this.rootDir}/generated`;
-  private readonly partialsDir = `${this.generatedDir}/partials`;
+  private readonly partialsDir = this.rootDir
 
   constructor(library: LuaLibrary) {
     this.library = library;
@@ -54,9 +53,8 @@ export class ZomboidGenerator {
   }
 
   setupDirectories() {
-    const { rootDir: distDir, generatedDir, partialsDir, outputDir, luaDir, zomboidDir } = this;
+    const { rootDir: distDir, generatedDir, partialsDir, outputDir, luaDir } = this;
     // Initialize directories.
-    if (!fs.existsSync(zomboidDir)) fs.mkdirSync(zomboidDir, { recursive: true });
     if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
 
     if (!fs.existsSync(generatedDir)) fs.mkdirSync(generatedDir, { recursive: true });
@@ -73,12 +71,14 @@ export class ZomboidGenerator {
     const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
     for (const fileName of luaFileNames) {
       const file = luaFiles[fileName];
-      console.log(`Generating: ${file.id.replace('.lua', '.d.ts')}..`);
-      console.log(file.folder)
+      const newFileName = path.basename(file.fileLocal, ".lua") + '.d.ts'
+      const newFolder = path.join(this.luaDir, file.folder)
+      const newFilePath = path.join(newFolder, newFileName)
+      console.log(`Generating: ${newFilePath}..`);
       const code = file.generateDefinitionFile(moduleName);
-      mkdirsSync(`${this.luaDir}/${file.folder}`);
+      mkdirsSync(newFilePath);
       writeTSFile(
-        `${this.outputDir}/lua/${file.fileLocal.replace('.lua', '.d.ts')}`,
+        newFilePath,
         prettify(code)
       );
     }
@@ -96,14 +96,14 @@ export class ZomboidGenerator {
     }
 
     // Wrap and save the code.
-    let s = '/** @noResolution @noSelfInFile */\n';
+    let s = '/** @noSelfInFile */\n';
     s += `/// <reference path="reference.d.ts" />\n\n`;
     s += `declare module '${moduleName}' {\n`;
     s += '// [PARTIAL:START]\n';
     s += code;
     s += '// [PARTIAL:STOP]\n';
     s += '}\n';
-    writeTSFile(`${partialsDir}/Lua.api.partial.d.ts`, prettify(s));
+    writeTSFile(`${partialsDir}/index.api.partial.d.ts`, prettify(s));
   }
 
   generateReferencePartial() {
@@ -127,13 +127,13 @@ export class ZomboidGenerator {
       for (const subdirName of dirNames) recurse(dir.dirs[subdirName]);
     };
     // Start the filetree walk.
-    recurse(luaDir.dirs['output'].dirs['lua']);
+    recurse(luaDir.dirs['lua']);
     // Generate the reference partial.
     references.sort((o1, o2) => o1.localeCompare(o2));
     let code = '// [PARTIAL:START]\n';
     for (const reference of references) code += `${reference}\n`;
     code += '// [PARTIAL:STOP]\n';
-    writeTSFile(`${partialsDir}/Lua.reference.partial.d.ts`, prettify(code));
+    writeTSFile(`${partialsDir}/index.reference.partial.d.ts`, prettify(code));
   }
 
   generateLuaInterfacePartial() {
@@ -159,6 +159,6 @@ export class ZomboidGenerator {
     luaCode += '-- [PARTIAL:STOP]\n\n';
     luaCode += 'return Exports\n';
 
-    writeLuaFile(`${partialsDir}/Lua.interface.partial.lua`, luaCode);
+    writeLuaFile(`${partialsDir}/index.interface.partial.lua`, luaCode);
   }
 }

@@ -28,6 +28,7 @@ import { LuaFunction } from './LuaFunction';
 import { LuaField } from './LuaField';
 import { LuaMethod } from './LuaMethod';
 import { LuaConstructor } from './LuaConstructor';
+import path from 'path';
 
 /**
  * **LuaFile** loads, parses, and processes Lua code stored in files.
@@ -78,22 +79,17 @@ export class LuaFile {
     this.library = library;
     this.id = id;
     this.file = file;
-    this.fileLocal = file.replace(luapath, '');
+    this.fileLocal = file;
     // console.log("luapath:", luapath)
     // console.log("id:", this.id)
     // console.log("file:", this.file)
     // console.log("fileLocal:", this.fileLocal)
-    let split = this.fileLocal.split('/');
-    split.shift();
-    this.fileLocal = split.join('/')
-    split.pop();
-    this.folder = split.join('/');
+    this.folder = path.dirname(this.fileLocal).replace(".", "")
     console.log("folder:", this.folder)
-    // console.log("-----------------------")
-    split = this.fileLocal.split('.');
-    split.pop();
-    this.containerNamespace = `lua.${this.folder.split('/').join('.')}`.replaceAll('..', '.');
-    this.propertyNamespace = `lua.${split.join('.').split('/').join('.')}`.replaceAll('..', '.');
+    const propertyName = path.parse(this.fileLocal).name
+    const containerName = path.dirname(this.fileLocal).split(path.sep).join(".")
+    this.containerNamespace = `lua.${containerName}`;
+    this.propertyNamespace = `lua.${containerName}.${propertyName}`;
   }
 
   /**

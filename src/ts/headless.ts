@@ -9,7 +9,7 @@ export let start = function () {
   console.log('### Loading please wait ###');
 
   const argv = process.argv.slice(2, process.argv.length)
-  const args: {[key: string]: string} = {};
+  const args: { [key: string]: string } = {};
   argv.forEach((arg) => {
     const split = arg.split("=")
     args[split[0]] = split[1]
@@ -27,7 +27,7 @@ export let start = function () {
 
   luaLibrary.scan(args.luapath || null);
   luaLibrary.parse(args.luapath || null);
-  
+
   // Loading all entries
   const classes: any[] = Object.values(luaLibrary.classes);
   const tables: any[] = Object.values(luaLibrary.tables);
