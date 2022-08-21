@@ -142,11 +142,9 @@ exports.mkdirsSync = (fp) => {
         fs.mkdirSync(dir, { recursive: true });
 };
 exports.writeTSFile = (path, code) => {
-    code = `${exports.generateTSLicense()}\n\n${code}`;
     fs.writeFileSync(path, code);
 };
 exports.writeLuaFile = (path, code) => {
-    code = `${exports.generateLuaLicense()}\n\n${code}`;
     fs.writeFileSync(path, code);
 };
 exports.prettify = (code) => {

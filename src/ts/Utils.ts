@@ -143,12 +143,10 @@ export const mkdirsSync = (fp: string) => {
 };
 
 export const writeTSFile = (path: string, code: string) => {
-  code = `${generateTSLicense()}\n\n${code}`;
   fs.writeFileSync(path, code);
 };
 
 export const writeLuaFile = (path: string, code: string) => {
-  code = `${generateLuaLicense()}\n\n${code}`;
   fs.writeFileSync(path, code);
 };
 
