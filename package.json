@@ -1,6 +1,6 @@
 {
-  "name": "JCME",
-  "version": "1.0.0",
+  "name": "@shughesuk/pipewrench-modeler",
+  "version": "1.0.7",
   "description": "None",
   "main": "main.js",
   "scripts": {
@@ -9,6 +9,18 @@
     "headless1": "node headless.js",
     "headless2": "node headless.js \"luapath=D:/Program Files (x86)/Steam/steamapps/common/ProjectZomboid/media/lua\""
   },
+  "bin": {
+    "pwm": "./main.js",
+    "pwm-cli": "./headless.js"
+  },
+  "files": [
+    "assets",
+    "main.js",
+    "headless.js",
+    "package.json",
+    "package-lock.json",
+    "README.md"
+  ],
   "devDependencies": {
     "@microsoft/tsdoc": "^0.12.10",
     "@types/jquery": "^3.3.30",

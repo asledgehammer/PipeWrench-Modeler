@@ -8,7 +8,6 @@ const os = require('os');
 const userHomeDir = os.homedir();
 
 import {
-  cleardirsSync,
   Directory,
   mkdirsSync,
   prettify,
@@ -22,60 +21,57 @@ export const WILDCARD_TYPE = 'any';
 export class ZomboidGenerator {
   static FUNCTION_CACHE: string[] = [];
   readonly library: LuaLibrary;
-  private readonly moduleName = '@asledgehammer/pipewrench';
-  private readonly rootDir = `./PipeWrench`;
-  private readonly outputDir = `${this.rootDir}`;
-  private readonly luaDir = `${this.outputDir}/lua`;
+  private readonly moduleName: string
 
-  private readonly generatedDir = `${this.rootDir}/generated`;
-  private readonly partialsDir = this.rootDir
-
-  constructor(library: LuaLibrary) {
+  private readonly outDir: string
+  constructor(library: LuaLibrary, moduleName: string, outDir: string) {
     this.library = library;
+    this.moduleName = moduleName || '@asledgehammer/pipewrench'
+    this.outDir = outDir || './dist'
   }
 
   run() {
     ZomboidGenerator.FUNCTION_CACHE.length = 0;
     console.log("- setupDirectories...")
-    this.setupDirectories();
+    const rootRef = "lua.reference.partial.d.ts"
+    const luaRef = "lua.interface.partial.lua"
+    const rootDef = "lua.api.partial.d.ts"
 
+    this.setupDirectories(rootRef, luaRef, rootDef);
     console.log("- generateDefinitions...")
-    this.generateDefinitions();
+    this.generateDefinitions(rootRef, rootDef);
 
     console.log("- generateReferencePartial...")
-    this.generateReferencePartial();
+    this.generateReferencePartial(rootRef);
 
     console.log("- generateLuaInterfacePartial...")
-    this.generateLuaInterfacePartial();
+    this.generateLuaInterfacePartial(luaRef);
 
     console.log("- generateAPIPartial...")
-    this.generateAPIPartial();
+    this.generateAPIPartial(rootDef, rootRef);
   }
 
-  setupDirectories() {
-    const { rootDir: distDir, generatedDir, partialsDir, outputDir, luaDir } = this;
+  setupDirectories(rootRef: string, luaRef: string, rootDef: string) {
+    const { outDir } = this;
     // Initialize directories.
-    if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
-
-    if (!fs.existsSync(generatedDir)) fs.mkdirSync(generatedDir, { recursive: true });
-    if (!fs.existsSync(partialsDir)) fs.mkdirSync(partialsDir, { recursive: true });
-
-    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
-    if (!fs.existsSync(luaDir)) fs.mkdirSync(luaDir, { recursive: true });
-    else cleardirsSync(this.luaDir);
+    fs.rmSync(path.join(outDir, rootRef), { "force": true })
+    fs.rmSync(path.join(outDir, luaRef), { "force": true })
+    fs.rmSync(path.join(outDir, rootDef), { "force": true })
+    fs.rmSync(path.join(outDir, "lua"), { "force": true, recursive: true })
+    if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
   }
 
-  generateDefinitions() {
-    const { library, moduleName } = this;
+  generateDefinitions(rootRef: string, rootDef: string) {
+    const { library, moduleName, outDir } = this;
     const { luaFiles } = library;
     const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
     for (const fileName of luaFileNames) {
       const file = luaFiles[fileName];
       const newFileName = path.basename(file.fileLocal, ".lua") + '.d.ts'
-      const newFolder = path.join(this.luaDir, file.folder)
+      const newFolder = path.join(outDir, file.folder)
       const newFilePath = path.join(newFolder, newFileName)
       console.log(`Generating: ${newFilePath}..`);
-      const code = file.generateDefinitionFile(moduleName);
+      const code = file.generateDefinitionFile(moduleName, rootRef, rootDef);
       mkdirsSync(newFilePath);
       writeTSFile(
         newFilePath,
@@ -84,8 +80,8 @@ export class ZomboidGenerator {
     }
   }
 
-  generateAPIPartial() {
-    const { library, moduleName, partialsDir } = this;
+  generateAPIPartial(rootDef: string, rootRef: string) {
+    const { library, moduleName, outDir } = this;
     const { luaFiles } = library;
     const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
     let code = '';
@@ -97,19 +93,19 @@ export class ZomboidGenerator {
 
     // Wrap and save the code.
     let s = '/** @noSelfInFile */\n';
-    s += `/// <reference path="reference.d.ts" />\n\n`;
+    s += `/// <reference path="${rootRef}" />\n\n`;
     s += `declare module '${moduleName}' {\n`;
     s += '// [PARTIAL:START]\n';
     s += code;
     s += '// [PARTIAL:STOP]\n';
     s += '}\n';
-    writeTSFile(`${partialsDir}/index.api.partial.d.ts`, prettify(s));
+    writeTSFile(`${outDir}/${rootDef}`, prettify(s));
   }
 
-  generateReferencePartial() {
-    const { rootDir: distDir, partialsDir } = this;
+  generateReferencePartial(rootRef: string) {
+    const { outDir } = this;
     // Grab the entire file tree generated so far.
-    const luaDir = scandirs(`${distDir}`);
+    const luaDir = scandirs(outDir);
     const references: string[] = [];
     // Generate the index.
     const recurse = (dir: Directory) => {
@@ -118,7 +114,7 @@ export class ZomboidGenerator {
         if (fileNames.length) {
           for (const fileName of fileNames) {
             const file = dir.files[fileName];
-            const refPath = file.path.replace(`${this.outputDir}/`, '');
+            const refPath = file.path.replace(`${outDir}/`, '');
             references.push(`/// <reference path="${refPath}" />`);
           }
         }
@@ -133,11 +129,11 @@ export class ZomboidGenerator {
     let code = '// [PARTIAL:START]\n';
     for (const reference of references) code += `${reference}\n`;
     code += '// [PARTIAL:STOP]\n';
-    writeTSFile(`${partialsDir}/index.reference.partial.d.ts`, prettify(code));
+    writeTSFile(`${outDir}/${rootRef}`, prettify(code));
   }
 
-  generateLuaInterfacePartial() {
-    const { library, partialsDir } = this;
+  generateLuaInterfacePartial(luaRef: string) {
+    const { library, outDir } = this;
     const { luaFiles } = library;
     const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
     let luaCode = '';
@@ -159,6 +155,6 @@ export class ZomboidGenerator {
     luaCode += '-- [PARTIAL:STOP]\n\n';
     luaCode += 'return Exports\n';
 
-    writeLuaFile(`${partialsDir}/index.interface.partial.lua`, luaCode);
+    writeLuaFile(`${outDir}/${luaRef}`, luaCode);
   }
 }

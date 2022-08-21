@@ -45,7 +45,7 @@ export class ModelUIManager {
   constructor(luaLibrary: LuaLibrary) {
     this.luaLibrary = luaLibrary;
 
-    this.generator = new ZomboidGenerator(this.luaLibrary);
+    this.generator = new ZomboidGenerator(this.luaLibrary, "@asledgehammer/pipewrench", "./dist");
 
     this.modelFile = this.luaLibrary.models.createFile('untitled');
 

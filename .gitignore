@@ -11,5 +11,5 @@ assets/media/lua/server
 assets/media/lua/shared
 
 assets/media/models/**/*.json
-PipeWrench
 dist
+.DS_Store

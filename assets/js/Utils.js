@@ -18,9 +18,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.applyTextArea = exports.replaceAll = exports.prettify = exports.writeLuaFile = exports.writeTSFile = exports.mkdirsSync = exports.wrapModule = exports.generateLuaLicense = exports.generateTSLicense = exports.scandirs = exports.cleardirsSync = exports.rmdirsync = exports.MIT_LICENSE = void 0;
 const fs = __importStar(require("fs"));
+const path_1 = __importDefault(require("path"));
 const prettier = __importStar(require("prettier"));
 const DocumentationBuilder_1 = require("./DocumentationBuilder");
 exports.MIT_LICENSE = [
@@ -124,27 +128,22 @@ exports.generateLuaLicense = () => {
     }
     return lines;
 };
-exports.wrapModule = (moduleName, fileLocal, namespace, code) => {
+exports.wrapModule = (moduleName, fileLocal, rootRef, rootDef, code) => {
     let backup = '';
-    for (let i = 0; i < fileLocal.split('/').length; i++)
+    for (let i = 1; i < fileLocal.split('/').length; i++)
         backup += '../';
-    let s = '/** @noResolution @noSelfInFile */\n';
-    s += `/// <reference path="${backup}reference.d.ts" />\n`;
-    s += `/// <reference path="${backup}PipeWrench.d.ts" />\n`;
-    s += "import * as PipeWrench from 'PipeWrench';\n\n";
-    s += `declare module '${moduleName}' {\n`;
+    const refPath = path_1.default.join(backup, rootRef);
+    const defPath = path_1.default.join(backup, rootDef);
+    let s = '/**  @noSelfInFile */\n';
+    // s += `/// <reference path="${refPath}" />\n`;
+    // s += `/// <reference path="${defPath}" />\n`;
+    s += `\ndeclare module '${moduleName}' {\n`;
     return `${s}${code}}\n`;
 };
-exports.mkdirsSync = (path) => {
-    const split = path.split('/');
-    let built = '';
-    for (const next of split) {
-        built += built.length ? `/${next}` : next;
-        if (next === '.')
-            continue;
-        if (!fs.existsSync(built))
-            fs.mkdirSync(built, { recursive: true });
-    }
+exports.mkdirsSync = (fp) => {
+    const dir = path_1.default.dirname(fp);
+    if (!fs.existsSync(dir))
+        fs.mkdirSync(dir, { recursive: true });
 };
 exports.writeTSFile = (path, code) => {
     code = `${exports.generateTSLicense()}\n\n${code}`;

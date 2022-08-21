@@ -30,7 +30,7 @@ const LuaClass_1 = require("./LuaClass");
 const ModelLibrary_1 = require("./model/ModelLibrary");
 /** @author JabDoesThings */
 class LuaLibrary {
-    constructor() {
+    constructor(luaPath) {
         this.models = new ModelLibrary_1.ModelLibrary(this);
         this.files = [];
         this.luaFiles = {};
@@ -38,13 +38,13 @@ class LuaLibrary {
         this.tables = {};
         this.globalFields = {};
         this.globalFunctions = {};
+        this.luaPath = luaPath || './assets/media/lua';
     }
-    scan(luaPath) {
-        luaPath = luaPath || './assets/media/lua';
+    scan() {
         this.files = [];
-        this.scanDir(path_1.default.join(luaPath, 'shared').replaceAll("\\", "/"));
-        this.scanDir(path_1.default.join(luaPath, 'client').replaceAll("\\", "/"));
-        this.scanDir(path_1.default.join(luaPath, 'server').replaceAll("\\", "/"));
+        this.scanDir(path_1.default.join(this.luaPath, 'shared'));
+        this.scanDir(path_1.default.join(this.luaPath, 'client'));
+        this.scanDir(path_1.default.join(this.luaPath, 'server'));
         this.files.sort((a, b) => {
             return a.localeCompare(b);
         });
@@ -71,8 +71,7 @@ class LuaLibrary {
                 this.scanDir(dir);
         }
     }
-    parse(luaPath) {
-        luaPath = luaPath || './assets/media/lua';
+    parse() {
         this.classes = {};
         this.tables = {};
         this.globalFields = {};
@@ -80,16 +79,10 @@ class LuaLibrary {
         // The root class doesn't define itself using 'derive(type: string)'.
         // Add it manually.
         this.classes['ISBaseObject'] = new LuaClass_1.LuaClass(null, 'ISBaseObject');
-        this.classes['ISBaseObject'].file = new LuaFile_1.LuaFile(this, '', '', luaPath.replace("./", "/"));
+        this.classes['ISBaseObject'].file = new LuaFile_1.LuaFile(this, '', '');
         for (const file of this.files) {
-            const id = file
-                .replace(path_1.default.join(luaPath, 'client').replaceAll("\\", "/"), '')
-                .replace(path_1.default.join(luaPath, 'server').replaceAll("\\", "/"), '')
-                .replace(path_1.default.join(luaPath, 'shared').replaceAll("\\", "/"), '')
-                .replace('.lua', '')
-                .replace('.Lua', '')
-                .replace('.LUA', '');
-            const luaFile = new LuaFile_1.LuaFile(this, id, file, luaPath.replace("./", "/"));
+            const id = file;
+            const luaFile = new LuaFile_1.LuaFile(this, id, file);
             luaFile.parse();
             luaFile.scanRequires();
             this.luaFiles[id] = luaFile;

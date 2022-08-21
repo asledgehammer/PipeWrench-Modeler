@@ -73,23 +73,19 @@ export class LuaFile {
    * @param library The library storing all discovered Lua.
    * @param id The `require(..) / require '..'` path to the file.
    * @param file The path to the file on the disk.
-   * @param luapath The path to the zomboid lua directory on the disk.
    */
-  constructor(library: LuaLibrary, id: string, file: string, luapath: string) {
+  constructor(library: LuaLibrary, id: string, file: string) {
     this.library = library;
     this.id = id;
     this.file = file;
-    this.fileLocal = file;
-    // console.log("luapath:", luapath)
-    // console.log("id:", this.id)
-    // console.log("file:", this.file)
-    // console.log("fileLocal:", this.fileLocal)
-    this.folder = path.dirname(this.fileLocal).replace(".", "")
-    console.log("folder:", this.folder)
+    this.fileLocal = path.join("lua", path.relative(library.luaPath, file));
+    this.folder = path.dirname(this.fileLocal)
     const propertyName = path.parse(this.fileLocal).name
     const containerName = path.dirname(this.fileLocal).split(path.sep).join(".")
-    this.containerNamespace = `lua.${containerName}`;
-    this.propertyNamespace = `lua.${containerName}.${propertyName}`;
+    this.containerNamespace = containerName;
+    this.propertyNamespace = `${containerName}.${propertyName}`;
+    console.log("Luafile: ", this.id)
+    console.log("Property: ", this.propertyNamespace)
   }
 
   /**
@@ -337,7 +333,7 @@ export class LuaFile {
     if (DEBUG) console.log('\n');
   }
 
-  generateDefinitionFile(moduleName: string): string {
+  generateDefinitionFile(moduleName: string, rootRef: string, rootDef: string): string {
     const { classes, tables, globalFields: fields, globalFunctions: functions } = this;
     const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
     const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
@@ -357,7 +353,7 @@ export class LuaFile {
       code += `${_function_.compile('  ')}\n\n`;
     }
     code += '}\n';
-    code = wrapModule(moduleName, this.fileLocal, this.containerNamespace, code);
+    code = wrapModule(moduleName, this.fileLocal, rootRef, rootDef, code);
     return code;
   }
 

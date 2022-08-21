@@ -14,7 +14,6 @@
     "emitDecoratorMetadata": false,
     "experimentalDecorators": false,
     "outDir": "assets/js/",
-    "rootDir": "src/ts/",
     "moduleResolution": "node",
     "noImplicitAny": true,
     "skipLibCheck": true,
@@ -38,5 +37,8 @@
   "lib": [
     "es6",
     "dom",
+  ],
+  "include": [
+    "src",
   ]
 }
