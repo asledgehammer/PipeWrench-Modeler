@@ -45,7 +45,7 @@ class ZomboidGenerator {
         const rootDef = "lua.api.partial.d.ts";
         this.setupDirectories(rootRef, luaRef, rootDef);
         console.log("- generateDefinitions...");
-        this.generateDefinitions(rootRef, rootDef);
+        this.generateDefinitions();
         console.log("- generateReferencePartial...");
         this.generateReferencePartial(rootRef);
         console.log("- generateLuaInterfacePartial...");
@@ -63,7 +63,7 @@ class ZomboidGenerator {
         if (!fs.existsSync(outDir))
             fs.mkdirSync(outDir, { recursive: true });
     }
-    generateDefinitions(rootRef, rootDef) {
+    generateDefinitions() {
         const { library, moduleName, outDir } = this;
         const { luaFiles } = library;
         const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
@@ -73,7 +73,7 @@ class ZomboidGenerator {
             const newFolder = path_1.default.join(outDir, file.folder);
             const newFilePath = path_1.default.join(newFolder, newFileName);
             console.log(`Generating: ${newFilePath}..`);
-            const code = file.generateDefinitionFile(moduleName, rootRef, rootDef);
+            const code = file.generateDefinitionFile(moduleName);
             Utils_1.mkdirsSync(newFilePath);
             Utils_1.writeTSFile(newFilePath, Utils_1.prettify(code));
         }

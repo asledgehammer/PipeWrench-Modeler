@@ -286,7 +286,7 @@ class LuaFile {
         if (LuaUtils_1.DEBUG)
             console.log('\n');
     }
-    generateDefinitionFile(moduleName, rootRef, rootDef) {
+    generateDefinitionFile(moduleName) {
         const { classes, tables, globalFields: fields, globalFunctions: functions } = this;
         const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
         const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
@@ -311,7 +311,7 @@ class LuaFile {
             code += `${_function_.compile('  ')}\n\n`;
         }
         code += '}\n';
-        code = Utils_1.wrapModule(moduleName, this.fileLocal, rootRef, rootDef, code);
+        code = Utils_1.wrapModule(moduleName, this.fileLocal, code);
         return code;
     }
     generateLuaInterface(prefix = '') {

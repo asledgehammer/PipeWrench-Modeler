@@ -333,7 +333,7 @@ export class LuaFile {
     if (DEBUG) console.log('\n');
   }
 
-  generateDefinitionFile(moduleName: string, rootRef: string, rootDef: string): string {
+  generateDefinitionFile(moduleName: string): string {
     const { classes, tables, globalFields: fields, globalFunctions: functions } = this;
     const classNames = Object.keys(classes).sort((o1, o2) => o1.localeCompare(o2));
     const tableNames = Object.keys(tables).sort((o1, o2) => o1.localeCompare(o2));
@@ -353,7 +353,7 @@ export class LuaFile {
       code += `${_function_.compile('  ')}\n\n`;
     }
     code += '}\n';
-    code = wrapModule(moduleName, this.fileLocal, rootRef, rootDef, code);
+    code = wrapModule(moduleName, this.fileLocal, code);
     return code;
   }
 

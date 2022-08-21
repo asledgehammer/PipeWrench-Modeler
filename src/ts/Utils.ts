@@ -128,15 +128,10 @@ export const generateLuaLicense = (): string => {
 export const wrapModule = (
   moduleName: string,
   fileLocal: string,
-  rootRef: string,
-  rootDef: string,
   code: string
 ): string => {
   let backup = '';
   for (let i = 1; i < fileLocal.split('/').length; i++) backup += '../';
-  const refPath = path.join(backup, rootRef)
-  const defPath = path.join(backup, rootDef)
-
   let s = '/**  @noSelfInFile */\n';
   s += `\ndeclare module '${moduleName}' {\n`;
   return `${s}${code}}\n`;
