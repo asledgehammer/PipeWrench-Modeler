@@ -135,8 +135,6 @@ exports.wrapModule = (moduleName, fileLocal, rootRef, rootDef, code) => {
     const refPath = path_1.default.join(backup, rootRef);
     const defPath = path_1.default.join(backup, rootDef);
     let s = '/**  @noSelfInFile */\n';
-    // s += `/// <reference path="${refPath}" />\n`;
-    // s += `/// <reference path="${defPath}" />\n`;
     s += `\ndeclare module '${moduleName}' {\n`;
     return `${s}${code}}\n`;
 };
