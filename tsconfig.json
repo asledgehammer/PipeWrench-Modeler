@@ -1,7 +1,10 @@
 {
   "version": "4.6.2",
   "compilerOptions": {
-    "lib": ["ESNext", "DOM"],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
     "strict": false,
     "module": "commonjs",
     "jsx": "preserve",
@@ -11,7 +14,6 @@
     "emitDecoratorMetadata": false,
     "experimentalDecorators": false,
     "outDir": "assets/js/",
-    "rootDir": "src/ts/",
     "moduleResolution": "node",
     "noImplicitAny": true,
     "skipLibCheck": true,
@@ -34,6 +36,9 @@
   ],
   "lib": [
     "es6",
-    "dom"
+    "dom",
+  ],
+  "include": [
+    "src",
   ]
 }

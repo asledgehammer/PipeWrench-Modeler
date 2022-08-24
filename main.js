@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const {app, BrowserWindow} = require('electron');
 const path = require('path');
 const remote = require('electron');

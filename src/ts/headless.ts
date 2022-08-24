@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import path from 'path';
 import { LuaLibrary } from './lua/LuaLibrary';
 import { ZomboidGenerator } from './ZomboidGenerator';
@@ -9,25 +11,25 @@ export let start = function () {
   console.log('### Loading please wait ###');
 
   const argv = process.argv.slice(2, process.argv.length)
-  const args: {[key: string]: string} = {};
+  const args: { [key: string]: string } = {};
   argv.forEach((arg) => {
     const split = arg.split("=")
     args[split[0]] = split[1]
   })
   console.log("Args:", args);
 
-  const luaLibrary = new LuaLibrary();
-  const generator = new ZomboidGenerator(luaLibrary);
 
   // Fix luapath
-  if (!args.luapath) {
-    args.luapath = path.resolve(__dirname, "../media/lua")
-  }
-  args.luapath = args.luapath.replaceAll("\\", "/")
+  let luaPath = args.luapath || path.resolve(__dirname, "../media/lua")
+  let outDir = args.outDir || path.resolve(__dirname, "./dist")
+  const moduleName = args.moduleName || "@asledgehammer/pipewrench"
 
-  luaLibrary.scan(args.luapath || null);
-  luaLibrary.parse(args.luapath || null);
-  
+  const luaLibrary = new LuaLibrary(luaPath || undefined);
+  const generator = new ZomboidGenerator(luaLibrary, moduleName, outDir);
+
+  luaLibrary.scan();
+  luaLibrary.parse();
+
   // Loading all entries
   const classes: any[] = Object.values(luaLibrary.classes);
   const tables: any[] = Object.values(luaLibrary.tables);

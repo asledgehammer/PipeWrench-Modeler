@@ -18,6 +18,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LuaFile = void 0;
 const fs = __importStar(require("fs"));
@@ -30,6 +33,7 @@ const LuaTable_1 = require("./LuaTable");
 const LuaFunction_1 = require("./LuaFunction");
 const LuaMethod_1 = require("./LuaMethod");
 const LuaConstructor_1 = require("./LuaConstructor");
+const path_1 = __importDefault(require("path"));
 /**
  * **LuaFile** loads, parses, and processes Lua code stored in files.
  *
@@ -40,9 +44,8 @@ class LuaFile {
      * @param library The library storing all discovered Lua.
      * @param id The `require(..) / require '..'` path to the file.
      * @param file The path to the file on the disk.
-     * @param luapath The path to the zomboid lua directory on the disk.
      */
-    constructor(library, id, file, luapath) {
+    constructor(library, id, file) {
         /** All proxy assigners discovered in the file. */
         this.proxies = {};
         /** All pseudo-classes discovered in the file. */
@@ -56,22 +59,14 @@ class LuaFile {
         this.library = library;
         this.id = id;
         this.file = file;
-        this.fileLocal = file.replace(luapath, '');
-        // console.log("luapath:", luapath)
-        // console.log("id:", this.id)
-        // console.log("file:", this.file)
-        // console.log("fileLocal:", this.fileLocal)
-        let split = this.fileLocal.split('/');
-        split.shift();
-        this.fileLocal = split.join('/');
-        split.pop();
-        this.folder = split.join('/');
-        console.log("folder:", this.folder);
-        // console.log("-----------------------")
-        split = this.fileLocal.split('.');
-        split.pop();
-        this.containerNamespace = `lua.${this.folder.split('/').join('.')}`.replaceAll('..', '.');
-        this.propertyNamespace = `lua.${split.join('.').split('/').join('.')}`.replaceAll('..', '.');
+        this.fileLocal = path_1.default.join("lua", path_1.default.relative(library.luaPath, file));
+        this.folder = path_1.default.dirname(this.fileLocal);
+        const propertyName = path_1.default.parse(this.fileLocal).name;
+        const containerName = path_1.default.dirname(this.fileLocal).split(path_1.default.sep).join(".");
+        this.containerNamespace = containerName;
+        this.propertyNamespace = `${containerName}.${propertyName}`;
+        console.log("Luafile: ", this.id);
+        console.log("Property: ", this.propertyNamespace);
     }
     /**
      * Cleans & parses Lua in the file using LuaParse.
@@ -316,7 +311,7 @@ class LuaFile {
             code += `${_function_.compile('  ')}\n\n`;
         }
         code += '}\n';
-        code = Utils_1.wrapModule(moduleName, this.fileLocal, this.containerNamespace, code);
+        code = Utils_1.wrapModule(moduleName, this.fileLocal, code);
         return code;
     }
     generateLuaInterface(prefix = '') {

@@ -20,7 +20,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ModelUIManager = void 0;
-const { dialog } = require('electron').remote;
+const { dialog } = require('electron');
 const fs = __importStar(require("fs"));
 const hljs = __importStar(require("highlight.js"));
 const prettier = __importStar(require("prettier"));
@@ -92,7 +92,7 @@ class ModelUIManager {
         };
         this.save = (as) => {
             if (as) {
-                const { dialog } = require('electron').remote;
+                const { dialog } = require('electron');
                 const promise = dialog.showSaveDialog(null, {
                     title: 'Save Model',
                     buttonLabel: 'Save',
@@ -112,12 +112,11 @@ class ModelUIManager {
             }
         };
         this.luaLibrary = luaLibrary;
-        this.generator = new ZomboidGenerator_1.ZomboidGenerator(this.luaLibrary);
+        this.generator = new ZomboidGenerator_1.ZomboidGenerator(this.luaLibrary, "@asledgehammer/pipewrench", "./dist");
         this.modelFile = this.luaLibrary.models.createFile('untitled');
         this.leftPanel = $('.left-panel').get(0);
         this.centerPanel = $('.center-panel').get(0);
         this.rightPanel = $('.right-panel').get(0);
-        // @ts-ignore
         this.modelPane = $(this.centerPanel).find('.model-pane').get(0);
         this.$modelPane = $(this.modelPane);
         this.$searchBar = $($('.search-bar').get(0));

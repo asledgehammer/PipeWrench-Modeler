@@ -24,13 +24,15 @@ export class LuaLibrary {
   tables: { [id: string]: LuaTable } = {};
   globalFields: { [id: string]: LuaField } = {};
   globalFunctions: { [id: string]: LuaFunction } = {};
-
-  scan(luaPath?: string) {
-    luaPath = luaPath || './assets/media/lua';
+  luaPath: string
+  constructor(luaPath?: string) {
+    this.luaPath = luaPath || './assets/media/lua'
+  }
+  scan() {
     this.files = [];
-    this.scanDir(path.join(luaPath, 'shared').replaceAll("\\", "/"));
-    this.scanDir(path.join(luaPath, 'client').replaceAll("\\", "/"));
-    this.scanDir(path.join(luaPath, 'server').replaceAll("\\", "/"));
+    this.scanDir(path.join(this.luaPath, 'shared'));
+    this.scanDir(path.join(this.luaPath, 'client'));
+    this.scanDir(path.join(this.luaPath, 'server'));
     this.files.sort((a: string, b: string) => {
       return a.localeCompare(b);
     });
@@ -59,9 +61,7 @@ export class LuaLibrary {
     }
   }
 
-  parse(luaPath?: string) {
-    luaPath = luaPath || './assets/media/lua';
-
+  parse() {
     this.classes = {};
     this.tables = {};
     this.globalFields = {};
@@ -70,18 +70,11 @@ export class LuaLibrary {
     // The root class doesn't define itself using 'derive(type: string)'.
     // Add it manually.
     this.classes['ISBaseObject'] = new LuaClass(null, 'ISBaseObject');
-    this.classes['ISBaseObject'].file = new LuaFile(this, '', '', luaPath.replace("./", "/"));
+    this.classes['ISBaseObject'].file = new LuaFile(this, '', '');
 
     for (const file of this.files) {
       const id = file
-        .replace(path.join(luaPath, 'client').replaceAll("\\", "/"), '')
-        .replace(path.join(luaPath, 'server').replaceAll("\\", "/"), '')
-        .replace(path.join(luaPath, 'shared').replaceAll("\\", "/"), '')
-        .replace('.lua', '')
-        .replace('.Lua', '')
-        .replace('.LUA', '');
-
-      const luaFile = new LuaFile(this, id, file, luaPath.replace("./", "/"));
+      const luaFile = new LuaFile(this, id, file);
       luaFile.parse();
       luaFile.scanRequires();
 

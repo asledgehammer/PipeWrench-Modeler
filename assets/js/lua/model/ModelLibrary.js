@@ -44,9 +44,11 @@ class ModelLibrary {
      * Scans and discovers JSON model files to load & read.
      */
     scan() {
-        this.files.length = 0;
-        this.scanDir('./assets/media/models');
-        this.files.sort((a, b) => a.localeCompare(b));
+        if (fs.existsSync("./assets/media/models")) {
+            this.files.length = 0;
+            this.scanDir('./assets/media/models');
+            this.files.sort((a, b) => a.localeCompare(b));
+        }
     }
     /**
      * Parses through all loaded ModelFiles, loading classes, tables, global fields, and global functions.

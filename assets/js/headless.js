@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 "use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -17,15 +18,14 @@ exports.start = function () {
         args[split[0]] = split[1];
     });
     console.log("Args:", args);
-    const luaLibrary = new LuaLibrary_1.LuaLibrary();
-    const generator = new ZomboidGenerator_1.ZomboidGenerator(luaLibrary);
     // Fix luapath
-    if (!args.luapath) {
-        args.luapath = path_1.default.resolve(__dirname, "../media/lua");
-    }
-    args.luapath = args.luapath.replaceAll("\\", "/");
-    luaLibrary.scan(args.luapath || null);
-    luaLibrary.parse(args.luapath || null);
+    let luaPath = args.luapath || path_1.default.resolve(__dirname, "../media/lua");
+    let outDir = args.outDir || path_1.default.resolve(__dirname, "./dist");
+    const moduleName = args.moduleName || "@asledgehammer/pipewrench";
+    const luaLibrary = new LuaLibrary_1.LuaLibrary(luaPath || undefined);
+    const generator = new ZomboidGenerator_1.ZomboidGenerator(luaLibrary, moduleName, outDir);
+    luaLibrary.scan();
+    luaLibrary.parse();
     // Loading all entries
     const classes = Object.values(luaLibrary.classes);
     const tables = Object.values(luaLibrary.tables);
