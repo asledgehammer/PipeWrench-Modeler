@@ -3,7 +3,6 @@
 # assets/js/
 # assets/css/
 
-package-lock.json
 node_modules/
 .eslintrc.json
 assets/media/lua/client
