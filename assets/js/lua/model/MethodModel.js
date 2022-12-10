@@ -9,7 +9,6 @@ const ParamModel_1 = require("./ParamModel");
 const ReturnModel_1 = require("./ReturnModel");
 const Utils_1 = require("../../Utils");
 const ModelUtils_1 = require("./ModelUtils");
-/** @author JabDoesThings */
 class MethodModel extends Model_1.Model {
     constructor(name, src) {
         super();
@@ -134,5 +133,4 @@ class MethodModel extends Model_1.Model {
     }
 }
 exports.MethodModel = MethodModel;
-/** (Loaded via {@link ModelUIManager}) */
 MethodModel.HTML_TEMPLATE = '';

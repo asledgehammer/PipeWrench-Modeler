@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReturnModel = void 0;
 const Model_1 = require("./Model");
-/** @author JabDoesThings */
 class ReturnModel extends Model_1.Model {
     constructor(json) {
         super();

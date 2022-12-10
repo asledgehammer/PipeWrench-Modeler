@@ -6,19 +6,7 @@ const ZomboidGenerator_1 = require("../ZomboidGenerator");
 const LuaNamedObject_1 = require("./LuaNamedObject");
 const LuaClass_1 = require("./LuaClass");
 const LuaTable_1 = require("./LuaTable");
-/**
- * **LuaField** stores calls to constants or variables.
- *
- * LuaFields are treated as fields for classes and treated as properties for tables and global.
- *
- * @author JabDoesThings
- */
 class LuaField extends LuaNamedObject_1.LuaNamedObject {
-    /**
-     * @param container (Optional) The container the field is assigned to.
-     * @param name The name of the element. (If stored globally, identifies as such)
-     * @param isStatic (Optional) If assigned to a class, this tells the generator if the field should be accessed statically or accessed only from a class instance.
-     */
     constructor(container, name, isStatic = true) {
         super(name);
         this.container = container;

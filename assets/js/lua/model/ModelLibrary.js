@@ -23,26 +23,16 @@ exports.ModelLibrary = void 0;
 const fs = __importStar(require("fs"));
 const ModelFile_1 = require("./ModelFile");
 const ModelUtils_1 = require("./ModelUtils");
-/** @author JabDoesThings */
 class ModelLibrary {
     constructor(luaLibrary) {
-        /** All model files discovered from scanning directories. */
         this.files = [];
-        /** All model files in the library. */
         this.modelFiles = {};
-        /** All class models in the library. */
         this.classes = {};
-        /** All table models in the library. */
         this.tables = {};
-        /** All global field models in the library. */
         this.globalFields = {};
-        /** All global function models in the library. */
         this.globalFunctions = {};
         this.luaLibrary = luaLibrary;
     }
-    /**
-     * Scans and discovers JSON model files to load & read.
-     */
     scan() {
         if (fs.existsSync("./assets/media/models")) {
             this.files.length = 0;
@@ -50,9 +40,6 @@ class ModelLibrary {
             this.files.sort((a, b) => a.localeCompare(b));
         }
     }
-    /**
-     * Parses through all loaded ModelFiles, loading classes, tables, global fields, and global functions.
-     */
     parse() {
         this.clear();
         for (const file of this.files) {
@@ -70,9 +57,6 @@ class ModelLibrary {
             this.modelFiles[id] = modelFile;
         }
     }
-    /**
-     * Clears all classes, tables, global fields, and global functions in the library.
-     */
     clear() {
         for (const id of Object.keys(this.classes))
             delete this.classes[id];
@@ -83,11 +67,6 @@ class ModelLibrary {
         for (const id of Object.keys(this.globalFunctions))
             delete this.globalFunctions[id];
     }
-    /**
-     *
-     * @param path The path to the file.
-     * @returns The model file instance. Returns null if not valid JSON.
-     */
     loadFile(path) {
         const modelFile = new ModelFile_1.ModelFile(this, ModelLibrary.getFileId(path), path);
         try {

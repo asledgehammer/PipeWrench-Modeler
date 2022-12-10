@@ -8,7 +8,6 @@ exports.start = void 0;
 const path_1 = __importDefault(require("path"));
 const LuaLibrary_1 = require("./lua/LuaLibrary");
 const ZomboidGenerator_1 = require("./ZomboidGenerator");
-// Entry Point from HTML.
 exports.start = function () {
     console.log('### Loading please wait ###');
     const argv = process.argv.slice(2, process.argv.length);
@@ -18,7 +17,6 @@ exports.start = function () {
         args[split[0]] = split[1];
     });
     console.log("Args:", args);
-    // Fix luapath
     let luaPath = args.luapath || path_1.default.resolve(__dirname, "../media/lua");
     let outDir = args.outDir || path_1.default.resolve(__dirname, "./dist");
     const moduleName = args.moduleName || "@asledgehammer/pipewrench";
@@ -26,7 +24,6 @@ exports.start = function () {
     const generator = new ZomboidGenerator_1.ZomboidGenerator(luaLibrary, moduleName, outDir);
     luaLibrary.scan();
     luaLibrary.parse();
-    // Loading all entries
     const classes = Object.values(luaLibrary.classes);
     const tables = Object.values(luaLibrary.tables);
     console.log("Sorting classes...");
