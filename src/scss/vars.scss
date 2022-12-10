@@ -16,7 +16,7 @@ $noise: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAMAAAAp4XiDAA
 
 // Numeric constants
 $left_panel_width: 256px;
-$center_panel_width: 512px;
+$center_panel_width: 384px;
 $right_panel_width: calc(100% - (#{$left_panel_width} + #{$center_panel_width}));
 
 $font_folder: '../fonts/';
