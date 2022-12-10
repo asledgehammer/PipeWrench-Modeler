@@ -34,11 +34,6 @@
     "src/ts/main.ts",
     "src/ts/headless.ts"
   ],
-  "lib": [
-    "es6",
-    "dom",
-  ],
-  "include": [
-    "src",
-  ]
+  "lib": ["ES6", "DOM"],
+  "include": ["src"]
 }
