@@ -55,7 +55,7 @@ export let start = function () {
     }
 
     console.log("Loading tables...")
-    for (const index in classes) {
+    for (const index in tables) {
       modelUIManager.setTable(tables[index].name);
     }
 
