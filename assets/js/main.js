@@ -24,7 +24,6 @@ exports.start = function () {
         classes.sort((a, b) => a.name.localeCompare(b.name));
         console.log("Sorting tables...");
         tables.sort((a, b) => a.name.localeCompare(b.name));
-        console.log("Loading classes...");
         console.log('### Ready ###');
     }, 100);
 };

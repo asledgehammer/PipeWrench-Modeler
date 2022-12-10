@@ -85,7 +85,7 @@ export class LuaFile {
     this.containerNamespace = containerName;
     this.propertyNamespace = `${containerName}.${propertyName}`;
     console.log("Luafile: ", this.id)
-    console.log("Property: ", this.propertyNamespace)
+    // console.log("Property: ", this.propertyNamespace)
   }
 
   /**

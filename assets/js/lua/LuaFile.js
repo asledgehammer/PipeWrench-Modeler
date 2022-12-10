@@ -52,7 +52,6 @@ class LuaFile {
         this.containerNamespace = containerName;
         this.propertyNamespace = `${containerName}.${propertyName}`;
         console.log("Luafile: ", this.id);
-        console.log("Property: ", this.propertyNamespace);
     }
     parse() {
         let raw = fs.readFileSync(this.file).toString();

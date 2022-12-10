@@ -49,11 +49,12 @@ export let start = function () {
     console.log("Sorting tables...")
     tables.sort((a, b) => a.name.localeCompare(b.name));
 
-    console.log("Loading classes...")
+    // Adds everything to the left panel.. (Not recommended!)
+    //
+    // console.log("Loading classes...")
     // for (const index in classes) {
     //   modelUIManager.setClass(classes[index].name);
     // }
-
     // console.log("Loading tables...")
     // for (const index in tables) {
     //   modelUIManager.setTable(tables[index].name);
