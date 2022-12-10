@@ -50,14 +50,14 @@ export let start = function () {
     tables.sort((a, b) => a.name.localeCompare(b.name));
 
     console.log("Loading classes...")
-    for (const index in classes) {
-      modelUIManager.setClass(classes[index].name);
-    }
+    // for (const index in classes) {
+    //   modelUIManager.setClass(classes[index].name);
+    // }
 
-    console.log("Loading tables...")
-    for (const index in tables) {
-      modelUIManager.setTable(tables[index].name);
-    }
+    // console.log("Loading tables...")
+    // for (const index in tables) {
+    //   modelUIManager.setTable(tables[index].name);
+    // }
 
     console.log('### Ready ###');
   }, 100);

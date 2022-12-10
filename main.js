@@ -38,7 +38,7 @@ function createWindow() {
   // mainWindow.setAutoHideMenuBar(true);
   // mainWindow.setMenu(null);
   mainWindow.webContents.openDevTools({
-    mode: 'detach',
+    mode: 'right',
   });
 
   mainWindow.loadFile('index.html');

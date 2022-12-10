@@ -1,4 +1,4 @@
-const { dialog } = require('electron');
+const { dialog } = require('electron').remote;
 
 import * as fs from 'fs';
 import * as hljs from 'highlight.js';
