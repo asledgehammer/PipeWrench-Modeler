@@ -4,6 +4,7 @@ exports.ParameterModel = void 0;
 const Model_1 = require("./Model");
 const ModelDocumentation_1 = require("./doc/ModelDocumentation");
 const Utils_1 = require("../../Utils");
+/** @author JabDoesThings */
 class ParameterModel extends Model_1.Model {
     constructor(methodName, src) {
         super();
@@ -80,4 +81,5 @@ class ParameterModel extends Model_1.Model {
     }
 }
 exports.ParameterModel = ParameterModel;
+/** (Loaded via {@link ModelUIManager}) */
 ParameterModel.HTML_TEMPLATE = '';
