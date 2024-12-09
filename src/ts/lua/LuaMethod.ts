@@ -114,19 +114,15 @@ export class LuaMethod extends LuaNamedObject {
     let s = '';
     if (documentationString.length) s += `${documentationString}\n`;
 
-    let compiled = `${s}${prefix}${this.isStatic ? 'static ' : ''}${this.name}: `;
-    if (wrapWildcardType) compiled += '(';
-    compiled += `(${parametersString}) => ${returnString}`;
-
-    ///////////////////////////////////////
-    // KONIJIMA FIX
-    // Fix the static method using ':' instead of '.' by removing the '| any'
-    if (wrapWildcardType) compiled += `)`;
-    if (wrapWildcardType && !this.isStatic) compiled += ` | ${WILDCARD_TYPE}`;
-    ///////////////////////////////////////
-    // ORIGINAL
-    // if (wrapWildcardType) compiled += `) | ${WILDCARD_TYPE}`;
-    ///////////////////////////////////////
+    let compiled = `${s}${prefix}${this.isStatic ? 'static ' : ''}${this.name}`;
+    if (!this.isStatic) {
+      // Declare as a class method instead of a class field
+      compiled +=  `(${parametersString}): ${returnString}`
+    } else {
+      // KONIJIMA FIX
+      // Fix the static method using ':' instead of '.' by removing the '| any'
+      compiled += `: (${parametersString}) => ${returnString}`;
+    }
 
     compiled += ';';
 
