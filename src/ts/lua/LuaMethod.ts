@@ -115,13 +115,22 @@ export class LuaMethod extends LuaNamedObject {
     if (documentationString.length) s += `${documentationString}\n`;
 
     let compiled = `${s}${prefix}${this.isStatic ? 'static ' : ''}${this.name}`;
-    if (!this.isStatic) {
+    const containerIsClass = container instanceof LuaClass
+    // Temporary solution for fixing class method override errors
+    // Conflict with typescript' override rule: 
+    // https://www.typescriptlang.org/docs/handbook/2/classes.html#overriding-methods
+    // Perhaps it can never be truly repaired
+    const wrongClassOverrideTempFix = containerIsClass || this.isStatic ? `${parametersString.trim() ? ', ' : ''}...__args: never[]` : ''
+    if (containerIsClass && !this.isStatic) {
       // Declare as a class method instead of a class field
-      compiled +=  `(${parametersString}): ${returnString}`
+      compiled +=  `(${parametersString}${wrongClassOverrideTempFix}): ${returnString}`
     } else {
+      compiled += `: `
+      if (wrapWildcardType && !this.isStatic) compiled += '(';
       // KONIJIMA FIX
       // Fix the static method using ':' instead of '.' by removing the '| any'
-      compiled += `: (${parametersString}) => ${returnString}`;
+      compiled += `(${parametersString}${wrongClassOverrideTempFix}) => ${returnString}`;
+      if (wrapWildcardType && !this.isStatic) compiled += `) | ${WILDCARD_TYPE}`;
     }
 
     compiled += ';';
