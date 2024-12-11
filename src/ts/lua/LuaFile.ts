@@ -374,7 +374,7 @@ export class LuaFile {
     if (!classNames.length && !tableNames.length && !fieldNames.length && !funcionNames.length) {
       return '';
     }
-    let code = `--[${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
+    let code = `--[${this.fileLocal.replace('.lua', '.d.ts').replaceAll(path.sep, '/')}]\n`;
     if (classNames.length) {
       for (const className of classNames) code += classes[className].generateLuaInterface(prefix);
     }
@@ -399,7 +399,7 @@ export class LuaFile {
     if (!classNames.length && !tableNames.length && !fieldNames.length && !functionNames.length) {
       return '';
     }
-    let code = `// [${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
+    let code = `// [${this.fileLocal.replace('.lua', '.d.ts').replaceAll(path.sep, '/')}]\n`;
     for (const className of classNames) code += `${classes[className].generateAPI(partial)}\n`;
     for (const tableName of tableNames) code += `${tables[tableName].generateAPI(partial)}\n`;
     for (const fieldName of fieldNames) code += `${fields[fieldName].generateAPI(partial, this)}\n`;
