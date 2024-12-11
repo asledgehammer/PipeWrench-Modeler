@@ -65,6 +65,7 @@ export class LuaFile {
   readonly folder: string;
   readonly containerNamespace: string;
   readonly propertyNamespace: string;
+  readonly side: string; // shared or client or server
 
   /** The parsed chunk provided by LuaParse. */
   parsed: ast.Chunk;
@@ -84,6 +85,13 @@ export class LuaFile {
     const containerName = path.dirname(this.fileLocal).split(path.sep).join(".")
     this.containerNamespace = containerName;
     this.propertyNamespace = `${containerName}.${propertyName}`;
+    if (this.propertyNamespace.startsWith('lua.client')) {
+      this.side = 'client'
+    } else if (this.propertyNamespace.startsWith('lua.server')) {
+      this.side = 'server'
+    } else {
+      this.side = 'shared'
+    }
     console.log("Luafile: ", this.id)
     // console.log("Property: ", this.propertyNamespace)
   }
@@ -353,7 +361,7 @@ export class LuaFile {
       code += `${_function_.compile('  ')}\n\n`;
     }
     code += '}\n';
-    code = wrapModule(moduleName, this.fileLocal, code);
+    code = wrapModule(moduleName, this.fileLocal, code, this.side);
     return code;
   }
 

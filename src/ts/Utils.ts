@@ -128,12 +128,14 @@ export const generateLuaLicense = (): string => {
 export const wrapModule = (
   moduleName: string,
   fileLocal: string,
-  code: string
+  code: string,
+  side: string,
 ): string => {
   let backup = '';
   for (let i = 1; i < fileLocal.split('/').length; i++) backup += '../';
   let s = '/**  @noSelfInFile */\n';
-  s += `\ndeclare module '${moduleName}' {\n`;
+  // split running side
+  s += `\ndeclare module '${moduleName}${side !== 'shared' ? `/${side}` : ''}' {\n`;
   return `${s}${code}}\n`;
 };
 
