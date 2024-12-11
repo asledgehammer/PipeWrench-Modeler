@@ -128,12 +128,13 @@ exports.generateLuaLicense = () => {
     }
     return lines;
 };
-exports.wrapModule = (moduleName, fileLocal, code) => {
+exports.wrapModule = (moduleName, fileLocal, code, side) => {
     let backup = '';
     for (let i = 1; i < fileLocal.split('/').length; i++)
         backup += '../';
     let s = '/**  @noSelfInFile */\n';
-    s += `\ndeclare module '${moduleName}' {\n`;
+    // split running side
+    s += `\ndeclare module '${moduleName}${side !== 'shared' ? `/${side}` : ''}' {\n`;
     return `${s}${code}}\n`;
 };
 exports.mkdirsSync = (fp) => {

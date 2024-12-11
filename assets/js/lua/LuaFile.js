@@ -65,6 +65,15 @@ class LuaFile {
         const containerName = path_1.default.dirname(this.fileLocal).split(path_1.default.sep).join(".");
         this.containerNamespace = containerName;
         this.propertyNamespace = `${containerName}.${propertyName}`;
+        if (this.propertyNamespace.startsWith('lua.client')) {
+            this.side = 'client';
+        }
+        else if (this.propertyNamespace.startsWith('lua.server')) {
+            this.side = 'server';
+        }
+        else {
+            this.side = 'shared';
+        }
         console.log("Luafile: ", this.id);
         // console.log("Property: ", this.propertyNamespace)
     }
@@ -311,7 +320,7 @@ class LuaFile {
             code += `${_function_.compile('  ')}\n\n`;
         }
         code += '}\n';
-        code = Utils_1.wrapModule(moduleName, this.fileLocal, code);
+        code = Utils_1.wrapModule(moduleName, this.fileLocal, code, this.side);
         return code;
     }
     generateLuaInterface(prefix = '') {
