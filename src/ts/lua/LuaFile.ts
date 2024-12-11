@@ -67,6 +67,9 @@ export class LuaFile {
   readonly propertyNamespace: string;
   readonly side: string; // shared or client or server
 
+  /** is import shared namespace in d.ts */
+  importShared = false;
+
   /** The parsed chunk provided by LuaParse. */
   parsed: ast.Chunk;
 
@@ -361,7 +364,13 @@ export class LuaFile {
       code += `${_function_.compile('  ')}\n\n`;
     }
     code += '}\n';
-    code = wrapModule(moduleName, this.fileLocal, code, this.side);
+    code = wrapModule({
+      moduleName,
+      fileLocal: this.fileLocal,
+      code,
+      side: this.side,
+      importShared: this.importShared,
+    });
     return code;
   }
 
