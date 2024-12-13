@@ -46,7 +46,7 @@ class LuaClass extends LuaContainer_1.LuaContainer {
         if (this.isEmpty()) {
             let s = `${prefix}${documentation}\n${prefix}export class ${ModelUtils_1.sanitizeName(name)}`;
             if (this.superClass)
-                s += ` extends ${this.superClass.fullPath}`;
+                s += ` extends ${this.getSuperClassFullPathWithSide()}`;
             return `${s} { [id: string]: ${ZomboidGenerator_1.WILDCARD_TYPE}; static [id: string]: ${ZomboidGenerator_1.WILDCARD_TYPE}; }`;
         }
         const { staticFields, nonStaticFields } = this.sortFields();
@@ -58,7 +58,7 @@ class LuaClass extends LuaContainer_1.LuaContainer {
             s += `${prefix}${documentation}\n`;
         s += `${prefix}export class ${ModelUtils_1.sanitizeName(name)}`;
         if (this.superClass)
-            s += ` extends ${this.superClass.fullPath}`;
+            s += ` extends ${this.getSuperClassFullPathWithSide()}`;
         s += ' {\n\n';
         // Wildcard.
         s += `${newPrefix}[id: string]: ${ZomboidGenerator_1.WILDCARD_TYPE};\n${newPrefix}static [id: string]: ${ZomboidGenerator_1.WILDCARD_TYPE};\n\n`;
@@ -122,9 +122,10 @@ class LuaClass extends LuaContainer_1.LuaContainer {
         // Render empty classes on one line.
         return `${prefix}${documentation ? `${documentation}\n` : ''}${prefix}export class ${ModelUtils_1.sanitizeName(name)} extends ${this.fullPath} {}`;
     }
-    generateLuaInterface(prefix = '') {
+    generateLuaInterface(prefix = '', requireFrom = '') {
         const { name } = this;
-        return `${prefix}Exports.${ModelUtils_1.sanitizeName(name)} = loadstring("return _G['${name}']")()\n`;
+        const requireStatement = requireFrom ? `require('${requireFrom}');` : '';
+        return `${prefix}Exports.${ModelUtils_1.sanitizeName(name)} = loadstring("${requireStatement}return _G['${name}']")()\n`;
     }
     scanMethods() {
         if (this._constructor_)
@@ -146,6 +147,15 @@ class LuaClass extends LuaContainer_1.LuaContainer {
     }
     get fullPath() {
         return `${this.namespace}.${ModelUtils_1.sanitizeName(this.name)}`;
+    }
+    getSuperClassFullPathWithSide() {
+        const fullPath = this.superClass.fullPath;
+        // if in client or server side, import using alias
+        if (this.file.side !== 'shared' && this.file.side !== this.superClass.file.side) {
+            this.file.importShared = true;
+            return fullPath.replace('lua.shared', 'sharedLua.shared');
+        }
+        return fullPath;
     }
 }
 exports.LuaClass = LuaClass;

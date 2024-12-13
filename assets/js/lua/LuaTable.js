@@ -83,9 +83,10 @@ class LuaTable extends LuaContainer_1.LuaContainer {
         // Render empty classes on one line.
         return `${prefix}${documentation ? `${documentation}\n` : ''}${prefix}export abstract class ${ModelUtils_1.sanitizeName(this.name)} extends ${this.fullPath} {}`;
     }
-    generateLuaInterface(prefix = '') {
+    generateLuaInterface(prefix = '', requireFrom = '') {
         const { name } = this;
-        return `${prefix}Exports.${ModelUtils_1.sanitizeName(name)} = loadstring("return _G['${name}']")()\n`;
+        const requireStatement = requireFrom ? `require('${requireFrom}');` : '';
+        return `${prefix}Exports.${ModelUtils_1.sanitizeName(name)} = loadstring("${requireStatement}return _G['${name}']")()\n`;
     }
     isEmpty() {
         return !Object.keys(this.fields).length && !Object.keys(this.methods).length;

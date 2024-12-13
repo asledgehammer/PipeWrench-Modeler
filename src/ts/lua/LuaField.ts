@@ -92,9 +92,10 @@ export class LuaField extends LuaNamedObject {
     )} = ${this.getFullPath(file)};`;
   }
 
-  generateLua(prefix: string = ''): string {
+  generateLua(prefix: string = '', requireFrom: string = ''): string {
     const { name } = this;
-    return `${prefix}Exports.${sanitizeName(name)} = loadstring("return _G['${name}']")()\n`;
+    const requireStatement = requireFrom ? `require('${requireFrom}');` : ''
+    return `${prefix}Exports.${sanitizeName(name)} = loadstring("${requireStatement}return _G['${name}']")()\n`;
   }
 
   getNamespace(file: LuaFile) {

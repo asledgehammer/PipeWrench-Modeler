@@ -128,12 +128,15 @@ exports.generateLuaLicense = () => {
     }
     return lines;
 };
-exports.wrapModule = (moduleName, fileLocal, code) => {
+exports.wrapModule = ({ moduleName, fileLocal, code, side, importShared, }) => {
     let backup = '';
     for (let i = 1; i < fileLocal.split('/').length; i++)
         backup += '../';
     let s = '/**  @noSelfInFile */\n';
-    s += `\ndeclare module '${moduleName}' {\n`;
+    // import shared namespace
+    s += importShared ? `\nimport { lua as sharedLua } from '@asledgehammer/pipewrench'\n` : '';
+    // split running side
+    s += `\ndeclare module '${moduleName}${side !== 'shared' ? `/${side}` : ''}' {\n`;
     return `${s}${code}}\n`;
 };
 exports.mkdirsSync = (fp) => {

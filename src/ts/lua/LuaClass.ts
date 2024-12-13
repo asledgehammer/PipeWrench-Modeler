@@ -58,7 +58,7 @@ export class LuaClass extends LuaContainer {
     // Render empty classes on one line.
     if (this.isEmpty()) {
       let s = `${prefix}${documentation}\n${prefix}export class ${sanitizeName(name)}`;
-      if (this.superClass) s += ` extends ${this.superClass.fullPath}`;
+      if (this.superClass) s += ` extends ${this.getSuperClassFullPathWithSide()}`;
       return `${s} { [id: string]: ${WILDCARD_TYPE}; static [id: string]: ${WILDCARD_TYPE}; }`;
     }
 
@@ -72,7 +72,7 @@ export class LuaClass extends LuaContainer {
     if (documentation.length) s += `${prefix}${documentation}\n`;
 
     s += `${prefix}export class ${sanitizeName(name)}`;
-    if (this.superClass) s += ` extends ${this.superClass.fullPath}`;
+    if (this.superClass) s += ` extends ${this.getSuperClassFullPathWithSide()}`;
     s += ' {\n\n';
 
     // Wildcard.
@@ -145,9 +145,10 @@ export class LuaClass extends LuaContainer {
     } {}`;
   }
 
-  generateLuaInterface(prefix: string = ''): string {
+  generateLuaInterface(prefix: string = '', requireFrom: string = ''): string {
     const { name } = this;
-    return `${prefix}Exports.${sanitizeName(name)} = loadstring("return _G['${name}']")()\n`;
+    const requireStatement = requireFrom ? `require('${requireFrom}');` : ''
+    return `${prefix}Exports.${sanitizeName(name)} = loadstring("${requireStatement}return _G['${name}']")()\n`;
   }
 
   scanMethods() {
@@ -174,5 +175,15 @@ export class LuaClass extends LuaContainer {
 
   get fullPath() {
     return `${this.namespace}.${sanitizeName(this.name)}`;
+  }
+
+  getSuperClassFullPathWithSide() {
+    const fullPath = this.superClass.fullPath
+    // if in client or server side, import using alias
+    if (this.file.side !== 'shared' && this.file.side !== this.superClass.file.side) {
+      this.file.importShared = true
+      return fullPath.replace('lua.shared', 'sharedLua.shared')
+    }
+    return fullPath
   }
 }
