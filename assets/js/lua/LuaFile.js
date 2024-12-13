@@ -56,6 +56,8 @@ class LuaFile {
         this.globalFunctions = {};
         /** All requires in the file. (Used for dependency chains) */
         this.requires = [];
+        /** is import shared namespace in d.ts */
+        this.importShared = false;
         this.library = library;
         this.id = id;
         this.file = file;
@@ -320,7 +322,13 @@ class LuaFile {
             code += `${_function_.compile('  ')}\n\n`;
         }
         code += '}\n';
-        code = Utils_1.wrapModule(moduleName, this.fileLocal, code, this.side);
+        code = Utils_1.wrapModule({
+            moduleName,
+            fileLocal: this.fileLocal,
+            code,
+            side: this.side,
+            importShared: this.importShared,
+        });
         return code;
     }
     generateLuaInterface(prefix = '') {
@@ -332,7 +340,7 @@ class LuaFile {
         if (!classNames.length && !tableNames.length && !fieldNames.length && !funcionNames.length) {
             return '';
         }
-        let code = `--[${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
+        let code = `--[${this.fileLocal.replace('.lua', '.d.ts').replaceAll(path_1.default.sep, '/')}]\n`;
         if (classNames.length) {
             for (const className of classNames)
                 code += classes[className].generateLuaInterface(prefix);
@@ -360,7 +368,7 @@ class LuaFile {
         if (!classNames.length && !tableNames.length && !fieldNames.length && !functionNames.length) {
             return '';
         }
-        let code = `// [${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
+        let code = `// [${this.fileLocal.replace('.lua', '.d.ts').replaceAll(path_1.default.sep, '/')}]\n`;
         for (const className of classNames)
             code += `${classes[className].generateAPI(partial)}\n`;
         for (const tableName of tableNames)
