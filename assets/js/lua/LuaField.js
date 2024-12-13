@@ -74,9 +74,10 @@ class LuaField extends LuaNamedObject_1.LuaNamedObject {
         const doc = this.generateDocumentation(prefix);
         return `${prefix}${doc ? `${doc}\n` : ''}${prefix}export const ${ModelUtils_1.sanitizeName(name)} = ${this.getFullPath(file)};`;
     }
-    generateLua(prefix = '') {
+    generateLua(prefix = '', requireFrom = '') {
         const { name } = this;
-        return `${prefix}Exports.${ModelUtils_1.sanitizeName(name)} = loadstring("return _G['${name}']")()\n`;
+        const requireStatement = requireFrom ? `require('${requireFrom}');` : '';
+        return `${prefix}Exports.${ModelUtils_1.sanitizeName(name)} = loadstring("${requireStatement}return _G['${name}']")()\n`;
     }
     getNamespace(file) {
         return file.propertyNamespace;

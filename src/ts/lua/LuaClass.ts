@@ -145,9 +145,10 @@ export class LuaClass extends LuaContainer {
     } {}`;
   }
 
-  generateLuaInterface(prefix: string = ''): string {
+  generateLuaInterface(prefix: string = '', requireFrom: string = ''): string {
     const { name } = this;
-    return `${prefix}Exports.${sanitizeName(name)} = loadstring("return _G['${name}']")()\n`;
+    const requireStatement = requireFrom ? `require('${requireFrom}');` : ''
+    return `${prefix}Exports.${sanitizeName(name)} = loadstring("${requireStatement}return _G['${name}']")()\n`;
   }
 
   scanMethods() {

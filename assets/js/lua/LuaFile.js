@@ -340,18 +340,19 @@ class LuaFile {
         if (!classNames.length && !tableNames.length && !fieldNames.length && !funcionNames.length) {
             return '';
         }
-        let code = `--[${this.fileLocal.replace('.lua', '.d.ts').replaceAll(path_1.default.sep, '/')}]\n`;
+        const requireFrom = this.fileLocal.replace('.lua', '').replaceAll(path_1.default.sep, '/');
+        let code = `--[${requireFrom}.d.ts]\n`;
         if (classNames.length) {
             for (const className of classNames)
-                code += classes[className].generateLuaInterface(prefix);
+                code += classes[className].generateLuaInterface(prefix, requireFrom);
         }
         if (tableNames.length) {
             for (const tableName of tableNames)
-                code += tables[tableName].generateLuaInterface(prefix);
+                code += tables[tableName].generateLuaInterface(prefix, requireFrom);
         }
         if (fieldNames.length) {
             for (const fieldName of fieldNames)
-                code += fields[fieldName].generateLua(prefix);
+                code += fields[fieldName].generateLua(prefix, requireFrom);
         }
         if (funcionNames.length) {
             for (const functionName of funcionNames)
