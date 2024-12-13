@@ -6,7 +6,19 @@ const ZomboidGenerator_1 = require("../ZomboidGenerator");
 const LuaNamedObject_1 = require("./LuaNamedObject");
 const LuaClass_1 = require("./LuaClass");
 const LuaTable_1 = require("./LuaTable");
+/**
+ * **LuaField** stores calls to constants or variables.
+ *
+ * LuaFields are treated as fields for classes and treated as properties for tables and global.
+ *
+ * @author JabDoesThings
+ */
 class LuaField extends LuaNamedObject_1.LuaNamedObject {
+    /**
+     * @param container (Optional) The container the field is assigned to.
+     * @param name The name of the element. (If stored globally, identifies as such)
+     * @param isStatic (Optional) If assigned to a class, this tells the generator if the field should be accessed statically or accessed only from a class instance.
+     */
     constructor(container, name, isStatic = true) {
         super(name);
         this.container = container;
@@ -62,9 +74,10 @@ class LuaField extends LuaNamedObject_1.LuaNamedObject {
         const doc = this.generateDocumentation(prefix);
         return `${prefix}${doc ? `${doc}\n` : ''}${prefix}export const ${ModelUtils_1.sanitizeName(name)} = ${this.getFullPath(file)};`;
     }
-    generateLua(prefix = '') {
+    generateLua(prefix = '', requireFrom = '') {
         const { name } = this;
-        return `${prefix}Exports.${ModelUtils_1.sanitizeName(name)} = loadstring("return _G['${name}']")()\n`;
+        const requireStatement = requireFrom ? `require('${requireFrom}');` : '';
+        return `${prefix}Exports.${ModelUtils_1.sanitizeName(name)} = loadstring("${requireStatement}return _G['${name}']")()\n`;
     }
     getNamespace(file) {
         return file.propertyNamespace;

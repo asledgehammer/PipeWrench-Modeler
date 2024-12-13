@@ -65,6 +65,10 @@ export class LuaFile {
   readonly folder: string;
   readonly containerNamespace: string;
   readonly propertyNamespace: string;
+  readonly side: string; // shared or client or server
+
+  /** is import shared namespace in d.ts */
+  importShared = false;
 
   /** The parsed chunk provided by LuaParse. */
   parsed: ast.Chunk;
@@ -84,6 +88,13 @@ export class LuaFile {
     const containerName = path.dirname(this.fileLocal).split(path.sep).join(".")
     this.containerNamespace = containerName;
     this.propertyNamespace = `${containerName}.${propertyName}`;
+    if (this.propertyNamespace.startsWith('lua.client')) {
+      this.side = 'client'
+    } else if (this.propertyNamespace.startsWith('lua.server')) {
+      this.side = 'server'
+    } else {
+      this.side = 'shared'
+    }
     console.log("Luafile: ", this.id)
     // console.log("Property: ", this.propertyNamespace)
   }
@@ -353,7 +364,13 @@ export class LuaFile {
       code += `${_function_.compile('  ')}\n\n`;
     }
     code += '}\n';
-    code = wrapModule(moduleName, this.fileLocal, code);
+    code = wrapModule({
+      moduleName,
+      fileLocal: this.fileLocal,
+      code,
+      side: this.side,
+      importShared: this.importShared,
+    });
     return code;
   }
 
@@ -366,15 +383,16 @@ export class LuaFile {
     if (!classNames.length && !tableNames.length && !fieldNames.length && !funcionNames.length) {
       return '';
     }
-    let code = `--[${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
+    const requireFrom = this.fileLocal.replace('.lua', '').replaceAll(path.sep, '/')
+    let code = `--[${requireFrom}.d.ts]\n`;
     if (classNames.length) {
-      for (const className of classNames) code += classes[className].generateLuaInterface(prefix);
+      for (const className of classNames) code += classes[className].generateLuaInterface(prefix, requireFrom);
     }
     if (tableNames.length) {
-      for (const tableName of tableNames) code += tables[tableName].generateLuaInterface(prefix);
+      for (const tableName of tableNames) code += tables[tableName].generateLuaInterface(prefix, requireFrom);
     }
     if (fieldNames.length) {
-      for (const fieldName of fieldNames) code += fields[fieldName].generateLua(prefix);
+      for (const fieldName of fieldNames) code += fields[fieldName].generateLua(prefix, requireFrom);
     }
     if (funcionNames.length) {
       for (const functionName of funcionNames) funcs[functionName].generateLuaInterface(prefix);
@@ -391,7 +409,7 @@ export class LuaFile {
     if (!classNames.length && !tableNames.length && !fieldNames.length && !functionNames.length) {
       return '';
     }
-    let code = `// [${this.fileLocal.replace('.lua', '.d.ts')}]\n`;
+    let code = `// [${this.fileLocal.replace('.lua', '.d.ts').replaceAll(path.sep, '/')}]\n`;
     for (const className of classNames) code += `${classes[className].generateAPI(partial)}\n`;
     for (const tableName of tableNames) code += `${tables[tableName].generateAPI(partial)}\n`;
     for (const fieldName of fieldNames) code += `${fields[fieldName].generateAPI(partial, this)}\n`;

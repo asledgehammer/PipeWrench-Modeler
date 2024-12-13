@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "electron main.js",
     "headless1": "node headless.js",
-    "headless2": "node headless.js \"luapath=D:/Program Files (x86)/Steam/steamapps/common/ProjectZomboid/media/lua\""
+    "headless2": "node headless.js \"luapath=D:/Program Files (x86)/Steam/steamapps/common/ProjectZomboid/media/lua\"",
+    "headless3": "npx ts-node headless.ts \"luapath=D:/Program Files (x86)/Steam/steamapps/common/ProjectZomboid/media/lua\""
   },
   "bin": {
     "pwm": "./main.js",

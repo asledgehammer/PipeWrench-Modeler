@@ -7,6 +7,7 @@ const ModelDocumentation_1 = require("./doc/ModelDocumentation");
 const ParamModel_1 = require("./ParamModel");
 const Utils_1 = require("../../Utils");
 const ModelUtils_1 = require("./ModelUtils");
+/** @author JabDoesThings */
 class ConstructorModel extends Model_1.Model {
     constructor(_class_, json) {
         super();
@@ -129,4 +130,5 @@ class ConstructorModel extends Model_1.Model {
     }
 }
 exports.ConstructorModel = ConstructorModel;
+/** (Loaded via {@link ModelUIManager}) */
 ConstructorModel.HTML_TEMPLATE = '';

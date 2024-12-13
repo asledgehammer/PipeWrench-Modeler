@@ -8,6 +8,7 @@ const FieldModel_1 = require("./FieldModel");
 const MethodModel_1 = require("./MethodModel");
 const AuthoredModelDocumentation_1 = require("./doc/AuthoredModelDocumentation");
 const Utils_1 = require("../../Utils");
+/** @author JabDoesThings */
 class TableModel extends Model_1.Model {
     constructor(table, name, json) {
         super();
@@ -101,6 +102,7 @@ class TableModel extends Model_1.Model {
         const { documentation: tableDoc } = this;
         if (tableDoc) {
             const { authors, description: tableDescription } = tableDoc;
+            // Process authors. (If defined)
             if (authors && authors.length) {
                 let s = '[';
                 for (const author of authors)
@@ -108,6 +110,7 @@ class TableModel extends Model_1.Model {
                 s = `${s.substring(0, s.length - 2)}]`;
                 documentationBuilder.appendAnnotation('docAuthors', s);
             }
+            // Process lines. (If defined)
             if (tableDescription && tableDescription.length) {
                 if (authors && authors.length)
                     documentationBuilder.appendLine();
@@ -152,4 +155,5 @@ class TableModel extends Model_1.Model {
     }
 }
 exports.TableModel = TableModel;
+/** (Loaded via {@link ModelUIManager}) */
 TableModel.HTML_TEMPLATE = '';

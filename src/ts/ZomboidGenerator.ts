@@ -15,6 +15,7 @@ import {
   writeLuaFile,
   writeTSFile,
 } from './Utils';
+import type { LuaFile } from './lua/LuaFile';
 
 export const WILDCARD_TYPE = 'any';
 
@@ -33,11 +34,22 @@ export class ZomboidGenerator {
   run() {
     ZomboidGenerator.FUNCTION_CACHE.length = 0;
     console.log("- setupDirectories...")
+    const sides = [
+      'shared',
+      'server',
+      'client',
+    ]
     const rootRef = "lua.reference.partial.d.ts"
-    const luaRef = "lua.interface.partial.lua"
-    const rootDef = "lua.api.partial.d.ts"
+    const getLuaRef = (side: string) => `lua.${side}.interface.partial.lua`
+    const luaRefsWithSide: [string, string][] = sides.map(side => [side, getLuaRef(side)])
+    const getRootDef = (side: string) => `lua.${side}.api.partial.d.ts`
+    const rootRefsWithSide: [string, string][] = sides.map(side => [side, getRootDef(side)])
 
-    this.setupDirectories(rootRef, luaRef, rootDef);
+    this.setupDirectories(
+      rootRef,
+      ...luaRefsWithSide.map(r => r[1]),
+      ...rootRefsWithSide.map(r => r[1]),
+    );
     console.log("- generateDefinitions...")
     this.generateDefinitions();
 
@@ -45,18 +57,22 @@ export class ZomboidGenerator {
     this.generateReferencePartial(rootRef);
 
     console.log("- generateLuaInterfacePartial...")
-    this.generateLuaInterfacePartial(luaRef);
+    luaRefsWithSide.forEach(([side, luaRef]) => {
+      this.generateLuaInterfacePartial(luaRef, side);
+    });
 
     console.log("- generateAPIPartial...")
-    this.generateAPIPartial(rootDef, rootRef);
+    rootRefsWithSide.forEach(([side, luaRef]) => {
+      this.generateAPIPartial(luaRef, rootRef, side);
+    });
   }
 
-  setupDirectories(rootRef: string, luaRef: string, rootDef: string) {
+  setupDirectories(...filePaths: string[]) {
     const { outDir } = this;
     // Initialize directories.
-    fs.rmSync(path.join(outDir, rootRef), { "force": true })
-    fs.rmSync(path.join(outDir, luaRef), { "force": true })
-    fs.rmSync(path.join(outDir, rootDef), { "force": true })
+    filePaths.forEach(filePath => {
+      fs.rmSync(path.join(outDir, filePath), { "force": true })
+    })
     fs.rmSync(path.join(outDir, "lua"), { "force": true, recursive: true })
     if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
   }
@@ -80,10 +96,11 @@ export class ZomboidGenerator {
     }
   }
 
-  generateAPIPartial(rootDef: string, rootRef: string) {
+  generateAPIPartial(rootDef: string, rootRef: string, side: string) {
     const { library, moduleName, outDir } = this;
     const { luaFiles } = library;
-    const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
+    const sideLuaFiles = this.getSideLuaFiles(luaFiles, side);
+    const luaFileNames = Object.keys(sideLuaFiles).sort((o1, o2) => o1.localeCompare(o2));
     let code = '';
     for (const fileName of luaFileNames) {
       const file = luaFiles[fileName];
@@ -132,26 +149,32 @@ export class ZomboidGenerator {
     writeTSFile(`${outDir}/${rootRef}`, prettify(code));
   }
 
-  generateLuaInterfacePartial(luaRef: string) {
+  getSideLuaFiles(luaFiles: { [id: string]: LuaFile }, side: string) {
+    return Object.entries(luaFiles).reduce(
+      (acc, [id, luaFile]) => {
+        if (luaFile.side !== side) {
+          return acc;
+        }
+        acc[id] = luaFile;
+        return acc;
+      },
+      {} as Record<string, LuaFile>
+    )
+  }
+
+  generateLuaInterfacePartial(luaRef: string, side: string) {
     const { library, outDir } = this;
     const { luaFiles } = library;
-    const luaFileNames = Object.keys(luaFiles).sort((o1, o2) => o1.localeCompare(o2));
+    const sideLuaFiles = this.getSideLuaFiles(luaFiles, side);
+    const luaFileNames = Object.keys(sideLuaFiles).sort((o1, o2) => o1.localeCompare(o2));
     let luaCode = '';
-    let prefix = '  ';
     luaCode += 'local Exports = {}\n';
     luaCode += '-- [PARTIAL:START]\n';
-    luaCode += '_G.PIPEWRENCH_READY = false\n';
-    luaCode += `triggerEvent('OnPipeWrenchBoot', false)\n`;
-    luaCode += 'Events.OnGameBoot.Add(function()\n\n';
     for (const fileName of luaFileNames) {
       const file = luaFiles[fileName];
-      const fileCode = file.generateLuaInterface(prefix);
+      const fileCode = file.generateLuaInterface();
       if (fileCode.length) luaCode += `${fileCode}\n`;
     }
-    luaCode += `${prefix}_G.PIPEWRENCH_READY = true\n`;
-    luaCode += `${prefix}-- Trigger reimport blocks for all compiled PipeWrench TypeScript file(s).\n`;
-    luaCode += `${prefix}triggerEvent('OnPipeWrenchBoot', true)\n`;
-    luaCode += 'end)\n';
     luaCode += '-- [PARTIAL:STOP]\n\n';
     luaCode += 'return Exports\n';
 
